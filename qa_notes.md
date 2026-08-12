@@ -23,3 +23,5 @@
 음성 검증에서 마이크 버튼을 실제로 눌렀고, 브라우저 콘솔에서 `SpeechRecognition`/`webkitSpeechRecognition` 지원 여부와 `speechSynthesis` 호출을 확인했다. 한국어 TTS utterance(`ko-KR`)를 호출했으며, 실제 STT 입력은 Preview 브라우저의 마이크 권한·오디오 장치 상태에 따라 자동화 환경에서 음성 문장까지 수집되지 않을 수 있다. 앱은 지원 브라우저에서 `ko-KR` 인식과 감정 표현 TTS를 사용하도록 구현되어 있다.
 
 `getScoreLabel`을 별도 헬퍼로 분리해 로딩·오류·null·저장 점수 4개 상태를 테스트 가능하게 만들었다. `pnpm check` 통과, Vitest 3개 파일·9개 테스트 전부 통과.
+
+최종 체크포인트 후 실제 브라우저에서 `SpeechRecognition`/`webkitSpeechRecognition` 인스턴스를 만들고 `lang = ko-KR`, `start()`를 호출했다. 콘솔에는 실행 코드가 남았고, Preview 자동화 환경에서는 음성 입력 권한/장치가 노출되지 않아 실제 전사 결과 콜백까지 수집되지 않았다. 따라서 앱 구현은 지원 브라우저·실제 모바일 기기에서 마이크 권한을 허용한 뒤 검증해야 한다. TTS는 `speechSynthesis.speak()` 호출을 앞서 수행했다.
