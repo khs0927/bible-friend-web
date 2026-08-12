@@ -34,7 +34,15 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; background: #fffaf4; color: #2d2946; font-family: 'Nunito', 'Gowun Dodum', sans-serif; }
+body { margin: 0; min-width: 320px; background: #fffaf4; color: #2d2946; font-family: 'Gowun Dodum', 'Nunito', sans-serif; }
+h1, h2, h3, .bf-brand-title { font-family: 'Jua', 'Gowun Dodum', sans-serif; letter-spacing: 0.02em; }
+@keyframes bfFadeShrink {
+  0% { opacity: 0; transform: scale(1.05) translateY(-8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.bf-chat-message.assistant {
+  animation: bfFadeShrink 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
 button, input, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .6; }

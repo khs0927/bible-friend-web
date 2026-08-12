@@ -1,16 +1,10 @@
-# 성경 친구 CosyVoice TTS 통합 TODO
+# TTS 및 반응형 대화창 개선 TODO
 
-- [x] CosyVoice 공식 저장소(QwenAudio/CosyVoice)의 아키텍처 및 API 요구사항 분석 (FastAPI 서버 및 HTTP/Streaming API 구조 확인)
-- [x] 영구 호스팅 환경(Autoscale serverless)과 CosyVoice(GPU/대형 모델 파이프라인)의 제약 조건 검토
-- [x] CosyVoice REST API 클라이언트 모듈 설계 및 프록시 설정 (`server/_core/cosyvoice.ts`)
-- [x] tRPC 라우터에 TTS 변환 엔드포인트 추가 및 감정 표현 프롬프트 연결 (`server/routers.ts`)
-- [x] 프론트엔드 채팅/스토리 오디오 재생에 CosyVoice 오디오 스트림/URL 연동 (`Home.tsx`)
-- [x] CosyVoice 통합 테스트 추가 및 전체 Vitest 검증 (`server/cosyvoice.test.ts`)
-- [x] 체크포인트 저장 및 사용자 최종 안내
-- [x] QwenAudio/CosyVoice 공식 문서/예제를 열어 읽고 FastAPI 엔드포인트와 스트리밍 구조를 분석해 cosyvoice_research.md에 기록
-- [x] 영구 웹사이트 환경(Autoscale serverless)과 CosyVoice(대형 모델/GPU/상시 실행)의 제약 조건을 검토하고 대체 아키텍처(클라이언트 Web Speech API + 서버 CosyVoice Fallback 또는 외부 API 프록시) 확정
-- [x] mock 기반 CosyVoice 성공/실패 tRPC 라우터 테스트 추가 및 pnpm check && pnpm test 실행
-- [x] 프론트엔드에서 CosyVoice TTS 오디오 재생 또는 브라우저 기본 TTS 폴백 연동 검증
-- [x] mock axios 기반 CosyVoice 성공/실패 tRPC 라우터 테스트 추가
-- [x] Home.tsx의 CosyVoice 호출을 tRPC mutation 훅(`mutateAsync`) 패턴으로 정밀하게 정돈하고 Vitest 통과 확인
-- [x] axios 성공 목업을 포함한 CosyVoice tRPC 라우터 성공 테스트 추가
+- [x] CosyVoice 음성이 재생되지 않고 브라우저 TTS로 조용히 폴백되던 원인 진단 (`COSYVOICE_API_URL` 미설정 및 서버 응답 에러 핸들링 수정)
+- [x] 서버리스 환경에서도 기본적으로 풍부한 감정 표현 오디오(또는 Web Audio API 기반 오디오 효과 및 Web Speech 향상 설정)가 확실히 작동하도록 헬퍼 개선 (`server/_core/cosyvoice.ts`)
+- [x] 대화 시 답변 텍스트를 화면에 보여주면서 음성도 동시에 재생되도록 `askMutation` 및 스토리 듣기 흐름 정비 (`Home.tsx`)
+- [x] 아동 친화적 글씨체(Google Fonts 'Gowun Dodum' / 'Jua') 적용 및 타이핑/축소 애니메이션 효과 추가 (`client/index.html`, `client/src/index.css`)
+- [x] 반응형 대화창 애니메이션 및 미세 인터랙션 강화 (`Home.tsx`, `App.css`)
+- [x] Vitest 단위 테스트 및 TypeScript 검증 실행 후 체크포인트 저장
+- [ ] CosyVoice 실패 시 응답 핸들링 테스트 추가 및 pnpm check && pnpm test 실행
+- [x] TTS 수정 및 감정 음성/글씨체 개선 후 webdev_save_checkpoint 실행

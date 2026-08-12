@@ -37,6 +37,7 @@ const initialMessages: Message[] = [
 
 async function speakKoreanWithCosyVoice(text: string, ttsMutation?: any) {
   if (typeof window === "undefined") return;
+  let serverPlayed = false;
   try {
     if (ttsMutation) {
       const res = await ttsMutation.mutateAsync({ text, mode: "instruct", instruct_text: "따뜻하고 친근한 어린이 목소리로 부드럽게 말해줘" });
@@ -45,19 +46,22 @@ async function speakKoreanWithCosyVoice(text: string, ttsMutation?: any) {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         await audio.play();
-        return;
+        serverPlayed = true;
       }
     }
   } catch {
-    // Fallback to Web Speech API
+    serverPlayed = false;
   }
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "ko-KR";
-  utterance.rate = 0.92;
-  utterance.pitch = 1.12;
-  window.speechSynthesis.speak(utterance);
+  
+  // 서버 CosyVoice가 미설정 상태이거나 호출 실패한 경우, 아이들에게 최적화된 감정/톤의 브라우저 음성 합성으로 동시에 또렷하게 들려줍니다.
+  if (!serverPlayed && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ko-KR";
+    utterance.rate = 0.94;
+    utterance.pitch = 1.22; // 아이들에게 친근한 밝고 높은 음역대
+    window.speechSynthesis.speak(utterance);
+  }
 }
 
 export default function Home() {

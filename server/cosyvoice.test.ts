@@ -7,7 +7,7 @@ describe("CosyVoice integration", () => {
     delete process.env.COSYVOICE_API_URL;
 
     await expect(synthesizeWithCosyVoice({ text: "안녕하세요" })).rejects.toThrow(
-      "COSYVOICE_API_URL is not configured"
+      "COSYVOICE_API_URL이 설정되지 않았습니다"
     );
 
     if (originalUrl) {

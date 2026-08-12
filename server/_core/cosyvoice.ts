@@ -11,31 +11,26 @@ export type CosyVoiceRequest = {
 
 /**
  * CosyVoice FastAPI 서버와 통신하여 텍스트를 음성 오디오 버퍼(ArrayBuffer)로 변환합니다.
- * 외부 COSYVOICE_API_URL 환경 변수가 설정되어 있지 않은 경우 안전한 폴백 에러를 반환합니다.
+ * 외부 COSYVOICE_API_URL 환경 변수가 설정되어 있지 않은 경우 명확한 에러를 발생시켜 클라이언트가 감정 표현 웹 톤으로 전환하도록 유도합니다.
  */
 export async function synthesizeWithCosyVoice(req: CosyVoiceRequest): Promise<ArrayBuffer> {
   const baseUrl = process.env.COSYVOICE_API_URL;
   if (!baseUrl) {
-    throw new Error("COSYVOICE_API_URL is not configured. Please provide the CosyVoice server endpoint.");
+    throw new Error("COSYVOICE_API_URL이 설정되지 않았습니다. 외부 CosyVoice GPU 서버 엔드포인트를 지정해 주세요.");
   }
 
-  try {
-    const response = await axios.post(
-      `${baseUrl.replace(/\/$/, "")}/tts`,
-      {
-        text: req.text,
-        mode: req.mode || "instruct",
-        instruct_text: req.instruct_text || "따뜻하고 친근한 어린이 목소리로 부드럽게 말해줘",
-        spk_id: req.spk_id || "default",
-      },
-      {
-        responseType: "arraybuffer",
-        timeout: 15000,
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("[CosyVoice] TTS synthesis failed:", error);
-    throw new Error("CosyVoice 음성 변환 중 오류가 발생했습니다.");
-  }
+  const response = await axios.post(
+    `${baseUrl.replace(/\/$/, "")}/tts`,
+    {
+      text: req.text,
+      mode: req.mode || "instruct",
+      instruct_text: req.instruct_text || "따뜻하고 친근한 어린이 목소리로 부드럽게 말해줘",
+      spk_id: req.spk_id || "default",
+    },
+    {
+      responseType: "arraybuffer",
+      timeout: 15000,
+    }
+  );
+  return response.data;
 }
