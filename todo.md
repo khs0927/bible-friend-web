@@ -1,19 +1,13 @@
-# 성경 친구 (Bible Friend) 프로젝트 TODO
+# 성경 친구 CosyVoice TTS 통합 TODO
 
-- [x] 영구 프로젝트 요구사항과 기존 scaffold 점검
-- [x] 데이터 모델·Gemini·음성·스토리지 통합 설계 (Drizzle 스키마 및 DB 헬퍼)
-- [x] 모바일 퍼스트 성경 친구 UI와 상호작용 구현 (Home.tsx, 스토리 모달, 퀴즈, 음성 STT/TTS)
-- [x] 서버 기능·Gemini 에이전트·오케스트레이터·대화 저장 구현 (tRPC 라우터)
-- [x] 이미지 자산 업로드·통합 테스트·빌드 검증
-- [x] 체크포인트 저장 및 영구 사이트 이용 안내
-- [x] 성경 친구 UI에 스토리·점수·퀴즈 loading/error/empty 상태와 퀴즈 초기 로딩 흐름 추가
-- [x] bible-friend-web에서 pnpm build 및 브라우저 상호작용(스토리 모달, 음성 STT/TTS, 퀴즈 정답 피드백) 검증 및 결과 기록
-- [x] Streamdown 의존성으로 인한 프로덕션 빌드 메모리 문제를 경량 채팅 UI로 해결하고 재빌드
-- [x] bible-friend-web에서 업로드된 스토리 이미지가 카드와 상세 모달에 실제 렌더링되는지 브라우저로 검증하고 결과 기록
-- [x] scoreQuery에 loading/error/empty 상태 UI를 추가하고 비로그인·로딩·오류 동작을 검증
-- [x] 브라우저에서 실제 Web Speech STT 시작·중지와 답변 TTS 재생을 검증하고 결과 기록
-- [x] 말씀 보물찾기에서 문제 표시·정답 선택·정답/오답 피드백 화면까지 실제 브라우저 검증하고 기록
-- [x] scoreQuery의 로딩·오류·빈 상태를 재현 또는 목업 방식으로 검증하고 각 상태 UI 동작을 기록
-- [x] webdev_save_checkpoint를 실제 실행하고 영구 사이트 URL·이용 안내를 사용자에게 전달한 뒤 기록
-- [x] 브라우저에서 Web Speech API의 STT 시작·듣기 상태·중지/전사와 TTS 재생 버튼을 검증 가능한 환경에서 확인하고 기록 (Preview 환경은 마이크 권한·실제 전사 검증 제한을 QA에 기록)
-- [x] scoreQuery 로딩·오류·null 상태를 테스트용 제어 분기로 재현해 각 UI 문구가 실제 표시되는지 확인하고 기록 (순수 헬퍼 4상태 단위 테스트 4건 통과)
+- [x] CosyVoice 공식 저장소(QwenAudio/CosyVoice)의 아키텍처 및 API 요구사항 분석 (FastAPI 서버 및 HTTP/Streaming API 구조 확인)
+- [ ] 영구 호스팅 환경(Autoscale serverless)과 CosyVoice(GPU/대형 모델 파이프라인)의 제약 조건 검토
+- [x] CosyVoice REST API 클라이언트 모듈 설계 및 프록시 설정 (`server/_core/cosyvoice.ts`)
+- [x] tRPC 라우터에 TTS 변환 엔드포인트 추가 및 감정 표현 프롬프트 연결 (`server/routers.ts`)
+- [x] 프론트엔드 채팅/스토리 오디오 재생에 CosyVoice 오디오 스트림/URL 연동 (`Home.tsx`)
+- [x] CosyVoice 통합 테스트 추가 및 전체 Vitest 검증 (`server/cosyvoice.test.ts`)
+- [x] 체크포인트 저장 및 사용자 최종 안내
+- [x] QwenAudio/CosyVoice 공식 문서/예제를 열어 읽고 FastAPI 엔드포인트와 스트리밍 구조를 분석해 cosyvoice_research.md에 기록
+- [x] 영구 웹사이트 환경(Autoscale serverless)과 CosyVoice(대형 모델/GPU/상시 실행)의 제약 조건을 검토하고 대체 아키텍처(클라이언트 Web Speech API + 서버 CosyVoice Fallback 또는 외부 API 프록시) 확정
+- [ ] mock 기반 CosyVoice 성공/실패 tRPC 라우터 테스트 추가 및 pnpm check && pnpm test 실행
+- [ ] 프론트엔드에서 CosyVoice TTS 오디오 재생 또는 브라우저 기본 TTS 폴백 연동 검증

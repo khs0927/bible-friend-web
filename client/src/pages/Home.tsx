@@ -35,8 +35,23 @@ const initialMessages: Message[] = [
   },
 ];
 
-function speakKorean(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+async function speakKoreanWithCosyVoice(text: string, trpcClient?: any) {
+  if (typeof window === "undefined") return;
+  try {
+    if (trpcClient) {
+      const res = await trpcClient.tts.synthesize.mutate({ text, mode: "instruct", instruct_text: "따뜻하고 친근한 어린이 목소리로 부드럽게 말해줘" });
+      if (res.success && res.audioBase64) {
+        const blob = new Blob([Uint8Array.from(atob(res.audioBase64), c => c.charCodeAt(0))], { type: "audio/wav" });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        await audio.play();
+        return;
+      }
+    }
+  } catch {
+    // Fallback to Web Speech API
+  }
+  if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "ko-KR";
@@ -50,6 +65,7 @@ export default function Home() {
   const storiesQuery = trpc.content.stories.useQuery();
   const scoreQuery = trpc.content.score.useQuery();
   const askMutation = trpc.ai.ask.useMutation();
+  const trpcUtils = trpc.useUtils();
   const orchestrateMutation = trpc.ai.orchestrate.useMutation();
   const addScoreMutation = trpc.game.addScore.useMutation({
     onSuccess: () => scoreQuery.refetch(),
@@ -101,18 +117,18 @@ export default function Home() {
     try {
       const result = await askMutation.mutateAsync({ question, storyId: selectedStoryContext });
       setMessages(current => [...current, { role: "assistant", content: result.answer }]);
-      if (voiceEnabled) speakKorean(result.answer);
+      if (voiceEnabled) speakKoreanWithCosyVoice(result.answer, trpcUtils);
     } catch {
       const fallback = "잠깐 연결이 쉬어 가고 있어요. 그래도 하나님은 우리 곁에 계셔요. 조금 뒤에 다시 물어봐 줄래?";
       setMessages(current => [...current, { role: "assistant", content: fallback }]);
-      if (voiceEnabled) speakKorean(fallback);
+      if (voiceEnabled) speakKoreanWithCosyVoice(fallback, trpcUtils);
     }
   };
 
   const toggleListening = () => {
     const recognition = recognitionRef.current;
     if (!recognition) {
-      speakKorean("이 브라우저에서는 음성 인식을 사용할 수 없어요. 아래 글 입력창에 질문을 적어도 괜찮아요.");
+      speakKoreanWithCosyVoice("이 브라우저에서는 음성 인식을 사용할 수 없어요. 아래 글 입력창에 질문을 적어도 괜찮아요.", trpcUtils);
       return;
     }
     if (isListening) recognition.stop();
@@ -133,9 +149,9 @@ export default function Home() {
     setQuizCorrect(correct);
     if (correct) {
       addScoreMutation.mutate({ points: 1 });
-      if (voiceEnabled) speakKorean("정답이야! 정말 멋지게 생각했어!");
+      if (voiceEnabled) speakKoreanWithCosyVoice("정답이야! 정말 멋지게 생각했어!", trpcUtils);
     } else if (voiceEnabled) {
-      speakKorean(`괜찮아! 정답은 ${quiz.options[quiz.answer]}야. 함께 다시 알아보자.`);
+      speakKoreanWithCosyVoice(`괜찮아! 정답은 ${quiz.options[quiz.answer]}야. 함께 다시 알아보자.`, trpcUtils);
     }
   };
 
@@ -151,7 +167,7 @@ export default function Home() {
     if (!selectedStory) return;
     const storyText = `${selectedStory.title}. ${selectedStory.body} ${selectedStory.lesson}`;
     setMessages(current => [...current, { role: "assistant", content: storyText }]);
-    if (voiceEnabled) speakKorean(storyText);
+    if (voiceEnabled) speakKoreanWithCosyVoice(storyText, trpcUtils);
     closeStory();
   };
 
@@ -191,7 +207,7 @@ export default function Home() {
             <section className="bf-section bf-chat-section">
               <div className="bf-section-heading"><span className="bf-section-icon violet"><MessageCircleHeart size={18} /></span><div><small>VOICE CHAT</small><h2>성경 친구와 이야기해요</h2></div><button className={`bf-round-icon ${voiceEnabled ? "is-on" : ""}`} onClick={() => setVoiceEnabled(value => !value)} aria-label="답변 음성 켜기/끄기">{voiceEnabled ? <Volume2 size={16} /> : <Pause size={16} />}</button></div>
               <div className="bf-chat-surface">
-                <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} />
+                <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} trpcUtils={trpcUtils} />
                 <div className="bf-voice-row"><button className={`bf-mic-button ${isListening ? "listening" : ""}`} onClick={toggleListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={19} /> : <Mic size={19} />}</button><span>{isListening ? "듣고 있어요… 천천히 말해 주세요" : "마이크를 누르고 말해 보세요"}</span><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={16} /></button></div>
               </div>
             </section>
@@ -232,14 +248,14 @@ export default function Home() {
   );
 }
 
-function ChatPanel({ messages, onSendMessage, isLoading }: { messages: Message[]; onSendMessage: (content: string) => void; isLoading: boolean }) {
+function ChatPanel({ messages, onSendMessage, isLoading, trpcUtils }: { messages: Message[]; onSendMessage: (content: string) => void; isLoading: boolean; trpcUtils: any }) {
   const [draft, setDraft] = useState("");
   const submit = () => {
     if (!draft.trim() || isLoading) return;
     onSendMessage(draft);
     setDraft("");
   };
-  return <div className="bf-chat-panel"><div className="bf-chat-messages" aria-live="polite">{messages.filter(message => message.role !== "system").map((message, index) => <div className={`bf-chat-message ${message.role === "user" ? "user" : "assistant"}`} key={`${message.role}-${index}`}><span className="bf-chat-avatar">{message.role === "user" ? "나" : <Sparkles size={12} />}</span><p>{message.content}</p>{message.role === "assistant" && <button onClick={() => speakKorean(message.content)} aria-label="이 답변 듣기"><Volume2 size={13} /></button>}</div>)}{isLoading && <div className="bf-chat-loading"><span /><span /><span /> 성경 친구가 생각하고 있어요…</div>}</div><div className="bf-chat-composer"><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder="궁금한 것을 글로 물어봐요" aria-label="성경 질문 입력" rows={1} /><button onClick={submit} disabled={!draft.trim() || isLoading} aria-label="질문 보내기"><Send size={16} /></button></div><div className="bf-chat-suggestions"><button onClick={() => onSendMessage("노아의 방주는 어떤 이야기야?")}>노아의 방주</button><button onClick={() => onSendMessage("하나님은 나를 사랑하시나요?")}>하나님의 사랑</button></div></div>;
+  return <div className="bf-chat-panel"><div className="bf-chat-messages" aria-live="polite">{messages.filter(message => message.role !== "system").map((message, index) => <div className={`bf-chat-message ${message.role === "user" ? "user" : "assistant"}`} key={`${message.role}-${index}`}><span className="bf-chat-avatar">{message.role === "user" ? "나" : <Sparkles size={12} />}</span><p>{message.content}</p>{message.role === "assistant" && <button onClick={() => speakKoreanWithCosyVoice(message.content, trpcUtils)} aria-label="이 답변 듣기"><Volume2 size={13} /></button>}</div>)}{isLoading && <div className="bf-chat-loading"><span /><span /><span /> 성경 친구가 생각하고 있어요…</div>}</div><div className="bf-chat-composer"><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder="궁금한 것을 글로 물어봐요" aria-label="성경 질문 입력" rows={1} /><button onClick={submit} disabled={!draft.trim() || isLoading} aria-label="질문 보내기"><Send size={16} /></button></div><div className="bf-chat-suggestions"><button onClick={() => onSendMessage("노아의 방주는 어떤 이야기야?")}>노아의 방주</button><button onClick={() => onSendMessage("하나님은 나를 사랑하시나요?")}>하나님의 사랑</button></div></div>;
 }
 
 function QuizPanel({ quiz, quizStarted, quizAnswered, quizCorrect, quizLoading, quizError, onStart, onAnswer, onNext, scoreLabel }: { quiz: { question: string; options: string[]; answer: number; explanation: string } | undefined; quizStarted: boolean; quizAnswered: boolean; quizCorrect: boolean; quizLoading: boolean; quizError: boolean; onStart: () => void; onAnswer: (index: number) => void; onNext: () => void; scoreLabel: string }) {

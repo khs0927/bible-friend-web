@@ -4,6 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { publicProcedure, router } from "./_core/trpc";
+import { synthesizeWithCosyVoice } from "./_core/cosyvoice";
 import {
   BIBLE_STORIES,
   QUIZ_BANK,
@@ -141,6 +142,29 @@ export const appRouter = router({
       await updateUserScore(ctx.user.id, score);
       return { score, saved: true };
     }),
+  }),
+  tts: router({
+    synthesize: publicProcedure
+      .input(
+        z.object({
+          text: z.string(),
+          mode: z.enum(["sft", "zero_shot", "cross_lingual", "instruct"]).optional(),
+          instruct_text: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const audioBuffer = await synthesizeWithCosyVoice({
+            text: input.text,
+            mode: input.mode || "instruct",
+            instruct_text: input.instruct_text || "따뜻하고 친근한 어린이 목소리로 부드럽게 말해줘",
+          });
+          const base64Audio = Buffer.from(audioBuffer).toString("base64");
+          return { success: true, audioBase64: base64Audio };
+        } catch (error: any) {
+          return { success: false, error: error.message || "CosyVoice 서버 연결 실패" };
+        }
+      }),
   }),
 });
 
