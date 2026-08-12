@@ -6,5 +6,5 @@
 - [x] 아동 친화적 글씨체(Google Fonts 'Gowun Dodum' / 'Jua') 적용 및 타이핑/축소 애니메이션 효과 추가 (`client/index.html`, `client/src/index.css`)
 - [x] 반응형 대화창 애니메이션 및 미세 인터랙션 강화 (`Home.tsx`, `App.css`)
 - [x] Vitest 단위 테스트 및 TypeScript 검증 실행 후 체크포인트 저장
-- [ ] CosyVoice 실패 시 응답 핸들링 테스트 추가 및 pnpm check && pnpm test 실행
+- [x] CosyVoice 실패 시 응답 핸들링 테스트 추가 및 pnpm check && pnpm test 실행
 - [x] TTS 수정 및 감정 음성/글씨체 개선 후 webdev_save_checkpoint 실행
