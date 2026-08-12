@@ -25,4 +25,23 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const chatHistory = mysqlTable("chat_history", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  userMessage: text("userMessage").notNull(),
+  agentResponse: text("agentResponse").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ChatHistory = typeof chatHistory.$inferSelect;
+export type InsertChatHistory = typeof chatHistory.$inferInsert;
+
+export const userScores = mysqlTable("user_scores", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  score: int("score").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserScore = typeof userScores.$inferSelect;
+export type InsertUserScore = typeof userScores.$inferInsert;

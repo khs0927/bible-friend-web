@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, chatHistory, InsertChatHistory, userScores, InsertUserScore } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,27 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getChatHistory(userId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(chatHistory).where(eq(chatHistory.userId, userId)).orderBy(desc(chatHistory.createdAt)).limit(limit);
+}
+
+export async function saveChatHistory(item: InsertChatHistory) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(chatHistory).values(item);
+}
+
+export async function getUserScore(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const res = await db.select().from(userScores).where(eq(userScores.userId, userId)).limit(1);
+  return res.length > 0 ? res[0].score : 0;
+}
+
+export async function updateUserScore(userId: number, score: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(userScores).values({ userId, score }).onDuplicateKeyUpdate({ set: { score } });
+}
