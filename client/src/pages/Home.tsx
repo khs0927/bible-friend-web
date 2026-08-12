@@ -1,8 +1,12 @@
+import React from "react";
+
 type Message = { role: "system" | "user" | "assistant"; content: string };
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { getScoreLabel } from "@/lib/scoreStatus";
+import { VoiceStatusBadge } from "@/components/VoiceStatusBadge";
+import { getVoiceStateFromPlaybackError, getVoiceStateFromPlaybackStarted, type VoiceStatus } from "@/lib/voiceStatus";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -36,6 +40,10 @@ const initialMessages: Message[] = [
   },
 ];
 
+export function HomeVoiceStatus({ enabled, status, error }: { enabled: boolean; status: VoiceStatus; error: string | null }) {
+  return <VoiceStatusBadge enabled={enabled} status={status} error={error} />;
+}
+
 export default function Home() {
   const { user } = useAuth();
   const storiesQuery = trpc.content.stories.useQuery();
@@ -49,6 +57,8 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("ready");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "stories" | "game">("home");
   const [quizStarted, setQuizStarted] = useState(false);
@@ -57,7 +67,21 @@ export default function Home() {
   const [generatedContent, setGeneratedContent] = useState<{ storyTitle: string; storyHook: string; storyLesson: string; quizQuestion: string; quizAnswer: string; encouragement: string } | null>(null);
   const recognitionRef = useRef<any>(null);
   const audioQueueRef = useRef<AudioPlaybackQueue | null>(null);
-  if (!audioQueueRef.current) audioQueueRef.current = new AudioPlaybackQueue(ttsMutation as TTSMutation);
+  if (!audioQueueRef.current) {
+    audioQueueRef.current = new AudioPlaybackQueue(ttsMutation as TTSMutation, {
+      onPlaybackStarted: info => {
+        const nextState = getVoiceStateFromPlaybackStarted(info.provider);
+        setVoiceStatus(nextState.status);
+        setVoiceError(nextState.error);
+      },
+      onPlaybackFinished: () => setVoiceStatus("ready"),
+      onPlaybackError: info => {
+        const nextState = getVoiceStateFromPlaybackError(info.code, info.message);
+        setVoiceStatus(nextState.status);
+        setVoiceError(nextState.error);
+      },
+    });
+  }
   const stories = storiesQuery.data ?? [];
   const selectedStory = stories.find(story => story.id === selectedStoryId) ?? null;
   const score = scoreQuery.data ?? 0;
@@ -67,6 +91,7 @@ export default function Home() {
 
   const speakText = (request: VoiceRequest) => {
     if (!voiceEnabled) return;
+    audioQueueRef.current?.prime();
     const sentences = splitSentences(request.text);
     for (const sentence of sentences.length > 0 ? sentences : [request.text]) {
       audioQueueRef.current?.enqueue({ ...request, text: sentence });
@@ -106,6 +131,7 @@ export default function Home() {
   const handleSend = async (content: string) => {
     const question = content.trim();
     if (!question || askMutation.isPending) return;
+    if (voiceEnabled) audioQueueRef.current?.prime();
     const nextMessages: Message[] = [...messages, { role: "user", content: question }];
     setMessages(nextMessages);
     try {
@@ -200,6 +226,7 @@ export default function Home() {
 
             <section className="bf-section bf-chat-section">
               <div className="bf-section-heading"><span className="bf-section-icon violet"><MessageCircleHeart size={18} /></span><div><small>VOICE CHAT</small><h2>성경 친구와 이야기해요</h2></div><button className={`bf-round-icon ${voiceEnabled ? "is-on" : ""}`} onClick={() => setVoiceEnabled(value => !value)} aria-label="답변 음성 켜기/끄기">{voiceEnabled ? <Volume2 size={16} /> : <Pause size={16} />}</button></div>
+              <HomeVoiceStatus enabled={voiceEnabled} status={voiceStatus} error={voiceError} />
               <div className="bf-chat-surface">
                 <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} onSpeak={speakText} />
                 <div className="bf-voice-row"><button className={`bf-mic-button ${isListening ? "listening" : ""}`} onClick={toggleListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={19} /> : <Mic size={19} />}</button><span>{isListening ? "듣고 있어요… 천천히 말해 주세요" : "마이크를 누르고 말해 보세요"}</span><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={16} /></button></div>

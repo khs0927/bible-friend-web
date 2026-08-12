@@ -274,7 +274,11 @@ class GeminiTTSProvider implements TTSProvider {
       } catch {
         throw new TTSProviderError("upstream", this.name, "Gemini TTS returned malformed JSON", true);
       }
-      const encoded = body?.output_audio?.data;
+      const encoded =
+        body?.output_audio?.data ??
+        body?.steps
+          ?.flatMap((step: any) => (Array.isArray(step?.content) ? step.content : []))
+          ?.find((block: any) => typeof block?.data === "string")?.data;
       if (typeof encoded !== "string" || encoded.length === 0) {
         throw new TTSProviderError("upstream", this.name, "Gemini TTS returned no audio data", true);
       }

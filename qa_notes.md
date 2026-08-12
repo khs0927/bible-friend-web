@@ -25,3 +25,21 @@
 `getScoreLabel`을 별도 헬퍼로 분리해 로딩·오류·null·저장 점수 4개 상태를 테스트 가능하게 만들었다. `pnpm check` 통과, Vitest 3개 파일·9개 테스트 전부 통과.
 
 최종 체크포인트 후 실제 브라우저에서 `SpeechRecognition`/`webkitSpeechRecognition` 인스턴스를 만들고 `lang = ko-KR`, `start()`를 호출했다. 콘솔에는 실행 코드가 남았고, Preview 자동화 환경에서는 음성 입력 권한/장치가 노출되지 않아 실제 전사 결과 콜백까지 수집되지 않았다. 따라서 앱 구현은 지원 브라우저·실제 모바일 기기에서 마이크 권한을 허용한 뒤 검증해야 한다. TTS는 `speechSynthesis.speak()` 호출을 앞서 수행했다.
+
+## 2026-08-12 Gemini TTS 무음 재현
+
+미리보기에서 `Gemini 한국어 음성 준비됨` 상태가 보였다. 질문 `하나님은 나를 사랑하시나요?`를 입력하고 전송했을 때 사용자 메시지는 화면에 추가되었지만 잠시 동안 `성경 친구가 생각하고 있어요…` 로딩 상태가 유지되었다. 자동화 환경의 청각 채널만으로 실제 소리 유무를 판정할 수 없으므로 서버 응답·브라우저 콘솔·Audio.play 실패 상태를 별도로 확인해야 한다.
+
+브라우저 점검에서 질문 답변은 정상적으로 채팅 버블에 표시되었고 콘솔에는 오류가 없었다. 직접 확인한 `GET /api/trpc/tts.synthesize`는 mutation을 GET으로 호출해 405를 반환했으므로, 실제 음성 API 확인은 POST로 해야 한다. 현재 무음 원인을 오디오 재생 Promise 및 POST 응답 데이터까지 추가 확인할 필요가 있다.
+
+POST `/api/trpc/tts.synthesize`를 올바른 배치 형식으로 직접 호출한 결과 HTTP 200이지만 `success: false`, `errorCode: rate_limit`, `audioBase64Length: 0`이 반환되었다. 따라서 현재 미재생의 1차 원인은 Gemini TTS가 무료/API rate limit에 걸려 서버 오디오를 생성하지 못하는 것이다. 클라이언트는 이 경우 Web Speech 폴백을 실행해야 하므로 브라우저 `speechSynthesis` 존재·호출·권한을 추가 확인하고, rate-limit 상태를 UI에 명확히 표시할 필요가 있다.
+
+Gemini 기본 모델을 `gemini-2.5-flash-preview-tts`로 바꾸고 steps 오디오 추출을 수정한 뒤, 브라우저 tRPC POST에서 `success: true`, `provider: gemini`, WAV Base64 약 226KB, `latencyMs: 14039`를 확인했다. 즉 서버 오디오 자체는 생성된다. 이후 새 문장 테스트에서는 TTS 요청이 기본 18초 timeout에 걸려 `errorCode: timeout`이 반환되었다. AudioContext 테스트는 오디오 디코드·재생을 시작했지만 긴 음성의 종료 이벤트가 3초 안에 오지 않아 테스트 타임아웃으로 끝났으므로, 재생 데이터의 유효성과 재생 종료 시간을 분리해 판정해야 한다.
+
+최종 브라우저 디코드 점검에서 Gemini 2.5 WAV는 `bytes: 175290`, `channels: 1`, `duration: 3.65095초`, `sampleRate: 44100`, AudioContext `running` 상태로 디코드되었다. 즉 서버 오디오와 브라우저 디코더는 정상이며, 사용자 제스처에서 AudioContext를 prime한 뒤 Web Audio로 재생하는 수정이 적용되었다.
+
+수정된 미리보기에서 채팅 제목 아래 `Gemini 한국어 음성 준비됨` 상태 배지가 표시되었다. 실제 질문 전송 시 사용자 메시지와 `성경 친구가 생각하고 있어요…` 로딩이 정상 시작되었으며, 답변이 완료되면 큐의 `onPlaybackStarted`/`onPlaybackError`에 따라 `성경 친구가 말하고 있어요…`, `브라우저 음성으로 이어서 재생해요`, 또는 오류 원인이 표시되도록 연결되어 있다. 자동화 브라우저의 청각 출력 자체는 도구가 판정하지 못하지만, Home 상호작용·tRPC·WAV·AudioContext 디코드 경로는 확인했다.
+
+실제 Home 상호작용 검증을 위해 TTS 응답을 rate-limit으로 모의하고 초기 답변의 `이 답변 듣기` 버튼을 눌렀다. 미리보기 채팅 영역에 실제로 `브라우저 음성 엔진이 재생을 시작하지 못했어요.`가 표시되었다. 따라서 `AudioPlaybackQueue.onPlaybackError` → Home `voiceStatus = error` → 오류 상태 배지 렌더링 경로가 브라우저에서 확인되었다.
+
+실제 Home 성공 경로도 검증했다. 서버가 반환한 실제 Gemini WAV 샘플을 TTS 응답으로 연결한 뒤 초기 답변의 `이 답변 듣기`를 클릭하자 채팅 영역에 `성경 친구가 말하고 있어요…`가 실제로 표시되었다. 즉 `onPlaybackStarted` → Home `voiceStatus = speaking` → 상태 배지 렌더링이 브라우저에서 확인되었다.

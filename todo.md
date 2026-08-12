@@ -20,3 +20,14 @@
 - [x] Gemini-first 라우터 계약에 맞게 기존 CosyVoice router tests를 갱신하고 전체 pnpm test 통과 증거 확보
 - [x] latencyMs/first-audio 관련 측정값을 명시적으로 검증하는 Vitest 추가
 - [x] AudioPlaybackQueue 또는 재생 시작 시점을 포함한 first-playable-audio 측정·검증 테스트를 추가하고 서버 synthesis latency와 구분
+- [x] 음성 미재생 버그 재현 및 서버 오디오·브라우저 Audio·Web Speech 폴백 원인 진단
+- [x] 사용자 제스처·재생 Promise·오디오 오류 처리와 Web Speech 폴백 수정
+- [x] 음성 미재생 회귀 테스트와 브라우저 검증 완료
+- [x] Web Speech synthesis-failed/onerror 시 사용자에게 상태를 표시하고 재시도 또는 명시적 무음 오류 처리 추가
+- [x] AudioPlaybackQueue의 서버 오디오 실패→Web Speech 폴백과 Web Speech 오류 경로 테스트 추가
+- [x] Home.tsx 상호작용 기준 음성 시작·오류 콜백을 UI에 연결하고 무음 원인 표시 검증
+- [x] Home.tsx 실제 상호작용에서 voiceStatus가 speaking 또는 error로 바뀌는 브라우저 검증 근거와 무음 원인 문구 표시 확인
+- [x] Home/Chat 레벨 테스트에서 AudioPlaybackQueue 콜백에 따른 상태 배지 텍스트 변경 검증
+- [x] 실제 Home 상호작용에서 서버 음성 성공 시 상태 배지가 `성경 친구가 말하고 있어요…`로 바뀌는 브라우저 검증 근거 남기기
+- [x] Home 또는 ChatPanel 렌더 테스트에서 음성 시작·오류 콜백에 따른 상태 배지 텍스트 변경 검증
+- [x] Home 또는 ChatPanel 렌더 테스트를 추가해 AudioPlaybackQueue의 onPlaybackStarted/onPlaybackError 콜백에 따른 상태 배지 변경을 통합 검증

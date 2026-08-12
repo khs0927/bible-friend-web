@@ -52,6 +52,21 @@ describe("Gemini TTS provider", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
+  it("extracts PCM audio from the Gemini 2.5 steps content response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ steps: [{ content: [{ data: pcm.toString("base64") }] }] }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new GeminiTTSProvider({ apiKey: "test-key", model: "gemini-2.5-flash-preview-tts", timeoutMs: 500 });
+    const result = await provider.synthesize(
+      { text: "짧은 테스트", speaker: "NARRATOR" },
+      resolveVoice({ text: "짧은 테스트", speaker: "NARRATOR" }),
+    );
+
+    expect(result.audio.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(result.audio.length).toBe(44 + pcm.length);
+  });
+
   it("maps Bible speakers to a child-safe voice and instruction", () => {
     const voice = resolveVoice({
       text: "하나님은 너를 사랑해.",
