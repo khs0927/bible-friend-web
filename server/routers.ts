@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { publicProcedure, router } from "./_core/trpc";
-import { synthesizeWithCosyVoice } from "./_core/cosyvoice";
+import { getVoiceProfiles, synthesizeSpeech } from "./_core/tts";
 import {
   BIBLE_STORIES,
   QUIZ_BANK,
@@ -144,27 +144,21 @@ export const appRouter = router({
     }),
   }),
   tts: router({
+    profiles: publicProcedure.query(() => getVoiceProfiles()),
     synthesize: publicProcedure
       .input(
         z.object({
-          text: z.string(),
+          text: z.string().min(1).max(900),
+          speaker: z.enum(["NARRATOR", "JESUS", "DAVID", "PETER", "MARY", "CHILD_FRIEND", "GENERAL_MALE", "GENERAL_FEMALE"]).optional(),
+          emotion: z.string().max(80).optional(),
+          style: z.string().max(240).optional(),
+          speed: z.number().min(0.8).max(1.2).optional(),
+          context: z.string().max(240).optional(),
           mode: z.enum(["sft", "zero_shot", "cross_lingual", "instruct"]).optional(),
-          instruct_text: z.string().optional(),
+          instructText: z.string().max(500).optional(),
         })
       )
-      .mutation(async ({ input }) => {
-        try {
-          const audioBuffer = await synthesizeWithCosyVoice({
-            text: input.text,
-            mode: input.mode || "instruct",
-            instruct_text: input.instruct_text || "따뜻하고 친근한 어린이 목소리로 부드럽게 말해줘",
-          });
-          const base64Audio = Buffer.from(audioBuffer).toString("base64");
-          return { success: true, audioBase64: base64Audio };
-        } catch (error: any) {
-          return { success: false, error: error.message || "CosyVoice 서버 연결 실패" };
-        }
-      }),
+      .mutation(async ({ input }) => synthesizeSpeech(input)),
   }),
 });
 
