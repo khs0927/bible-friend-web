@@ -105,6 +105,38 @@ describe("AudioPlaybackQueue", () => {
     expect(playbackFinished).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
   });
 
+  it("starts browser speech immediately from a speaker tap even when voices are initially empty", async () => {
+    const playbackStarted = vi.fn();
+    const utterances: any[] = [];
+    class MockUtterance {
+      onstart?: () => void;
+      onend?: () => void;
+      onerror?: (event: { error: string }) => void;
+      lang = "";
+      rate = 1;
+      pitch = 1;
+      constructor(public readonly text: string) { utterances.push(this); }
+    }
+    const speechSynthesis = new EventTarget() as EventTarget & Record<string, any>;
+    speechSynthesis.cancel = vi.fn();
+    speechSynthesis.getVoices = () => [];
+    speechSynthesis.speak = (utterance: MockUtterance) => {
+      utterance.onstart?.();
+      setTimeout(() => utterance.onend?.(), 0);
+    };
+    vi.stubGlobal("window", { speechSynthesis });
+    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+
+    const queue = new AudioPlaybackQueue(
+      { mutateAsync: async () => ({ success: false, errorCode: "rate_limit" }) },
+      { onPlaybackStarted: playbackStarted },
+    );
+    queue.speakBrowserNow({ text: "버튼을 누르면 바로 들려요.", speaker: "CHILD_FRIEND" });
+
+    expect(utterances).toHaveLength(1);
+    expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
+  });
+
   it("starts browser speech before a slow server TTS response returns", async () => {
     const playbackStarted = vi.fn();
     const utterances: any[] = [];

@@ -23,18 +23,20 @@ export type AudioPlaybackQueueOptions = {
 async function waitForSpeechVoices(synthesis: SpeechSynthesis, timeoutMs = 700) {
   if (typeof synthesis.getVoices !== "function") return true;
   if (synthesis.getVoices().length > 0) return true;
-  if (typeof synthesis.addEventListener !== "function") return false;
+  // iOS Safari may expose an empty list before its default voice is ready.
+  // Do not reject that state: allow speak() to try the platform default voice.
+  if (typeof synthesis.addEventListener !== "function") return true;
   return new Promise<boolean>(resolve => {
     let settled = false;
-    const finish = (available: boolean) => {
+    const finish = () => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       synthesis.removeEventListener("voiceschanged", onVoicesChanged);
-      resolve(available);
+      resolve(true);
     };
-    const onVoicesChanged = () => finish(synthesis.getVoices().length > 0);
-    const timer = setTimeout(() => finish(synthesis.getVoices().length > 0), timeoutMs);
+    const onVoicesChanged = () => finish();
+    const timer = setTimeout(() => finish(), timeoutMs);
     synthesis.addEventListener("voiceschanged", onVoicesChanged, { once: true });
   });
 }
@@ -69,6 +71,19 @@ export class AudioPlaybackQueue {
     if (typeof window === "undefined") return;
     this.queue.push({ ...request, text: request.text.trim() });
     void this.flush();
+  }
+
+  speakBrowserNow(request: VoiceRequest) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    this.cancel();
+    const run = this.generation;
+    this.playing = true;
+    void this.playBrowserAudio(request, request.speed ?? 0.94, "browser", run, undefined, false).finally(() => {
+      if (run === this.generation) {
+        this.playing = false;
+        void this.flush();
+      }
+    });
   }
 
   cancel() {
@@ -221,7 +236,7 @@ export class AudioPlaybackQueue {
     }
   }
 
-  private playBrowserAudio(request: VoiceRequest, rate: number, provider: string, run: number, serverResponseAt?: number) {
+  private playBrowserAudio(request: VoiceRequest, rate: number, provider: string, run: number, serverResponseAt?: number, waitForVoices = true) {
     return new Promise<boolean>(resolve => {
       if (run !== this.generation) {
         resolve(false);
@@ -232,12 +247,7 @@ export class AudioPlaybackQueue {
         resolve(false);
         return;
       }
-      void waitForSpeechVoices(window.speechSynthesis).then(voicesReady => {
-        if (!voicesReady) {
-          this.options.onPlaybackError?.({ request, provider, code: "browser_speech_unavailable", message: "이 기기에서는 한국어 음성 엔진이 준비되지 않았어요. 잠시 후 다시 눌러 주세요." });
-          resolve(false);
-          return;
-        }
+      const startSpeech = () => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(request.text);
         utterance.lang = "ko-KR";
@@ -257,7 +267,12 @@ export class AudioPlaybackQueue {
           resolve(false);
         };
         window.speechSynthesis.speak(utterance);
-      });
+      };
+      if (waitForVoices) {
+        void waitForSpeechVoices(window.speechSynthesis).then(startSpeech);
+      } else {
+        startSpeech();
+      }
 
     });
   }
