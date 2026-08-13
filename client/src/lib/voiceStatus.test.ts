@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getVoiceStatusText } from "./voiceStatus";
+import { getVoiceStateFromPlaybackError, getVoiceStatusText } from "./voiceStatus";
 
 describe("voice status text", () => {
   it("renders the speaking and fallback states used by Home", () => {
@@ -10,6 +10,12 @@ describe("voice status text", () => {
   it("renders the concrete error instead of hiding a silent failure", () => {
     expect(getVoiceStatusText(true, "error", "브라우저 음성 엔진이 재생을 시작하지 못했어요.")).toBe("브라우저 음성 엔진이 재생을 시작하지 못했어요.");
     expect(getVoiceStatusText(true, "error", null)).toBe("음성을 재생하지 못했어요");
+  });
+
+  it("maps internal browser and rate-limit errors to child-friendly messages", () => {
+    expect(getVoiceStateFromPlaybackError("browser_speech_unavailable", "error1").error).toBe("이 기기에서 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.");
+    expect(getVoiceStateFromPlaybackError("rate_limit", "error1").error).toContain("AI 음성 사용량");
+    expect(getVoiceStateFromPlaybackError("timeout", "error1").error).toContain("음성 준비가 늦어지고");
   });
 
   it("explains when the child turned voice off", () => {

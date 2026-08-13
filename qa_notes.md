@@ -75,3 +75,9 @@ Gemini 기본 모델을 `gemini-2.5-flash-preview-tts`로 바꾸고 steps 오디
 성공 경로 최종 브라우저 검증: 전역 fetch와 Audio 성공 mock을 적용한 뒤 답변 다시 듣기를 클릭하자 실제 DOM에 `성경 친구가 말하고 있어요…`가 표시되었다. 같은 화면에 성공 음성 테스트 답변도 추가되었고, 이는 Home 상태 배지·오디오 시작 성공 계약의 브라우저 증거다.
 
 실제 브라우저 timing 로그 최종 증거: `server-response`에서 `serverResponseAt=1786588852568`, `observedAt=1786589005654`, `observationLatencyMs=153086`, `synthesisLatencyMs=80`, `success=true`를 확인했다. 같은 재생에서 `first-playable`은 `startedAt=1786589005684`, `serverToFirstPlayableMs=153116`으로 기록되었으며, DOM 상태는 `성경 친구가 말하고 있어요…`, `speaking=true`였다. 해당 mock은 브라우저에서 성공 TTS·상태·구간 계측 계약을 함께 검증한다.
+
+새 오류 재현: 미리보기에서 `하나님은 나를 사랑하시나요?`가 textarea index 6에 정상 입력되었고 질문 보내기 버튼은 index 7이다. 다음 단계에서 전송 후 로딩 상태, error1 텍스트, console/network 오류를 확인한다.
+
+실제 error1 재현 결과: 질문·답변 텍스트는 정상 생성되었지만 Home 상태 배지에 `브라우저 음성 엔진이 재생을 시작하지 못했어요.`가 표시되었다. 즉, LLM 응답 자체가 멈춘 것이 아니라 음성 재생 단계에서 실패한 상태이며, 사용자 화면의 error1은 브라우저 음성 폴백 오류로 좁혀졌다.
+
+수정 후 브라우저 재검증: 초기 답변 다시 듣기를 누르면 raw `error1` 대신 `이 기기에서 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.`가 화면에 표시된다. 이는 미리보기의 한국어 Web Speech 음성 목록 부재를 사용자에게 안전하게 안내하는 상태다.

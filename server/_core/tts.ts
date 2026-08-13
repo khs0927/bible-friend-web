@@ -128,6 +128,8 @@ const DEFAULT_DAILY_REQUEST_LIMIT = 80;
 const DEFAULT_DAILY_CHARACTER_LIMIT = 20_000;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const CACHE_LIMIT = 120;
+const DEFAULT_RATE_LIMIT_COOLDOWN_MS = 15_000;
+let geminiRateLimitUntil = 0;
 
 function numberEnv(value: string | undefined, fallback: number, min: number) {
   const parsed = Number(value);
@@ -234,7 +236,7 @@ class GeminiTTSProvider implements TTSProvider {
   constructor(options?: { apiKey?: string; model?: string; timeoutMs?: number }) {
     this.apiKey = options?.apiKey ?? ENV.geminiApiKey;
     this.model = options?.model ?? ENV.geminiTtsModel;
-    this.timeoutMs = options?.timeoutMs ?? ENV.geminiTtsTimeoutMs;
+    this.timeoutMs = Math.max(250, Math.min(options?.timeoutMs ?? ENV.geminiTtsTimeoutMs, ENV.geminiTtsHardTimeoutMs));
   }
 
   isAvailable() {
@@ -434,10 +436,16 @@ export function resetTTSRuntimeState() {
   audioCache.clear();
   inFlightRequests.clear();
   dailyUsage.clear();
+  geminiRateLimitUntil = 0;
 }
 
 export function getTTSRuntimeStats() {
-  return { cacheEntries: audioCache.size, inFlightRequests: inFlightRequests.size, quotaRemaining: remainingQuota() };
+  return {
+    cacheEntries: audioCache.size,
+    inFlightRequests: inFlightRequests.size,
+    geminiRateLimited: geminiRateLimitUntil > Date.now(),
+    quotaRemaining: remainingQuota(),
+  };
 }
 
 export function synthesizeSpeech(request: TTSRequest): Promise<TTSResponse> {
@@ -490,8 +498,12 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
 
   const providers: TTSProvider[] = [geminiProvider, new CosyVoiceProvider()];
   let lastFailure: TTSProviderError | undefined;
+  if (Date.now() < geminiRateLimitUntil) {
+    lastFailure = new TTSProviderError("rate_limit", "gemini", "Gemini TTS rate limit cooldown is active", true);
+  }
   for (const provider of providers) {
     if (!provider.isAvailable()) continue;
+    if (provider.name === "gemini" && Date.now() < geminiRateLimitUntil) continue;
     try {
       const result = await provider.synthesize(normalized, resolved);
       if (result.provider === "gemini") consumeUsage(normalized.text);
@@ -511,6 +523,10 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
       };
     } catch (error) {
       lastFailure = error instanceof TTSProviderError ? error : new TTSProviderError("unknown", provider.name, "Provider failed");
+      if (provider.name === "gemini" && lastFailure.code === "rate_limit") {
+        const cooldownMs = numberEnv(process.env.GEMINI_TTS_RATE_LIMIT_COOLDOWN_MS, DEFAULT_RATE_LIMIT_COOLDOWN_MS, 1_000);
+        geminiRateLimitUntil = Date.now() + cooldownMs;
+      }
       console.warn(`[TTS] ${provider.name} failed with ${lastFailure.code}`);
     }
   }

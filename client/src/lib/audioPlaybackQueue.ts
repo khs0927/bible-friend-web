@@ -12,11 +12,32 @@ export type TTSMutation = { mutateAsync: (input: VoiceRequest) => Promise<any> }
 export type AudioPlaybackQueueOptions = {
   onPlaybackStarted?: (info: { request: VoiceRequest; provider: string; startedAt: number; serverResponseAt?: number }) => void;
   onPlaybackFinished?: (info: { request: VoiceRequest; provider: string; finishedAt: number; serverResponseAt?: number }) => void;
-  onServerResponse?: (info: { request: VoiceRequest; provider?: string; serverResponseAt: number; observedAt: number; latencyMs?: number; success: boolean }) => void;
+  onServerResponse?: (info: { request: VoiceRequest; provider?: string; serverResponseAt: number; observedAt: number; latencyMs?: number; success: boolean; errorCode?: string; errorMessage?: string }) => void;
   onPlaybackError?: (info: { request: VoiceRequest; provider: string; code: string; message: string }) => void;
   /** Start device speech while a slow server TTS request continues warming the cache. */
   fastFallbackMs?: number;
+  /** Maximum time to wait for a late server WAV after device speech fails. */
+  lateServerRecoveryMs?: number;
 };
+
+async function waitForSpeechVoices(synthesis: SpeechSynthesis, timeoutMs = 700) {
+  if (typeof synthesis.getVoices !== "function") return true;
+  if (synthesis.getVoices().length > 0) return true;
+  if (typeof synthesis.addEventListener !== "function") return false;
+  return new Promise<boolean>(resolve => {
+    let settled = false;
+    const finish = (available: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      resolve(available);
+    };
+    const onVoicesChanged = () => finish(synthesis.getVoices().length > 0);
+    const timer = setTimeout(() => finish(synthesis.getVoices().length > 0), timeoutMs);
+    synthesis.addEventListener("voiceschanged", onVoicesChanged, { once: true });
+  });
+}
 
 export class AudioPlaybackQueue {
   private queue: VoiceRequest[] = [];
@@ -85,6 +106,8 @@ export class AudioPlaybackQueue {
             observedAt: Date.now(),
             latencyMs: response.latencyMs,
             success: Boolean(response.success),
+            errorCode: response.errorCode,
+            errorMessage: response.error,
           });
         }
       }).catch(() => undefined);
@@ -99,13 +122,13 @@ export class AudioPlaybackQueue {
         if (run === this.generation) {
           const browserPlayed = await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
           if (!browserPlayed) {
-            try {
-              const lateResponse = await serverPromise;
-              if (run === this.generation && lateResponse.success && lateResponse.audioBase64) {
-                await this.playServerAudio(next, lateResponse.audioBase64, lateResponse.mimeType ?? "audio/wav", lateResponse.provider ?? "server", run, lateResponse.serverResponseAt);
-              }
-            } catch {
-              // The explicit browser error is already reported; keep the UI responsive.
+            const recoveryMs = this.options.lateServerRecoveryMs ?? 2_500;
+            const lateResponse = await Promise.race([
+              serverPromise,
+              new Promise<{ __lateRecoveryTimeout: true }>(resolve => setTimeout(() => resolve({ __lateRecoveryTimeout: true }), recoveryMs)),
+            ]).catch(() => ({ __lateRecoveryTimeout: true as const }));
+            if (!("__lateRecoveryTimeout" in lateResponse) && run === this.generation && lateResponse.success && lateResponse.audioBase64) {
+              await this.playServerAudio(next, lateResponse.audioBase64, lateResponse.mimeType ?? "audio/wav", lateResponse.provider ?? "server", run, lateResponse.serverResponseAt);
             }
           }
         }
@@ -204,30 +227,38 @@ export class AudioPlaybackQueue {
         resolve(false);
         return;
       }
-      if (!("speechSynthesis" in window)) {
-        this.options.onPlaybackError?.({ request, provider, code: "browser_speech_unavailable", message: "이 브라우저에서는 음성 재생을 사용할 수 없어요." });
+      if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+        this.options.onPlaybackError?.({ request, provider, code: "browser_speech_unavailable", message: "이 기기에서는 음성 엔진을 사용할 수 없어요. 잠시 후 다시 눌러 주세요." });
         resolve(false);
         return;
       }
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(request.text);
-      utterance.lang = "ko-KR";
-      utterance.rate = Math.min(1.05, Math.max(0.86, rate));
-      utterance.pitch = 1.18;
-      const started = () => {
-        this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
-      };
-      utterance.onstart = started;
-      utterance.onend = () => {
-        this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
-        resolve(true);
-      };
-      utterance.onerror = event => {
-        const code = event?.error ?? "browser_speech_error";
-        this.options.onPlaybackError?.({ request, provider, code, message: "브라우저 음성 엔진이 재생을 시작하지 못했어요." });
-        resolve(false);
-      };
-      window.speechSynthesis.speak(utterance);
+      void waitForSpeechVoices(window.speechSynthesis).then(voicesReady => {
+        if (!voicesReady) {
+          this.options.onPlaybackError?.({ request, provider, code: "browser_speech_unavailable", message: "이 기기에서는 한국어 음성 엔진이 준비되지 않았어요. 잠시 후 다시 눌러 주세요." });
+          resolve(false);
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(request.text);
+        utterance.lang = "ko-KR";
+        utterance.rate = Math.min(1.05, Math.max(0.86, rate));
+        utterance.pitch = 1.18;
+        const started = () => {
+          this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
+        };
+        utterance.onstart = started;
+        utterance.onend = () => {
+          this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
+          resolve(true);
+        };
+        utterance.onerror = event => {
+          const code = event?.error ?? "browser_speech_error";
+          this.options.onPlaybackError?.({ request, provider, code, message: "브라우저 음성 엔진이 재생을 시작하지 못했어요." });
+          resolve(false);
+        };
+        window.speechSynthesis.speak(utterance);
+      });
+
     });
   }
 }

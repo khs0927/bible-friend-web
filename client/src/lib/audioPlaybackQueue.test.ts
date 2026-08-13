@@ -212,6 +212,22 @@ describe("AudioPlaybackQueue", () => {
     expect(playbackError).toHaveBeenCalledWith(expect.objectContaining({ code: "synthesis-failed", provider: "browser" }));
   });
 
+  it("does not wait forever for late server audio after browser speech is unavailable", async () => {
+    const playbackError = vi.fn();
+    vi.stubGlobal("window", {
+      AudioContext: undefined,
+      speechSynthesis: { cancel: vi.fn(), getVoices: () => [], speak: vi.fn() },
+    });
+    const queue = new AudioPlaybackQueue(
+      { mutateAsync: () => new Promise(() => undefined) },
+      { fastFallbackMs: 5, lateServerRecoveryMs: 10, onPlaybackError: playbackError },
+    );
+    queue.enqueue({ text: "늦은 음성 복구를 기다리지 않아요.", speaker: "NARRATOR" });
+    await new Promise(resolve => setTimeout(resolve, 35));
+
+    expect(playbackError).toHaveBeenCalledWith(expect.objectContaining({ code: "browser_speech_unavailable" }));
+  });
+
   it("propagates server response timing to first-playable callbacks", async () => {
     const serverResponseAt = Date.now() - 12;
     const onServerResponse = vi.fn();

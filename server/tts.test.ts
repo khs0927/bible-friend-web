@@ -52,6 +52,17 @@ describe("Gemini TTS provider", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
+  it("aborts a hanging upstream request at the hard timeout", async () => {
+    const fetchMock = vi.fn((_url: string, init: RequestInit) => new Promise((_, reject) => {
+      init.signal?.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new GeminiTTSProvider({ apiKey: "test-key", model: "test-tts", timeoutMs: 250 });
+
+    await expect(provider.synthesize({ text: "멈춘 요청", speaker: "NARRATOR" }, resolveVoice({ text: "멈춘 요청", speaker: "NARRATOR" }))).rejects.toMatchObject({ code: "timeout" });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("extracts PCM audio from the Gemini 2.5 steps content response", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ steps: [{ content: [{ data: pcm.toString("base64") }] }] }), { status: 200 }),
@@ -130,6 +141,24 @@ describe("Gemini TTS provider", () => {
       expect(result.fallbackSuggested).toBe(true);
     }
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("opens a short rate-limit circuit to avoid repeated slow calls", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(geminiResponse(429));
+    vi.stubGlobal("fetch", fetchMock);
+    process.env.GEMINI_TTS_RATE_LIMIT_COOLDOWN_MS = "1000";
+
+    const first = await synthesizeSpeech({ text: "첫 번째 음성 요청", speaker: "NARRATOR" });
+    const secondStartedAt = Date.now();
+    const second = await synthesizeSpeech({ text: "두 번째 음성 요청", speaker: "NARRATOR" });
+    const secondElapsedMs = Date.now() - secondStartedAt;
+
+    expect(first.success).toBe(false);
+    expect(second.success).toBe(false);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(secondElapsedMs).toBeLessThan(100);
+    expect(getTTSRuntimeStats().geminiRateLimited).toBe(true);
+    delete process.env.GEMINI_TTS_RATE_LIMIT_COOLDOWN_MS;
   });
 
   it("keeps an existing WAV unchanged", () => {

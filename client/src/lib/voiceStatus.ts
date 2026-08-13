@@ -5,7 +5,16 @@ export function getVoiceStateFromPlaybackStarted(provider: string): { status: Vo
 }
 
 export function getVoiceStateFromPlaybackError(code: string, message: string): { status: VoiceStatus; error: string } {
-  return { status: "error", error: code === "rate_limit" ? "오늘의 AI 음성 사용량이 잠시 쉬고 있어요." : message };
+  if (code === "rate_limit" || code === "quota") {
+    return { status: "error", error: "오늘의 AI 음성 사용량이 잠시 쉬고 있어요. 글로는 계속 이야기할 수 있어요." };
+  }
+  if (code === "browser_speech_unavailable" || code === "synthesis-failed" || code === "browser_speech_error") {
+    return { status: "error", error: "이 기기에서 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요." };
+  }
+  if (code === "timeout") {
+    return { status: "error", error: "음성 준비가 늦어지고 있어요. 잠시 후 다시 눌러 주세요." };
+  }
+  return { status: "error", error: message || "음성을 재생하지 못했어요. 잠시 후 다시 눌러 주세요." };
 }
 
 export function getVoiceStatusText(enabled: boolean, status: VoiceStatus, error: string | null) {

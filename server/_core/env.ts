@@ -10,4 +10,5 @@ export const ENV = {
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   geminiTtsModel: process.env.GEMINI_TTS_MODEL ?? "gemini-2.5-flash-preview-tts",
   geminiTtsTimeoutMs: Number(process.env.GEMINI_TTS_TIMEOUT_MS ?? 30_000),
+  geminiTtsHardTimeoutMs: Number(process.env.GEMINI_TTS_HARD_TIMEOUT_MS ?? 8_000),
 };

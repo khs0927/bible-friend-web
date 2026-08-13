@@ -19,7 +19,7 @@ describe("HomeVoiceStatus", () => {
   it("renders the error state after AudioPlaybackQueue onPlaybackError", () => {
     const nextState = getVoiceStateFromPlaybackError("synthesis-failed", "브라우저 음성 엔진이 재생을 시작하지 못했어요.");
     const html = renderToStaticMarkup(<HomeVoiceStatus enabled status={nextState.status} error={nextState.error} />);
-    expect(html).toContain("브라우저 음성 엔진이 재생을 시작하지 못했어요.");
+    expect(html).toContain("이 기기에서 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.");
     expect(html).toContain("bf-voice-status error");
   });
 });

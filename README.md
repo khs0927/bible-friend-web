@@ -15,13 +15,15 @@
 |---|---|---|
 | `GEMINI_API_KEY` | 없음 | Gemini Developer API 인증 키. 서버에서만 사용 |
 | `GEMINI_TTS_MODEL` | `gemini-2.5-flash-preview-tts` | 사용할 Gemini TTS 모델 |
-| `GEMINI_TTS_TIMEOUT_MS` | `30000` | 음성 요청 타임아웃 |
+| `GEMINI_TTS_TIMEOUT_MS` | `30000` | 기본 음성 요청 타임아웃. hard timeout보다 길면 hard timeout이 우선 |
 | `GEMINI_TTS_MAX_CHARS` | `900` | 한 문장·요청의 최대 문자 수 |
 | `GEMINI_TTS_DAILY_REQUESTS` | `80` | 서버 인스턴스별 일일 Gemini 요청 보호 한도 |
 | `GEMINI_TTS_DAILY_CHARS` | `20000` | 서버 인스턴스별 일일 Gemini 문자 보호 한도 |
+| `GEMINI_TTS_HARD_TIMEOUT_MS` | `8000` | upstream이 멈출 때 강제 abort하는 최대 대기시간 |
+| `GEMINI_TTS_RATE_LIMIT_COOLDOWN_MS` | `15000` | Gemini 429 이후 재호출을 막는 회로 차단시간 |
 | `COSYVOICE_API_URL` | 없음 | 선택형 CosyVoice `/tts` 폴백 엔드포인트 |
 
-현재 비용 보호는 요청 중복 제거, 완료된 오디오의 24시간 메모리 캐시, 최대 문자 수, 일일 요청·문자 수, 타임아웃, 제한 오류 분류를 포함합니다. 저지연 브라우저 선행 폴백은 서버 호출을 중복하지 않으며, 늦게 도착한 서버 결과는 캐시 워밍에만 사용합니다. 캐시는 인스턴스 메모리 기반이므로 배포 인스턴스가 교체되면 초기화됩니다. 성경 구절과 대표 안내 음성을 장기적으로 재사용하려면 S3 오디오 자산 라이브러리를 별도 구축하는 것이 적합합니다.
+현재 비용 보호는 요청 중복 제거, 완료된 오디오의 24시간 메모리 캐시, 최대 문자 수, 일일 요청·문자 수, 8초 hard abort, rate-limit 회로 차단, 제한 오류 분류를 포함합니다. 브라우저 음성 목록이 아직 비어 있으면 `voiceschanged` 이벤트를 잠시 기다린 뒤, 끝내 엔진이 없을 때는 내부 코드 대신 어린이용 안내 문구를 표시합니다. 저지연 브라우저 선행 폴백은 서버 호출을 중복하지 않으며, 늦게 도착한 서버 결과는 캐시 워밍에만 사용합니다. 캐시는 인스턴스 메모리 기반이므로 배포 인스턴스가 교체되면 초기화됩니다. 성경 구절과 대표 안내 음성을 장기적으로 재사용하려면 S3 오디오 자산 라이브러리를 별도 구축하는 것이 적합합니다.
 
 ### 화자 프로필
 
@@ -34,7 +36,7 @@ pnpm check
 pnpm test
 ```
 
-테스트는 WAV 변환, 한국어 화자 지시문, 캐시 재사용, 동시 요청 deduplication, 첫 오디오 latency 측정값, Gemini rate-limit 안전 응답, Gemini 실패 후 CosyVoice 폴백, 두 서버 Provider 실패 후 안전 오류를 검증합니다. `server/geminiKey.test.ts`는 설정된 키로 가벼운 Gemini 모델 목록 엔드포인트를 확인합니다.
+테스트는 WAV 변환, 한국어 화자 지시문, 캐시 재사용, 동시 요청 deduplication, 첫 오디오 latency 측정값, serverResponseAt 전달, 8초 hard timeout, Gemini rate-limit circuit breaker, Gemini 실패 후 CosyVoice 폴백, 두 서버 Provider 실패 후 안전 오류를 검증합니다. `server/geminiKey.test.ts`는 설정된 키로 가벼운 Gemini 모델 목록 엔드포인트를 확인합니다.
 
 ### 현재 제한사항
 

@@ -44,3 +44,16 @@
 - [x] 브라우저 회귀 검증에 성공·오류 두 경로의 상태 배지 변화와 오디오 시작 흐름 근거를 남기기
 - [x] 실제 브라우저 또는 테스트에서 `serverResponseAt`와 `onPlaybackStarted` 시각이 함께 기록된 로그/증거를 남기고 구간별(ms) 값을 QA 메모에 고정
 - [x] AudioPlaybackQueue 또는 Home 레벨 테스트에 `serverResponseAt` 전달 및 `serverToFirstPlayableMs` 계산 검증 추가
+
+- [x] error1 실제 코드·서버 TTS 응답·브라우저 음성 엔진 상태 재현 및 원인 확정
+- [x] TTS 로딩 중 음성 시작과 error1 사용자 표시를 안정적으로 수정
+- [x] error1·지연·성공 재생 회귀 테스트와 실제 브라우저 재검증
+- [x] Gemini rate-limit 재시도 폭주를 막는 서버 회로 차단과 짧은 요청 종료시간 추가
+- [x] 브라우저 음성 엔진 실패 시 늦은 서버 WAV를 무기한 기다리지 않고 제한시간 내 복구
+- [x] 내부 브라우저 오류 코드를 어린이에게 보이는 단순 안내 문구로 매핑하고 error1 노출 제거
+- [ ] 실제 Android Chrome/iOS Safari 기기에서 한국어 Web Speech 음성 목록·Gemini WAV·사용자 제스처 재생을 각각 확인
+- [ ] 실제 Android Chrome/iOS Safari 또는 음성 엔진이 있는 브라우저에서 질문 후 성공 음성 재생까지 end-to-end 검증하고 QA 근거를 남기기
+- [ ] 로딩 중 fast fallback 또는 늦은 서버 WAV 복구로 실제 음성이 시작되는지 브라우저 실환경에서 재현·기록하기
+- [ ] error1 수정 이후 성공·실패 경로를 모두 포함한 브라우저 회귀 검증(상태 배지 + 실제 재생 여부) 근거를 남기기
+- [x] Gemini rate-limit 회로 차단과 별도로 TTS 요청을 더 빨리 종료하는 짧은 timeout/abort 정책을 코드에 추가하고 테스트로 검증
+- [x] rate-limit 상태에서 첫 실패 이후 후속 요청이 짧은 종료시간으로 즉시 안전 응답되는지 회귀 테스트 추가
