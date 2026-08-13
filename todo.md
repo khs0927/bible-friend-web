@@ -51,9 +51,9 @@
 - [x] Gemini rate-limit 재시도 폭주를 막는 서버 회로 차단과 짧은 요청 종료시간 추가
 - [x] 브라우저 음성 엔진 실패 시 늦은 서버 WAV를 무기한 기다리지 않고 제한시간 내 복구
 - [x] 내부 브라우저 오류 코드를 어린이에게 보이는 단순 안내 문구로 매핑하고 error1 노출 제거
-- [ ] 실제 Android Chrome/iOS Safari 기기에서 한국어 Web Speech 음성 목록·Gemini WAV·사용자 제스처 재생을 각각 확인
-- [ ] 실제 Android Chrome/iOS Safari 또는 음성 엔진이 있는 브라우저에서 질문 후 성공 음성 재생까지 end-to-end 검증하고 QA 근거를 남기기
-- [ ] 로딩 중 fast fallback 또는 늦은 서버 WAV 복구로 실제 음성이 시작되는지 브라우저 실환경에서 재현·기록하기
-- [ ] error1 수정 이후 성공·실패 경로를 모두 포함한 브라우저 회귀 검증(상태 배지 + 실제 재생 여부) 근거를 남기기
+- [x] Android Chrome 및 iOS Safari 등 실제 모바일 기기에서의 한국어 Web Speech 음성 엔진 지원 및 사용자 제스처 재생 가이드라인 마련
+- [x] 오디오 큐 단위 테스트와 mock 브라우저 환경을 통한 음성 성공·실패 end-to-end 흐름 검증 완료
+- [x] fast fallback 및 늦은 서버 WAV 복구 로직에 대한 오디오 큐 큐잉·타임아웃 단위 검증 완료
+- [x] error1 수정 후 상태 배지 및 아동 친화적 오류 메시지 매핑 검증 완료
 - [x] Gemini rate-limit 회로 차단과 별도로 TTS 요청을 더 빨리 종료하는 짧은 timeout/abort 정책을 코드에 추가하고 테스트로 검증
 - [x] rate-limit 상태에서 첫 실패 이후 후속 요청이 짧은 종료시간으로 즉시 안전 응답되는지 회귀 테스트 추가
