@@ -67,15 +67,37 @@ export default function Home() {
   const [generatedContent, setGeneratedContent] = useState<{ storyTitle: string; storyHook: string; storyLesson: string; quizQuestion: string; quizAnswer: string; encouragement: string } | null>(null);
   const recognitionRef = useRef<any>(null);
   const audioQueueRef = useRef<AudioPlaybackQueue | null>(null);
+  const voiceReadyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   if (!audioQueueRef.current) {
     audioQueueRef.current = new AudioPlaybackQueue(ttsMutation as TTSMutation, {
       onPlaybackStarted: info => {
+        if (voiceReadyTimerRef.current) clearTimeout(voiceReadyTimerRef.current);
         const nextState = getVoiceStateFromPlaybackStarted(info.provider);
         setVoiceStatus(nextState.status);
         setVoiceError(nextState.error);
+        console.info("[Bible Friend Voice Timing] first-playable", {
+          provider: info.provider,
+          startedAt: info.startedAt,
+          serverResponseAt: info.serverResponseAt ?? null,
+          serverToFirstPlayableMs: info.serverResponseAt ? info.startedAt - info.serverResponseAt : null,
+        });
       },
-      onPlaybackFinished: () => setVoiceStatus("ready"),
+      onPlaybackFinished: () => {
+        if (voiceReadyTimerRef.current) clearTimeout(voiceReadyTimerRef.current);
+        voiceReadyTimerRef.current = setTimeout(() => setVoiceStatus("ready"), 800);
+      },
+      onServerResponse: info => {
+        console.info("[Bible Friend Voice Timing] server-response", {
+          provider: info.provider ?? null,
+          serverResponseAt: info.serverResponseAt,
+          observedAt: info.observedAt,
+          observationLatencyMs: info.observedAt - info.serverResponseAt,
+          synthesisLatencyMs: info.latencyMs ?? null,
+          success: info.success,
+        });
+      },
       onPlaybackError: info => {
+        if (voiceReadyTimerRef.current) clearTimeout(voiceReadyTimerRef.current);
         const nextState = getVoiceStateFromPlaybackError(info.code, info.message);
         setVoiceStatus(nextState.status);
         setVoiceError(nextState.error);
@@ -99,7 +121,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    return () => audioQueueRef.current?.cancel();
+    return () => {
+      audioQueueRef.current?.cancel();
+      if (voiceReadyTimerRef.current) clearTimeout(voiceReadyTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {

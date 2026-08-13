@@ -10,9 +10,12 @@ export type VoiceRequest = {
 export type TTSMutation = { mutateAsync: (input: VoiceRequest) => Promise<any> };
 
 export type AudioPlaybackQueueOptions = {
-  onPlaybackStarted?: (info: { request: VoiceRequest; provider: string; startedAt: number }) => void;
-  onPlaybackFinished?: (info: { request: VoiceRequest; provider: string; finishedAt: number }) => void;
+  onPlaybackStarted?: (info: { request: VoiceRequest; provider: string; startedAt: number; serverResponseAt?: number }) => void;
+  onPlaybackFinished?: (info: { request: VoiceRequest; provider: string; finishedAt: number; serverResponseAt?: number }) => void;
+  onServerResponse?: (info: { request: VoiceRequest; provider?: string; serverResponseAt: number; observedAt: number; latencyMs?: number; success: boolean }) => void;
   onPlaybackError?: (info: { request: VoiceRequest; provider: string; code: string; message: string }) => void;
+  /** Start device speech while a slow server TTS request continues warming the cache. */
+  fastFallbackMs?: number;
 };
 
 export class AudioPlaybackQueue {
@@ -72,7 +75,43 @@ export class AudioPlaybackQueue {
       return;
     }
     try {
-      const response = await this.ttsMutation.mutateAsync(next);
+      const serverPromise = this.ttsMutation.mutateAsync(next);
+      void serverPromise.then((response: any) => {
+        if (typeof response?.serverResponseAt === "number") {
+          this.options.onServerResponse?.({
+            request: next,
+            provider: response.provider,
+            serverResponseAt: response.serverResponseAt,
+            observedAt: Date.now(),
+            latencyMs: response.latencyMs,
+            success: Boolean(response.success),
+          });
+        }
+      }).catch(() => undefined);
+      const fastFallbackMs = this.options.fastFallbackMs ?? 1_200;
+      const race = await Promise.race([
+        serverPromise,
+        new Promise<{ __fastFallback: true }>(resolve => setTimeout(() => resolve({ __fastFallback: true }), fastFallbackMs)),
+      ]);
+      if ("__fastFallback" in race) {
+        // Keep the server request alive so a successful response can populate its cache.
+        void serverPromise.catch(() => undefined);
+        if (run === this.generation) {
+          const browserPlayed = await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
+          if (!browserPlayed) {
+            try {
+              const lateResponse = await serverPromise;
+              if (run === this.generation && lateResponse.success && lateResponse.audioBase64) {
+                await this.playServerAudio(next, lateResponse.audioBase64, lateResponse.mimeType ?? "audio/wav", lateResponse.provider ?? "server", run, lateResponse.serverResponseAt);
+              }
+            } catch {
+              // The explicit browser error is already reported; keep the UI responsive.
+            }
+          }
+        }
+        return;
+      }
+      const response = race;
       if (run !== this.generation) return;
       const provider = response.success ? response.provider ?? "server" : "browser";
       if (!response.success) {
@@ -84,7 +123,7 @@ export class AudioPlaybackQueue {
         });
       }
       if (response.success && response.audioBase64) {
-        await this.playServerAudio(next, response.audioBase64, response.mimeType ?? "audio/wav", provider, run);
+        await this.playServerAudio(next, response.audioBase64, response.mimeType ?? "audio/wav", provider, run, response.serverResponseAt);
       } else {
         await this.playBrowserAudio(next, next.speed ?? 0.94, provider, run);
       }
@@ -101,9 +140,9 @@ export class AudioPlaybackQueue {
     }
   }
 
-  private async playServerAudio(request: VoiceRequest, base64: string, mimeType: string, provider: string, run: number) {
+  private async playServerAudio(request: VoiceRequest, base64: string, mimeType: string, provider: string, run: number, serverResponseAt?: number) {
     const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
-    const webAudioPlayed = await this.playWithWebAudio(request, bytes, provider, run);
+    const webAudioPlayed = await this.playWithWebAudio(request, bytes, provider, run, serverResponseAt);
     if (webAudioPlayed) return;
     const url = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
     const audio = new Audio(url);
@@ -113,7 +152,7 @@ export class AudioPlaybackQueue {
       const playPromise = audio.play();
       await playPromise;
       if (run === this.generation) {
-        this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now() });
+        this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
       }
       await new Promise<void>((resolve, reject) => {
         audio.addEventListener("ended", () => { completed = true; resolve(); }, { once: true });
@@ -125,12 +164,12 @@ export class AudioPlaybackQueue {
       URL.revokeObjectURL(url);
       if (this.currentAudio === audio) this.currentAudio = undefined;
       if (run === this.generation && completed) {
-        this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now() });
+        this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
       }
     }
   }
 
-  private async playWithWebAudio(request: VoiceRequest, bytes: Uint8Array, provider: string, run: number) {
+  private async playWithWebAudio(request: VoiceRequest, bytes: Uint8Array, provider: string, run: number, serverResponseAt?: number) {
     if (typeof window === "undefined") return false;
     const browserWindow = window as typeof window & { webkitAudioContext?: typeof AudioContext };
     const AudioContextCtor = window.AudioContext ?? browserWindow.webkitAudioContext;
@@ -148,9 +187,9 @@ export class AudioPlaybackQueue {
         source.onended = () => resolve();
       });
       source.start();
-      this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now() });
+      this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
       await finished;
-      if (run === this.generation) this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now() });
+      if (run === this.generation) this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
       if (this.currentSource === source) this.currentSource = undefined;
       return true;
     } catch {
@@ -159,15 +198,15 @@ export class AudioPlaybackQueue {
     }
   }
 
-  private playBrowserAudio(request: VoiceRequest, rate: number, provider: string, run: number) {
-    return new Promise<void>(resolve => {
+  private playBrowserAudio(request: VoiceRequest, rate: number, provider: string, run: number, serverResponseAt?: number) {
+    return new Promise<boolean>(resolve => {
       if (run !== this.generation) {
-        resolve();
+        resolve(false);
         return;
       }
       if (!("speechSynthesis" in window)) {
         this.options.onPlaybackError?.({ request, provider, code: "browser_speech_unavailable", message: "이 브라우저에서는 음성 재생을 사용할 수 없어요." });
-        resolve();
+        resolve(false);
         return;
       }
       window.speechSynthesis.cancel();
@@ -176,17 +215,17 @@ export class AudioPlaybackQueue {
       utterance.rate = Math.min(1.05, Math.max(0.86, rate));
       utterance.pitch = 1.18;
       const started = () => {
-        this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now() });
+        this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
       };
       utterance.onstart = started;
       utterance.onend = () => {
-        this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now() });
-        resolve();
+        this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
+        resolve(true);
       };
       utterance.onerror = event => {
         const code = event?.error ?? "browser_speech_error";
         this.options.onPlaybackError?.({ request, provider, code, message: "브라우저 음성 엔진이 재생을 시작하지 못했어요." });
-        resolve();
+        resolve(false);
       };
       window.speechSynthesis.speak(utterance);
     });

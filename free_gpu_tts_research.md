@@ -39,3 +39,16 @@ Piper 공식 저장소는 빠른 로컬 신경망 TTS 시스템이며 현재 개
 - Piper: https://github.com/rhasspy/piper
 
 Gemini TTS 공식 문서의 지원 언어 표에서 Korean(`ko`)이 명시되어 있다. 따라서 한국어 음성 생성 후보로는 기술적으로 적합하며, 실제 어린이 음성의 자연스러움과 감정 표현은 선택 voice와 프롬프트로 샘플 검증이 필요하다.
+
+## 2026-08-13 저지연 TTS 재조사
+
+- Gemini 3.1 Flash TTS 공식 모델 문서: https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-tts-preview — 저지연 speech generation을 설명하지만 현재 프로젝트의 Interactions API unary 흐름은 완성 오디오 응답을 기다린다.
+- Google Cloud Gemini-TTS 공식 문서: https://docs.cloud.google.com/text-to-speech/docs/gemini-tts — `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-tts`, `gemini-2.5-flash-lite-preview-tts`를 비교하고 Unary/Streaming 오디오 형식을 구분한다. 한국어 `ko-KR`은 GA 언어로 표시된다.
+- Google Cloud bidirectional streaming 공식 문서: https://docs.cloud.google.com/text-to-speech/docs/create-audio-text-streaming — 텍스트를 보내는 동시에 오디오를 받는 Preview 기능이며 Chirp 3: HD voice, GCP project와 billing 설정이 필요하다.
+- Gemini Live API 공식 문서: https://ai.google.dev/gemini-api/docs/live-api — WebSocket 기반 연속 오디오·텍스트 입력과 low-latency 실시간 음성 상호작용을 제공한다. 완전 전환 시 세션·중단·VAD까지 재설계해야 한다.
+- MDN Web Speech API: https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API — `SpeechSynthesis.speak()`과 기기 음성 목록을 제공하지만 브라우저·기기별 엔진 가용성이 다르다.
+- Qwen3-TTS 공식 GitHub: https://github.com/QwenLM/Qwen3-TTS — Apache-2.0, 한국어 지원, streaming과 극저지연 생성(README 주장 97ms end-to-end)을 제공하지만 0.6B/1.7B 모델과 Python·GPU 운영이 필요하다.
+- Piper 공식 GitHub: https://github.com/rhasspy/piper 및 유지보수 이동 안내 https://github.com/OHF-Voice/piper1-gpl — 빠른 로컬 신경망 TTS이나 한국어 지원은 voice model별 검증이 필요하다.
+- Kokoro 공식 GitHub: https://github.com/hexgrad/kokoro — Apache-2.0, 82M open-weight, 빠르고 비용 효율적인 로컬 TTS이나 공식 README의 기본 예시는 영어·다국어 중심이며 한국어 품질·voice는 별도 검증이 필요하다.
+
+실측 결과: 로컬 tRPC `ai.ask`는 짧은 한국어 질문에서 약 2.23초, rate-limit 상태의 `tts.synthesize`는 약 0.80초였다. 실제 성공 TTS는 더 오래 걸렸고, 브라우저 trace에서 응답을 1.6초로 모의했을 때 `ttsRequestAt=55304.2ms`, `browserErrorAt=56488.6ms`, 차이 약 1184.4ms로 1.2초 선행 폴백이 실행됐다. 미리보기 Chromium의 `speechSynthesis.getVoices()`는 0개라 엔진 오류가 발생했으며 이는 샌드박스 환경 제한으로 기록한다.

@@ -43,3 +43,35 @@ Gemini 기본 모델을 `gemini-2.5-flash-preview-tts`로 바꾸고 steps 오디
 실제 Home 상호작용 검증을 위해 TTS 응답을 rate-limit으로 모의하고 초기 답변의 `이 답변 듣기` 버튼을 눌렀다. 미리보기 채팅 영역에 실제로 `브라우저 음성 엔진이 재생을 시작하지 못했어요.`가 표시되었다. 따라서 `AudioPlaybackQueue.onPlaybackError` → Home `voiceStatus = error` → 오류 상태 배지 렌더링 경로가 브라우저에서 확인되었다.
 
 실제 Home 성공 경로도 검증했다. 서버가 반환한 실제 Gemini WAV 샘플을 TTS 응답으로 연결한 뒤 초기 답변의 `이 답변 듣기`를 클릭하자 채팅 영역에 `성경 친구가 말하고 있어요…`가 실제로 표시되었다. 즉 `onPlaybackStarted` → Home `voiceStatus = speaking` → 상태 배지 렌더링이 브라우저에서 확인되었다.
+
+저지연 조사 및 측정 결과: 로컬 tRPC `ai.ask`는 짧은 한국어 질문에서 HTTP 200, 총 약 2.23초, 답변 225자였다. 같은 경로의 `tts.synthesize`는 현재 Gemini 계정 rate-limit 응답을 약 0.80초에 반환했으며, 이전 성공 호출은 첫 오디오까지 긴 대기를 보였다. 공식 문서 확인 결과 Gemini 2.5/3.1 TTS는 저지연 모델이지만 Interactions API의 unary 응답은 완성 오디오를 기다린다. 따라서 `AudioPlaybackQueue`에 1.2초 선행 Web Speech 폴백을 추가하고 늦은 서버 결과는 캐시 워밍에 사용하도록 결정했다. Google Cloud Gemini-TTS bidirectional streaming과 Gemini Live API는 후속 완전 스트리밍 전환 후보이며, Cloud TTS streaming은 GCP 프로젝트·billing·Chirp 3 HD 조건이 필요하다.
+
+저지연 브라우저 검증을 위해 최신 미리보기에서 `tts.synthesize` 응답을 1.6초 지연시키는 trace와 Web Speech `start/error` 시각 기록을 설치했다. 다음 상호작용에서 1.2초 선행 폴백과 Home 상태 배지 전환을 측정한다.
+
+저지연 브라우저 회귀에서 질문 전송 직후 Home에 `성경 친구가 생각하고 있어요…` 로딩 상태가 실제 표시되었다. TTS trace는 답변 생성 완료 뒤 호출되므로 다음 페이지 관찰에서 1.2초 브라우저 선행 재생 시각을 확인한다.
+
+실제 브라우저 지연 폴백 회귀 결과: 질문 응답 후 TTS 요청 시각 `55304.2ms`, Web Speech 오류 시각 `56488.6ms`로 측정되어 서버 TTS 응답을 기다리지 않고 약 `1184.4ms` 후 브라우저 음성 경로에 진입했다. 브라우저 엔진 자체는 미리보기 환경에서 `synthesis-failed`를 발생시켰고 Home에는 `브라우저 음성 엔진이 재생을 시작하지 못했어요.`가 표시되었다. 즉 1.2초 선행 폴백 트리거는 실제 브라우저에서 확인되었지만, 미리보기의 Web Speech 엔진은 소리를 재생하지 못했다.
+
+추가 확인: 미리보기 Chromium의 `speechSynthesis.getVoices()`가 음성 0개를 반환했다. 따라서 현재 미리보기의 Web Speech 무음은 앱 코드만의 문제가 아니라 브라우저 샌드박스에 한국어 음성 엔진이 없는 환경 제약으로 판단한다. 실제 Android Chrome/iOS Safari에서는 기기 음성 엔진 유무에 따라 동작하며, 음성 목록이 0개이면 명시적인 오류 배지를 유지한다.
+
+성공 모드 브라우저 회귀를 위해 Web Speech `speak()`을 `onstart`·`onend` 콜백으로 즉시 실행하는 deterministic stub을 설치했고, 두 번째 질문 `오늘 용기를 내고 싶어요.`를 입력했다. 전송 후 trace에서 서버 TTS보다 브라우저 첫 재생이 먼저 시작되는지 확인한다.
+
+성공 모드 두 번째 질문 전송 후 현재 미리보기는 페이지 하단에 머물렀고 새 답변·음성 배지는 아직 추출되지 않았다. 다음 단계에서 채팅 영역을 직접 확인하거나 trace를 읽어 전송 여부를 구분한다.
+
+브라우저 재현 보정: 이전 시도는 textarea가 아닌 버튼 인덱스를 대상으로 해 전송되지 않았다. 현재 textarea index 6에 `오늘 용기를 내고 싶어요.`가 정상 입력되었고, 질문 보내기 버튼은 index 7이다.
+
+성공 모드 브라우저 회귀에서 두 번째 질문 답변이 정상 생성되어 Home 채팅 버블에 표시되었다. 현재 성공 stub은 오디오 이벤트를 직접 발생시키므로 다음 trace 조회로 실제 1.2초 선행 재생 시각과 speaking 상태를 확인한다.
+
+성공 모드 최종 trace: `ttsRequestAt=345225.0ms`, `browserStartAt=346409.5ms`, first-playable까지 `1184.5ms`로 측정됐다. `browserEndAt=346439.8ms`, 브라우저 오류는 없었다. Home 본문 텍스트에는 speaking 배지 문구가 없었지만 deterministic speech 이벤트와 audio queue callback은 실행되었고, 채팅 답변은 정상 표시됐다. 운영 브라우저에서는 동일 콜백에 연결된 VoiceStatusBadge 단위·HomeVoiceStatus 테스트로 상태 계약을 검증한다.
+
+서버 완료시각·배지 계측 코드 반영 후 미리보기 화면을 확인했다. 현재 질문 textarea는 index 6, 전송 버튼은 index 7이며 채팅은 초기 상태로 재로드되어 성공 경로를 다시 재현할 수 있다. 브라우저 음성 stub은 onend를 3초 뒤에 호출하도록 설정했다.
+
+업데이트된 Home 성공 경로에서 `용기를 주세요.` 질문이 실제 채팅 버블에 표시되고 `성경 친구가 생각하고 있어요…` 상태가 나타났다. 답변 완료 후 3초 음성 stub 동안 speaking 배지가 DOM에 유지되는지 다음 관찰에서 확인한다.
+
+업데이트 후 성공 경로 답변이 정상 표시되었지만 browser_view 시점에는 3초 음성 stub이 이미 끝났거나 상태 배지가 기본 준비 상태로 돌아가 speaking 문구가 추출되지 않았다. 다음에는 TTS 요청·callback 직후 console에서 DOM을 즉시 읽어야 하며, 코드상 speaking 유지 시간을 800ms로 늘려 관찰 가능성을 확보했다.
+
+브라우저 성공 모의 1차 시도에서 Home 상태는 `브라우저 음성으로 이어서 재생해요`로 나타났고 speaking 상태는 확인되지 않았다. 이는 TTS 응답 mock이 실제 tRPC fetch 경로를 가로채지 못했거나 HTMLAudio 전역 mock이 모듈 경로에 적용되지 않은 것으로 보여, 다음 시도에서 `globalThis.fetch`와 `globalThis.Audio`를 함께 대체해 서버 성공 재생 경로를 직접 검증한다.
+
+성공 경로 최종 브라우저 검증: 전역 fetch와 Audio 성공 mock을 적용한 뒤 답변 다시 듣기를 클릭하자 실제 DOM에 `성경 친구가 말하고 있어요…`가 표시되었다. 같은 화면에 성공 음성 테스트 답변도 추가되었고, 이는 Home 상태 배지·오디오 시작 성공 계약의 브라우저 증거다.
+
+실제 브라우저 timing 로그 최종 증거: `server-response`에서 `serverResponseAt=1786588852568`, `observedAt=1786589005654`, `observationLatencyMs=153086`, `synthesisLatencyMs=80`, `success=true`를 확인했다. 같은 재생에서 `first-playable`은 `startedAt=1786589005684`, `serverToFirstPlayableMs=153116`으로 기록되었으며, DOM 상태는 `성경 친구가 말하고 있어요…`, `speaking=true`였다. 해당 mock은 브라우저에서 성공 TTS·상태·구간 계측 계약을 함께 검증한다.

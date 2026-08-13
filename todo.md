@@ -31,3 +31,16 @@
 - [x] 실제 Home 상호작용에서 서버 음성 성공 시 상태 배지가 `성경 친구가 말하고 있어요…`로 바뀌는 브라우저 검증 근거 남기기
 - [x] Home 또는 ChatPanel 렌더 테스트에서 음성 시작·오류 콜백에 따른 상태 배지 텍스트 변경 검증
 - [x] Home 또는 ChatPanel 렌더 테스트를 추가해 AudioPlaybackQueue의 onPlaybackStarted/onPlaybackError 콜백에 따른 상태 배지 변경을 통합 검증
+
+- [x] Gemini TTS 호출·서버 생성·첫 재생 구간별 지연 측정값 수집
+- [x] 공식 문서와 연결 가능한 커넥터를 바탕으로 저지연 TTS 대안 비교
+- [x] 사용자 체감 지연을 줄이는 즉시 브라우저 음성·문장 분할·캐시 전략 적용
+- [x] 저지연 전략의 Vitest·TypeScript·브라우저 회귀 검증 및 운영 선택지 문서화
+- [x] 실제 브라우저에서 저지연 경로를 재현해 질문 후 1.2초 내 브라우저 음성이 먼저 시작되는지 확인하고 first-playable 시점 기록
+- [x] 서버 생성 완료 시점과 브라우저 첫 재생 시점을 함께 로깅하거나 노출해 구간별 실측값 남기기
+- [x] fast fallback 적용 후 Home UI에서 상태 배지·오디오 시작 흐름을 브라우저 회귀 검증으로 남기기
+- [x] 서버 TTS 응답 완료 시각(`serverResponseAt`)과 브라우저 첫 재생 시각을 함께 기록/노출해 구간별 실측값을 남기기
+- [x] fast fallback 성공 경로에서 Home UI 상태 배지(`성경 친구가 말하고 있어요…`)가 실제 브라우저에서 표시되는지 재현·기록하기
+- [x] 브라우저 회귀 검증에 성공·오류 두 경로의 상태 배지 변화와 오디오 시작 흐름 근거를 남기기
+- [x] 실제 브라우저 또는 테스트에서 `serverResponseAt`와 `onPlaybackStarted` 시각이 함께 기록된 로그/증거를 남기고 구간별(ms) 값을 QA 메모에 고정
+- [x] AudioPlaybackQueue 또는 Home 레벨 테스트에 `serverResponseAt` 전달 및 `serverToFirstPlayableMs` 계산 검증 추가

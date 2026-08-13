@@ -62,6 +62,7 @@ export type TTSResponse =
       cached: boolean;
       fallback: boolean;
       quotaRemaining: { requests: number; characters: number };
+      serverResponseAt: number;
     }
   | {
       success: false;
@@ -69,6 +70,7 @@ export type TTSResponse =
       errorCode: TTSFailureCode;
       fallbackSuggested: true;
       quotaRemaining: { requests: number; characters: number };
+      serverResponseAt: number;
     };
 
 export type VoiceProfile = {
@@ -467,6 +469,7 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
       cached: true,
       fallback: cached.provider !== "gemini",
       quotaRemaining: remainingQuota(),
+      serverResponseAt: Date.now(),
     };
   }
 
@@ -481,6 +484,7 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
       errorCode: failure.code,
       fallbackSuggested: true,
       quotaRemaining: remainingQuota(),
+      serverResponseAt: Date.now(),
     };
   }
 
@@ -503,6 +507,7 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
         cached: false,
         fallback: provider.name !== "gemini",
         quotaRemaining: remainingQuota(),
+        serverResponseAt: Date.now(),
       };
     } catch (error) {
       lastFailure = error instanceof TTSProviderError ? error : new TTSProviderError("unknown", provider.name, "Provider failed");
@@ -517,6 +522,7 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
     errorCode: failureCode,
     fallbackSuggested: true,
     quotaRemaining: remainingQuota(),
+    serverResponseAt: Date.now(),
   };
 }
 

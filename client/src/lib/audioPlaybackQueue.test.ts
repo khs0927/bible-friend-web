@@ -105,6 +105,85 @@ describe("AudioPlaybackQueue", () => {
     expect(playbackFinished).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
   });
 
+  it("starts browser speech before a slow server TTS response returns", async () => {
+    const playbackStarted = vi.fn();
+    const utterances: any[] = [];
+    let resolveServer!: (value: any) => void;
+    const serverPromise = new Promise(resolve => { resolveServer = resolve; });
+    class MockUtterance {
+      onerror?: (event: { error: string }) => void;
+      onstart?: () => void;
+      onend?: () => void;
+      lang = "";
+      rate = 1;
+      pitch = 1;
+      constructor(public readonly text: string) { utterances.push(this); }
+    }
+    vi.stubGlobal("window", {
+      speechSynthesis: {
+        cancel: vi.fn(),
+        speak: (utterance: MockUtterance) => {
+          utterance.onstart?.();
+          setTimeout(() => utterance.onend?.(), 0);
+        },
+      },
+    });
+    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+
+    const queue = new AudioPlaybackQueue(
+      { mutateAsync: async () => serverPromise },
+      { fastFallbackMs: 5, onPlaybackStarted: playbackStarted },
+    );
+    queue.enqueue({ text: "먼저 바로 들려줄게요.", speaker: "CHILD_FRIEND" });
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    expect(utterances).toHaveLength(1);
+    expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
+    resolveServer({ success: true, audioBase64: "", provider: "gemini" });
+  });
+
+  it("retries a late server WAV after the browser speech engine fails", async () => {
+    const playbackStarted = vi.fn();
+    const playbackError = vi.fn();
+    const bytes = Buffer.from([82, 73, 70, 70]);
+    const utterances: any[] = [];
+    let resolveServer!: (value: any) => void;
+    const serverPromise = new Promise(resolve => { resolveServer = resolve; });
+    class MockUtterance {
+      onerror?: (event: { error: string }) => void;
+      onstart?: () => void;
+      onend?: () => void;
+      lang = "";
+      rate = 1;
+      pitch = 1;
+      constructor(public readonly text: string) { utterances.push(this); }
+    }
+    vi.stubGlobal("window", {
+      speechSynthesis: {
+        cancel: vi.fn(),
+        speak: (utterance: MockUtterance) => setTimeout(() => utterance.onerror?.({ error: "synthesis-failed" }), 0),
+      },
+    });
+    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+    vi.stubGlobal("Audio", MockAudio);
+    vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:test"), revokeObjectURL: vi.fn() });
+    vi.stubGlobal("atob", (value: string) => Buffer.from(value, "base64").toString("binary"));
+
+    const queue = new AudioPlaybackQueue(
+      { mutateAsync: async () => serverPromise },
+      { fastFallbackMs: 5, onPlaybackStarted: playbackStarted, onPlaybackError: playbackError },
+    );
+    queue.enqueue({ text: "서버 음성으로 다시 이어 갈게요.", speaker: "CHILD_FRIEND" });
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(utterances).toHaveLength(1);
+    expect(playbackError).toHaveBeenCalledWith(expect.objectContaining({ code: "synthesis-failed" }));
+
+    resolveServer({ success: true, audioBase64: bytes.toString("base64"), mimeType: "audio/wav", provider: "gemini" });
+    await new Promise(resolve => setTimeout(resolve, 25));
+    expect(MockAudio.instances).toHaveLength(1);
+    expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "gemini" }));
+  });
+
   it("reports a browser synthesis-failed event instead of silently swallowing it", async () => {
     const playbackError = vi.fn();
     class MockUtterance {
@@ -131,6 +210,30 @@ describe("AudioPlaybackQueue", () => {
     await new Promise(resolve => setTimeout(resolve, 20));
 
     expect(playbackError).toHaveBeenCalledWith(expect.objectContaining({ code: "synthesis-failed", provider: "browser" }));
+  });
+
+  it("propagates server response timing to first-playable callbacks", async () => {
+    const serverResponseAt = Date.now() - 12;
+    const onServerResponse = vi.fn();
+    const onPlaybackStarted = vi.fn();
+    const playbackStarted = onPlaybackStarted;
+    const bytes = Buffer.from([82, 73, 70, 70]);
+    vi.stubGlobal("window", { AudioContext: MockAudioContext, speechSynthesis: { cancel: vi.fn(), speak: vi.fn() } });
+    vi.stubGlobal("Audio", MockAudio);
+    vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:test"), revokeObjectURL: vi.fn() });
+    vi.stubGlobal("atob", (value: string) => Buffer.from(value, "base64").toString("binary"));
+
+    const queue = new AudioPlaybackQueue(
+      { mutateAsync: async () => ({ success: true, audioBase64: bytes.toString("base64"), mimeType: "audio/wav", provider: "gemini", latencyMs: 37, serverResponseAt }) },
+      { onServerResponse, onPlaybackStarted },
+    );
+    queue.enqueue({ text: "서버 완료시각도 함께 기록해요.", speaker: "NARRATOR" });
+    await new Promise(resolve => setTimeout(resolve, 25));
+
+    expect(onServerResponse).toHaveBeenCalledWith(expect.objectContaining({ serverResponseAt, latencyMs: 37, success: true }));
+    const started = playbackStarted.mock.calls[0]?.[0];
+    expect(started).toEqual(expect.objectContaining({ provider: "gemini", serverResponseAt }));
+    expect(started.startedAt - started.serverResponseAt).toBeGreaterThanOrEqual(0);
   });
 
   it("measures first playable audio separately from server synthesis latency", async () => {
