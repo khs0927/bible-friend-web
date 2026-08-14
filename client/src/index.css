@@ -225,3 +225,93 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px sol
 }
 
 .bf-mic-button { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Central microphone owns the complete voice interaction */
+.bf-bottom-nav .bf-nav-center {
+  position: relative;
+  z-index: 3;
+  width: 68px;
+  height: 68px;
+  flex: 0 0 68px;
+  justify-content: center;
+  gap: 0;
+  margin: -35px 3px 0;
+  border: 5px solid #fffaf4;
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(145deg, #ef907a, #f3b16e);
+  box-shadow: 0 11px 24px rgba(239,144,122,.38);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform .14s cubic-bezier(.22,1,.36,1), box-shadow .14s ease-out, background .18s ease-out;
+}
+.bf-bottom-nav .bf-nav-center svg {
+  position: relative;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  padding: 11px;
+  color: #fff;
+  background: transparent;
+  box-shadow: none;
+}
+.bf-bottom-nav .bf-nav-center .bf-nav-mic-label {
+  position: absolute;
+  z-index: 4;
+  right: -12px;
+  bottom: -11px;
+  display: grid;
+  place-items: center;
+  min-width: 49px;
+  height: 25px;
+  padding: 0 7px;
+  border: 3px solid #fffaf4;
+  border-radius: 99px;
+  color: #fff;
+  background: #d97870;
+  font-family: 'Gowun Dodum', sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 5px 12px rgba(81,68,158,.2);
+  pointer-events: none;
+}
+.bf-bottom-nav .bf-nav-center.is-pressed,
+.bf-bottom-nav .bf-nav-center:active {
+  transform: scale(1.12) translateY(-3px);
+  box-shadow: 0 0 0 10px rgba(239,144,122,.18), 0 16px 30px rgba(239,144,122,.44);
+}
+.bf-bottom-nav .bf-nav-center.is-listening {
+  background: linear-gradient(145deg, #df5a61, #ef907a);
+  animation: bf-nav-mic-breathe 1.05s ease-in-out infinite;
+}
+.bf-bottom-nav .bf-nav-center.is-listening::before,
+.bf-bottom-nav .bf-nav-center.is-listening::after {
+  content: '';
+  position: absolute;
+  inset: -11px;
+  border: 3px solid rgba(239,144,122,.48);
+  border-radius: 30px;
+  animation: bf-nav-mic-ripple 1.6s ease-out infinite;
+  pointer-events: none;
+}
+.bf-bottom-nav .bf-nav-center.is-listening::after { animation-delay: .8s; }
+.bf-bottom-nav .bf-nav-center.is-listening .bf-nav-mic-label,
+.bf-bottom-nav .bf-nav-center.is-pressed .bf-nav-mic-label {
+  background: #df5a61;
+}
+@keyframes bf-nav-mic-breathe { 0%,100% { transform: scale(1.04); } 50% { transform: scale(1.12); } }
+@keyframes bf-nav-mic-ripple { 0% { opacity: .75; transform: scale(.82); } 100% { opacity: 0; transform: scale(1.42); } }
+@media (max-width: 390px) {
+  .bf-bottom-nav .bf-nav-center { width: 64px; height: 64px; flex-basis: 64px; margin-top: -33px; }
+  .bf-bottom-nav .bf-nav-center svg { width: 45px; height: 45px; padding: 10px; }
+  .bf-bottom-nav .bf-nav-center .bf-nav-mic-label { right: -14px; bottom: -11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-bottom-nav .bf-nav-center.is-listening,
+  .bf-bottom-nav .bf-nav-center.is-listening::before,
+  .bf-bottom-nav .bf-nav-center.is-listening::after { animation: none; }
+}

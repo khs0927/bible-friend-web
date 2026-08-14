@@ -110,3 +110,8 @@
 - [x] 마이크 질문 후 답변 도착 시 실제 자동 TTS 요청·재생 통합 회귀 테스트 추가 및 Gemini provider 검증 (Home live flow에서 답변 도착 후 HTTP 200 `provider: gemini`, `errorCode: rate_limit` 자동 요청 확인)
 - [x] allowBrowserFallback 재도입의 기계음 자동 재생 정책을 테스트로 고정하고 Gemini 실패 시 기계음 자동 전환을 차단
 - [ ] 실제 390×844 터치 시작·종료·권한 오류·재시작 lifecycle과 자동 재생을 재검증한 뒤 새 체크포인트 저장 (synthetic touch lifecycle·자동 Gemini provider 단위 검증 완료; 실제 iPhone 청취/권한 확인 대기)
+
+- [x] 하단 왼쪽의 별도 마이크 안내·버튼 영역 제거
+- [x] 하단 중앙 마이크 버튼에 음성 시작·중지·전사 기능 통합
+- [x] 중앙 마이크의 눌림·듣는 중·중지 상태와 파동 효과를 명확히 표시
+- [x] 중앙 마이크 통합 후 회귀 테스트·390×844 모바일 검증·빌드·체크포인트 저장
