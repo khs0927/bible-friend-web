@@ -128,3 +128,6 @@
 - [x] Gemini API 제한 완화를 위한 개발 관점 최적화 전략 수립 (캐시, 토큰, 멀티키, 백오프, 에스컬레이션)
 
 - [x] Gemini API 제한 완화·캐시·큐·TTS 오픈소스 조사 및 검토
+
+- [x] 첨부 제안 분석 및 Gemini TTS 지수 백오프(Exponential Backoff + Jitter) 재시도 구현
+- [x] 전체 54개 Vitest 단위 테스트 통과 및 프로덕션 번들 검증 완료

@@ -249,63 +249,76 @@ class GeminiTTSProvider implements TTSProvider {
       throw new TTSProviderError("configuration", this.name, "GEMINI_API_KEY is not configured");
     }
     const startedAt = Date.now();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-goog-api-key": this.apiKey,
-        },
-        body: JSON.stringify({
-          model: this.model,
-          input: resolved.prompt,
-          response_format: { type: "audio" },
-          generation_config: {
-            speech_config: [{ voice: resolved.voice }],
-          },
-        }),
-        signal: controller.signal,
-      });
-      const bodyText = await response.text();
-      if (!response.ok) {
-        const code = errorCodeFromStatus(response.status, bodyText);
-        throw new TTSProviderError(code, this.name, `Gemini TTS returned HTTP ${response.status}`, code === "rate_limit" || code === "upstream");
-      }
-      let body: any;
+    const maxRetries = 3;
+    let attempt = 0;
+    let response: Response | undefined;
+    let bodyText = "";
+
+    while (attempt <= maxRetries) {
+      attempt++;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
-        body = JSON.parse(bodyText);
-      } catch {
-        throw new TTSProviderError("upstream", this.name, "Gemini TTS returned malformed JSON", true);
+        response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-goog-api-key": this.apiKey,
+          },
+          body: JSON.stringify({
+            model: this.model,
+            input: resolved.prompt,
+            response_format: { type: "audio" },
+            generation_config: {
+              speech_config: [{ voice: resolved.voice }],
+            },
+          }),
+          signal: controller.signal,
+        });
+        bodyText = await response.text();
+        if (response.ok) break;
+
+        const code = errorCodeFromStatus(response.status, bodyText);
+        const retryable = code === "upstream" && attempt < maxRetries;
+        if (!retryable) {
+          throw new TTSProviderError(code, this.name, `Gemini TTS returned HTTP ${response.status}`, code === "rate_limit" || code === "upstream" || code === "timeout");
+        }
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      } catch (err) {
+        if (err instanceof TTSProviderError) throw err;
+        if ((err as Error)?.name === "AbortError" || attempt >= maxRetries) {
+          throw new TTSProviderError("timeout", this.name, "Gemini TTS request timed out", true);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      } finally {
+        clearTimeout(timeout);
       }
-      const encoded =
-        body?.output_audio?.data ??
-        body?.steps
-          ?.flatMap((step: any) => (Array.isArray(step?.content) ? step.content : []))
-          ?.find((block: any) => typeof block?.data === "string")?.data;
-      if (typeof encoded !== "string" || encoded.length === 0) {
-        throw new TTSProviderError("upstream", this.name, "Gemini TTS returned no audio data", true);
-      }
-      const audio = makeWavFromPcm(Buffer.from(encoded, "base64"));
-      return {
-        audio,
-        mimeType: "audio/wav",
-        provider: this.name,
-        model: this.model,
-        voice: resolved.voice,
-        latencyMs: Date.now() - startedAt,
-        cached: false,
-      };
-    } catch (error) {
-      if (error instanceof TTSProviderError) throw error;
-      if ((error as Error)?.name === "AbortError") {
-        throw new TTSProviderError("timeout", this.name, "Gemini TTS request timed out", true);
-      }
-      throw new TTSProviderError("upstream", this.name, "Gemini TTS request failed", true);
-    } finally {
-      clearTimeout(timeout);
     }
+
+    let body: any;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      throw new TTSProviderError("upstream", this.name, "Gemini TTS returned malformed JSON", true);
+    }
+    const encoded =
+      body?.output_audio?.data ??
+      body?.steps
+        ?.flatMap((step: any) => (Array.isArray(step?.content) ? step.content : []))
+        ?.find((block: any) => typeof block?.data === "string")?.data;
+    if (typeof encoded !== "string" || encoded.length === 0) {
+      throw new TTSProviderError("upstream", this.name, "Gemini TTS returned no audio data", true);
+    }
+    const audio = makeWavFromPcm(Buffer.from(encoded, "base64"));
+    return {
+      audio,
+      mimeType: "audio/wav",
+      provider: this.name,
+      model: this.model,
+      voice: resolved.voice,
+      latencyMs: Date.now() - startedAt,
+      cached: false,
+    };
   }
 }
 
