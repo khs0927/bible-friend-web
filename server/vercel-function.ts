@@ -2,6 +2,7 @@ import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./_core/oauth";
 import { createContext } from "./_core/context";
+import { ENV } from "./_core/env";
 import { appRouter } from "./routers";
 
 /**
@@ -22,8 +23,10 @@ app.get("/api/health", (_req, res) => {
     ok: true,
     service: "bible-friend-web",
     runtime: "vercel",
-    ttsModel: process.env.GEMINI_TTS_MODEL ?? "gemini-3.1-flash-tts-preview",
-    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    ttsModel: ENV.geminiTtsModel,
+    geminiConfigured: Boolean(ENV.geminiApiKey),
+    ttsTimeoutMs: ENV.geminiTtsTimeoutMs,
+    ttsHardTimeoutMs: ENV.geminiTtsHardTimeoutMs,
     timestamp: new Date().toISOString(),
   });
 });
