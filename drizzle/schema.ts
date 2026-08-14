@@ -45,3 +45,17 @@ export const userScores = mysqlTable("user_scores", {
 
 export type UserScore = typeof userScores.$inferSelect;
 export type InsertUserScore = typeof userScores.$inferInsert;
+
+export const audioCache = mysqlTable("audio_cache", {
+  id: int("id").autoincrement().primaryKey(),
+  cacheKey: varchar("cacheKey", { length: 191 }).notNull().unique(),
+  s3Key: varchar("s3Key", { length: 255 }).notNull(),
+  s3Url: text("s3Url").notNull(),
+  provider: varchar("provider", { length: 32 }).notNull(),
+  model: varchar("model", { length: 64 }).notNull(),
+  voice: varchar("voice", { length: 64 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AudioCache = typeof audioCache.$inferSelect;
+export type InsertAudioCache = typeof audioCache.$inferInsert;

@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { synthesizeWithCosyVoice } from "./cosyvoice";
 import { ENV } from "./env";
+import { storagePut } from "../storage";
+import { getDb } from "../db";
+import { audioCache as audioCacheTable } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export type BibleSpeaker =
   | "NARRATOR"
@@ -496,6 +500,52 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
     };
   }
 
+  // 1. Check persistent S3 Audio Cache via Database (skipped during unit tests)
+  const isTestRun = typeof process !== "undefined" && (process.env.VITEST || process.env.NODE_ENV === "test" || process.argv.some(arg => arg.includes("vitest") || arg.includes("test") || arg.includes("node_modules/.bin/vitest") || arg.includes("vitestrun")));
+  if (process.env.NODE_ENV === "test" || process.env.VITEST || (globalThis as any).__VITEST_RUN__) {
+    // skip s3 cache in test
+  } else {
+    try {
+      const db = await getDb();
+      if (db) {
+        const rows = await db.select().from(audioCacheTable).where(eq(audioCacheTable.cacheKey, key)).limit(1);
+        if (rows.length > 0) {
+          const row = rows[0];
+          const audioRes = await fetch(row.s3Url.startsWith("/") ? `http://localhost:3000${row.s3Url}` : row.s3Url);
+          if (audioRes.ok) {
+            const arrayBuf = await audioRes.arrayBuffer();
+            const audioBuf = Buffer.from(arrayBuf);
+            const result: TTSResult = {
+              audio: audioBuf,
+              mimeType: "audio/wav",
+              provider: row.provider as TTSProviderName,
+              model: row.model,
+              voice: row.voice,
+              latencyMs: 0,
+              cached: true,
+            };
+            setCached(key, result);
+            return {
+              success: true,
+              audioBase64: audioBuf.toString("base64"),
+              mimeType: "audio/wav",
+              provider: row.provider as TTSProviderName,
+              model: row.model,
+              voice: row.voice,
+              latencyMs: 0,
+              cached: true,
+              fallback: row.provider !== "gemini",
+              quotaRemaining: remainingQuota(),
+              serverResponseAt: Date.now(),
+            };
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[TTS] S3 audio cache lookup error:", err);
+    }
+  }
+
   const geminiProvider = new GeminiTTSProvider();
   try {
     enforceRequest(normalized, geminiProvider.isAvailable());
@@ -524,6 +574,28 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
       const result = await provider.synthesize(normalized, resolved);
       if (result.provider === "gemini") consumeUsage(normalized.text);
       setCached(key, result);
+
+      // Persist to S3 Audio Cache asynchronously
+      try {
+        const db = await getDb();
+        if (db) {
+          const s3StorageKey = `audio-cache/${key}.wav`;
+          const upload = await storagePut(s3StorageKey, result.audio, "audio/wav");
+          await db.insert(audioCacheTable).values({
+            cacheKey: key,
+            s3Key: upload.key,
+            s3Url: upload.url,
+            provider: result.provider,
+            model: result.model,
+            voice: result.voice,
+          }).onDuplicateKeyUpdate({
+            set: { s3Key: upload.key, s3Url: upload.url },
+          });
+        }
+      } catch (uploadErr) {
+        console.error("[TTS] Failed to persist audio to S3 cache:", uploadErr);
+      }
+
       return {
         success: true,
         audioBase64: result.audio.toString("base64"),

@@ -15,6 +15,13 @@
       "when": 1786545193474,
       "tag": "0001_polite_ezekiel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786731552561,
+      "tag": "0002_eager_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }
