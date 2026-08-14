@@ -277,9 +277,11 @@ export default function Home() {
         {activeTab === "home" && (
           <section className="bf-home-screen">
             <section className="bf-section bf-chat-section">
-              <div className="bf-section-heading"><span className="bf-section-icon violet"><MessageCircleHeart size={20} /></span><div><small>VOICE CHAT</small><h2>성경 친구와 이야기해요</h2></div><button className={`bf-round-icon ${voiceEnabled ? "is-on" : ""}`} onClick={() => setVoiceEnabled(value => !value)} aria-label={getVoiceToggleLabel(voiceEnabled)} aria-pressed={voiceEnabled} title={getVoiceToggleLabel(voiceEnabled)}>{voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button></div>
-              <HomeVoiceStatus enabled={voiceEnabled} status={voiceStatus} error={voiceError} />
               <div className="bf-chat-surface bf-chat-surface-art" style={{ backgroundImage: `url(${CHAT_BACKGROUND_URL})` }}>
+                <div className="bf-chat-utility">
+                  {voiceStatus === "error" && <HomeVoiceStatus enabled={voiceEnabled} status={voiceStatus} error={voiceError} />}
+                  <button className={`bf-round-icon ${voiceEnabled ? "is-on" : ""}`} onClick={() => setVoiceEnabled(value => !value)} aria-label={getVoiceToggleLabel(voiceEnabled)} aria-pressed={voiceEnabled} title={getVoiceToggleLabel(voiceEnabled)}>{voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+                </div>
                 <div className="bf-chat-friend-bg" aria-hidden="true"><span>✦</span><img src={FRIEND_MASCOT_URL} alt="" /></div>
                 <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} onSpeak={speakText} onSpeakNow={speakNow} />
                 <div className="bf-voice-row"><button className={`bf-mic-button ${isListening ? "listening" : ""}`} onPointerDown={event => { if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onClick={toggleListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={19} /> : <Mic size={19} />}</button><span>{isListening ? "듣고 있어요… 천천히 말해 주세요" : "마이크를 누르고 말해 보세요"}</span><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={17} /></button></div>

@@ -160,3 +160,40 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px sol
 @media (prefers-reduced-motion: reduce) {
   .bf-chat-friend-bg img, .bf-chat-avatar::after { animation: none; }
 }
+
+/* Soft conversation-first visual polish */
+.bf-brand strong { font-family: 'Gowun Dodum', sans-serif; font-size: 17px; font-weight: 900; letter-spacing: -.08em; }
+.bf-top-copy { max-width: 320px; color: #5c4bb0; font-family: 'Gowun Dodum', sans-serif; font-size: 17px; font-weight: 900; letter-spacing: -.08em; line-height: 1.45; }
+.bf-chat-surface.bf-chat-surface-art { padding: 9px 4px 8px; border: 0; background-color: transparent; box-shadow: none; backdrop-filter: none; }
+.bf-chat-surface.bf-chat-surface-art::before { opacity: .32; }
+.bf-chat-surface.bf-chat-surface-art::after { opacity: .3; }
+.bf-chat-utility { position: absolute; z-index: 4; inset: 9px 8px auto; display: flex; align-items: center; justify-content: flex-end; min-height: 35px; pointer-events: none; }
+.bf-chat-utility .bf-round-icon { pointer-events: auto; width: 38px; height: 38px; border-radius: 14px; box-shadow: 0 7px 16px rgba(81,68,158,.14); }
+.bf-chat-utility .bf-voice-status { pointer-events: auto; margin: 0 auto 0 0; }
+.bf-chat-messages { padding: 54px 10px 15px; background: transparent; backdrop-filter: none; }
+.bf-chat-message p { border: 1px solid rgba(255,255,255,.78); box-shadow: 0 9px 24px rgba(65,49,112,.13), 0 2px 7px rgba(65,49,112,.07); font-family: 'Gowun Dodum', sans-serif; font-size: 17px; font-weight: 600; line-height: 1.75; }
+.bf-chat-message.user p { border-color: rgba(113,99,199,.12); box-shadow: 0 9px 22px rgba(81,68,158,.16); }
+.bf-chat-composer { border-color: rgba(113,99,199,.14); box-shadow: 0 9px 24px rgba(65,49,112,.12); }
+.bf-chat-composer textarea { font-family: 'Gowun Dodum', sans-serif; font-size: 16px; font-weight: 600; }
+.bf-chat-suggestions button { box-shadow: 0 5px 13px rgba(81,68,158,.08); font-family: 'Gowun Dodum', sans-serif; }
+.bf-bottom-nav { border-radius: 24px 24px 0 0; padding-top: 10px; background: rgba(255,252,249,.96); box-shadow: 0 -9px 28px rgba(66,53,105,.12); }
+.bf-bottom-nav button { gap: 5px; color: #a9a1b7; font-family: 'Gowun Dodum', sans-serif; font-size: 11px; font-weight: 900; transition: color .18s ease-out, transform .18s ease-out; }
+.bf-bottom-nav button svg { width: 34px; height: 34px; padding: 8px; border-radius: 13px; color: #7d6cbd; background: #f2efff; transition: transform .18s ease-out, color .18s ease-out, background .18s ease-out, box-shadow .18s ease-out; }
+.bf-bottom-nav button:nth-child(2) svg { color: #df866e; background: #fff0e9; }
+.bf-bottom-nav button:nth-child(4) svg { color: #d19a37; background: #fff5d9; }
+.bf-bottom-nav button:nth-child(5) svg { color: #65a99f; background: #eaf8f4; }
+.bf-bottom-nav button.active { color: #51449e; transform: translateY(-2px); }
+.bf-bottom-nav button.active svg { color: #fff; background: linear-gradient(145deg, #7163c7, #9b7ae0); box-shadow: 0 7px 16px rgba(113,99,199,.25); transform: translateY(-2px) rotate(-4deg); }
+.bf-bottom-nav button:nth-child(2).active svg { background: linear-gradient(145deg, #ef907a, #f3b16e); box-shadow: 0 7px 16px rgba(239,144,122,.25); }
+.bf-bottom-nav button:nth-child(4).active svg { background: linear-gradient(145deg, #e8ab48, #f4c865); box-shadow: 0 7px 16px rgba(232,171,72,.24); }
+.bf-bottom-nav button:nth-child(5).active svg { background: linear-gradient(145deg, #65b7a9, #91d3c1); box-shadow: 0 7px 16px rgba(101,183,169,.24); }
+.bf-bottom-nav .bf-nav-center { width: 52px; height: 52px; margin: -28px 7px 0; border: 5px solid #fffaf4; border-radius: 19px; background: linear-gradient(145deg, #ef907a, #f3b16e); box-shadow: 0 9px 20px rgba(239,144,122,.35); }
+.bf-bottom-nav .bf-nav-center svg { width: 42px; height: 42px; padding: 9px; color: #fff; background: transparent; box-shadow: none; }
+@media (max-width: 390px) {
+  .bf-top-copy { max-width: 220px; font-size: 15px; }
+  .bf-brand strong { font-size: 16px; }
+  .bf-chat-message p { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-bottom-nav button, .bf-bottom-nav button svg { transition: none; }
+}
