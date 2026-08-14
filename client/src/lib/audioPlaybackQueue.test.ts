@@ -66,7 +66,7 @@ describe("AudioPlaybackQueue", () => {
     expect(MockAudio.instances).toHaveLength(0);
   });
 
-  it("falls back to Web Speech and reports the server TTS error", async () => {
+  it("reports the server TTS error without silently switching to mechanical speech", async () => {
     const playbackStarted = vi.fn();
     const playbackFinished = vi.fn();
     const playbackError = vi.fn();
@@ -99,10 +99,10 @@ describe("AudioPlaybackQueue", () => {
     queue.enqueue({ text: "브라우저 음성으로 이어서 말해요.", speaker: "CHILD_FRIEND" });
     await new Promise(resolve => setTimeout(resolve, 20));
 
-    expect(utterances).toHaveLength(1);
+    expect(utterances).toHaveLength(0);
     expect(playbackError).toHaveBeenCalledWith(expect.objectContaining({ code: "rate_limit", provider: "server" }));
-    expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
-    expect(playbackFinished).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
+    expect(playbackStarted).not.toHaveBeenCalled();
+    expect(playbackFinished).not.toHaveBeenCalled();
   });
 
   it("starts browser speech immediately from a speaker tap even when voices are initially empty", async () => {
@@ -137,7 +137,7 @@ describe("AudioPlaybackQueue", () => {
     expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
   });
 
-  it("starts browser speech before a slow server TTS response returns", async () => {
+  it("does not start browser speech before a slow Gemini server response returns", async () => {
     const playbackStarted = vi.fn();
     const utterances: any[] = [];
     let resolveServer!: (value: any) => void;
@@ -164,13 +164,13 @@ describe("AudioPlaybackQueue", () => {
 
     const queue = new AudioPlaybackQueue(
       { mutateAsync: async () => serverPromise },
-      { fastFallbackMs: 5, onPlaybackStarted: playbackStarted },
+      { fastFallbackMs: 5, allowBrowserFallback: false, onPlaybackStarted: playbackStarted },
     );
     queue.enqueue({ text: "먼저 바로 들려줄게요.", speaker: "CHILD_FRIEND" });
     await new Promise(resolve => setTimeout(resolve, 20));
 
-    expect(utterances).toHaveLength(1);
-    expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
+    expect(utterances).toHaveLength(0);
+    expect(playbackStarted).not.toHaveBeenCalled();
     resolveServer({ success: true, audioBase64: "", provider: "gemini" });
   });
 
@@ -203,7 +203,7 @@ describe("AudioPlaybackQueue", () => {
 
     const queue = new AudioPlaybackQueue(
       { mutateAsync: async () => serverPromise },
-      { fastFallbackMs: 5, onPlaybackStarted: playbackStarted, onPlaybackError: playbackError },
+      { fastFallbackMs: 5, allowBrowserFallback: true, onPlaybackStarted: playbackStarted, onPlaybackError: playbackError },
     );
     queue.enqueue({ text: "서버 음성으로 다시 이어 갈게요.", speaker: "CHILD_FRIEND" });
     await new Promise(resolve => setTimeout(resolve, 20));
@@ -216,7 +216,7 @@ describe("AudioPlaybackQueue", () => {
     expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "gemini" }));
   });
 
-  it("reports a browser synthesis-failed event instead of silently swallowing it", async () => {
+  it("reports a browser synthesis-failed event when browser fallback is explicitly enabled", async () => {
     const playbackError = vi.fn();
     class MockUtterance {
       onerror?: (event: { error: string }) => void;
@@ -236,7 +236,7 @@ describe("AudioPlaybackQueue", () => {
 
     const queue = new AudioPlaybackQueue(
       { mutateAsync: async () => ({ success: false, errorCode: "rate_limit", error: "오늘 음성 사용량을 쉬어 가고 있어요." }) },
-      { onPlaybackError: playbackError },
+      { allowBrowserFallback: true, onPlaybackError: playbackError },
     );
     queue.enqueue({ text: "음성 엔진 오류를 확인해요.", speaker: "CHILD_FRIEND" });
     await new Promise(resolve => setTimeout(resolve, 20));
@@ -252,7 +252,7 @@ describe("AudioPlaybackQueue", () => {
     });
     const queue = new AudioPlaybackQueue(
       { mutateAsync: () => new Promise(() => undefined) },
-      { fastFallbackMs: 5, lateServerRecoveryMs: 10, onPlaybackError: playbackError },
+      { fastFallbackMs: 5, lateServerRecoveryMs: 10, allowBrowserFallback: true, onPlaybackError: playbackError },
     );
     queue.enqueue({ text: "늦은 음성 복구를 기다리지 않아요.", speaker: "NARRATOR" });
     await new Promise(resolve => setTimeout(resolve, 35));

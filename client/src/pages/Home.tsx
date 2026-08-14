@@ -31,7 +31,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioPlaybackQueue, splitSentences, type TTSMutation, type VoiceRequest } from "@/lib/audioPlaybackQueue";
+import { AudioPlaybackQueue, type TTSMutation, type VoiceRequest } from "@/lib/audioPlaybackQueue";
 
 const initialMessages: Message[] = [
   {
@@ -114,10 +114,9 @@ export default function Home() {
   const speakText = (request: VoiceRequest) => {
     if (!voiceEnabled) return;
     audioQueueRef.current?.prime();
-    const sentences = splitSentences(request.text);
-    for (const sentence of sentences.length > 0 ? sentences : [request.text]) {
-      audioQueueRef.current?.enqueue({ ...request, text: sentence });
-    }
+    // One Gemini request per answer keeps the expressive prosody intact and
+    // avoids exhausting the free TTS request quota sentence by sentence.
+    audioQueueRef.current?.enqueue({ ...request, text: request.text.trim() });
   };
 
   useEffect(() => {
@@ -154,7 +153,9 @@ export default function Home() {
   const speakNow = (request: VoiceRequest) => {
     if (!voiceEnabled) return;
     audioQueueRef.current?.prime();
-    audioQueueRef.current?.speakBrowserNow(request);
+    // A speaker-button tap must still use Gemini TTS. It only primes Web Audio
+    // from the user gesture; it must never start the mechanical browser voice.
+    speakText(request);
   };
 
   const selectedStoryContext = useMemo(() => selectedStory?.id, [selectedStory]);

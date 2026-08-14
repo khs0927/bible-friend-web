@@ -66,6 +66,7 @@ export type TTSResponse =
     }
   | {
       success: false;
+      provider: TTSProviderName;
       error: string;
       errorCode: TTSFailureCode;
       fallbackSuggested: true;
@@ -221,9 +222,9 @@ function safeUpstreamMessage(code: TTSFailureCode) {
     case "rate_limit":
       return "오늘 음성 사용량을 잠시 쉬어 가고 있어요. 글로는 계속 이야기할 수 있어요.";
     case "timeout":
-      return "음성을 준비하는 데 시간이 걸리고 있어요. 기기 음성으로 이어 갈게요.";
+      return "Gemini 음성을 준비하는 데 시간이 걸리고 있어요. 잠시 후 다시 눌러 주세요.";
     default:
-      return "음성을 잠시 준비하지 못했어요. 기기 음성으로 이어 갈게요.";
+      return "Gemini 음성을 잠시 준비하지 못했어요. 잠시 후 다시 눌러 주세요.";
   }
 }
 
@@ -488,6 +489,7 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
     const failure = error instanceof TTSProviderError ? error : new TTSProviderError("invalid_request", "gemini", "Invalid TTS request");
     return {
       success: false,
+      provider: failure.provider,
       error: safeUpstreamMessage(failure.code),
       errorCode: failure.code,
       fallbackSuggested: true,
@@ -534,6 +536,7 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
   const failureCode = lastFailure?.code ?? "configuration";
   return {
     success: false,
+    provider: lastFailure?.provider ?? "gemini",
     error: safeUpstreamMessage(failureCode),
     errorCode: failureCode,
     fallbackSuggested: true,

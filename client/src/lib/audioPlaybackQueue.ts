@@ -18,6 +18,8 @@ export type AudioPlaybackQueueOptions = {
   fastFallbackMs?: number;
   /** Maximum time to wait for a late server WAV after device speech fails. */
   lateServerRecoveryMs?: number;
+  /** Browser speech is opt-in only; Gemini server audio is the default and preferred path. */
+  allowBrowserFallback?: boolean;
 };
 
 async function waitForSpeechVoices(synthesis: SpeechSynthesis, timeoutMs = 700) {
@@ -126,11 +128,14 @@ export class AudioPlaybackQueue {
           });
         }
       }).catch(() => undefined);
-      const fastFallbackMs = this.options.fastFallbackMs ?? 1_200;
-      const race = await Promise.race([
-        serverPromise,
-        new Promise<{ __fastFallback: true }>(resolve => setTimeout(() => resolve({ __fastFallback: true }), fastFallbackMs)),
-      ]);
+      const allowBrowserFallback = this.options.allowBrowserFallback === true;
+      const fastFallbackMs = this.options.fastFallbackMs;
+      const race = allowBrowserFallback && typeof fastFallbackMs === "number"
+        ? await Promise.race([
+            serverPromise,
+            new Promise<{ __fastFallback: true }>(resolve => setTimeout(() => resolve({ __fastFallback: true }), fastFallbackMs)),
+          ])
+        : await serverPromise;
       if ("__fastFallback" in race) {
         // Keep the server request alive so a successful response can populate its cache.
         void serverPromise.catch(() => undefined);
@@ -162,13 +167,15 @@ export class AudioPlaybackQueue {
       }
       if (response.success && response.audioBase64) {
         await this.playServerAudio(next, response.audioBase64, response.mimeType ?? "audio/wav", provider, run, response.serverResponseAt);
-      } else {
-        await this.playBrowserAudio(next, next.speed ?? 0.94, provider, run);
+      } else if (allowBrowserFallback) {
+        await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
       }
     } catch (error) {
       if (run === this.generation) {
-        this.options.onPlaybackError?.({ request: next, provider: "browser", code: "audio_play_failed", message: error instanceof Error ? error.message : "오디오 재생을 시작하지 못했어요." });
-        await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
+        this.options.onPlaybackError?.({ request: next, provider: "gemini", code: "audio_play_failed", message: error instanceof Error ? error.message : "오디오 재생을 시작하지 못했어요." });
+        if (this.options.allowBrowserFallback === true) {
+          await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
+        }
       }
     } finally {
       if (run === this.generation) {
