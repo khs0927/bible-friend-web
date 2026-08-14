@@ -1,8 +1,8 @@
 import React from "react";
-
-type Message = { role: "system" | "user" | "assistant"; content: string };
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
+
+type Message = { role: "system" | "user" | "assistant"; content: string };
 import { trpc } from "@/lib/trpc";
 import { getScoreLabel } from "@/lib/scoreStatus";
 import { VoiceStatusBadge } from "@/components/VoiceStatusBadge";
@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
-  MoreHorizontal,
   Check,
   Heart,
   Lightbulb,
@@ -34,6 +33,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AudioPlaybackQueue, type TTSMutation, type VoiceRequest } from "@/lib/audioPlaybackQueue";
+
+const FRIEND_MASCOT_URL = "/manus-storage/bible-friend-mascot_06125680.png";
+const CHAT_BACKGROUND_URL = "/manus-storage/bible-friend-chat-bg_371dab14.png";
 
 const initialMessages: Message[] = [
   {
@@ -62,7 +64,7 @@ export default function Home() {
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("ready");
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "more">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "more" | "records">("home");
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizAnswered, setQuizAnswered] = useState(false);
   const [quizCorrect, setQuizCorrect] = useState(false);
@@ -265,28 +267,20 @@ export default function Home() {
       <div className="bf-ambient bf-ambient-two" />
       <header className="bf-topbar">
         <a href="#top" className="bf-brand" aria-label="성경 친구 홈">
-          <span className="bf-brand-mark"><Sparkles size={18} /></span>
-          <span><strong>성경 친구</strong><small>작은 마음에 닿는 하나님 이야기</small></span>
+          <span className="bf-brand-mark"><img src={FRIEND_MASCOT_URL} alt="" /></span>
+          <span><strong>성경 친구</strong></span>
         </a>
-        <div className="bf-header-actions">
-          <span className={`bf-voice-ready ${voiceStatus === "error" ? "is-limited" : ""}`}><i />{voiceStatus === "error" ? "Gemini 음성 잠시 쉬는 중" : "Gemini 한국어 음성 준비됨"}</span>
-          {user ? <span className="bf-user-chip">내 기록</span> : <button className="bf-login-button" onClick={() => startLogin()}>기록 저장하기</button>}
-        </div>
+        <p className="bf-top-copy">궁금한 건 뭐든 성경친구에게 물어봐요</p>
       </header>
 
       <main id="top" className="bf-main">
         {activeTab === "home" && (
           <section className="bf-home-screen">
-            <motion.div className="bf-home-intro" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}>
-              <span className="bf-kicker"><Zap size={12} /> 오늘의 작은 모험</span>
-              <h1>궁금한 마음 그대로,<br /><em>하나님께 물어봐요.</em></h1>
-              <p>궁금한 건 뭐든 편하게 말해 주세요.</p>
-            </motion.div>
             <section className="bf-section bf-chat-section">
-              <div className="bf-section-heading"><span className="bf-section-icon violet"><MessageCircleHeart size={20} /></span><div><small>VOICE CHAT</small><h2>성경 친구와 이야기해요</h2></div><button className={`bf-round-icon ${voiceEnabled ? "is-on" : ""}`} onClick={() => setVoiceEnabled(value => !value)} aria-label={getVoiceToggleLabel(voiceEnabled)} title={getVoiceToggleLabel(voiceEnabled)}>{voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button></div>
+              <div className="bf-section-heading"><span className="bf-section-icon violet"><MessageCircleHeart size={20} /></span><div><small>VOICE CHAT</small><h2>성경 친구와 이야기해요</h2></div><button className={`bf-round-icon ${voiceEnabled ? "is-on" : ""}`} onClick={() => setVoiceEnabled(value => !value)} aria-label={getVoiceToggleLabel(voiceEnabled)} aria-pressed={voiceEnabled} title={getVoiceToggleLabel(voiceEnabled)}>{voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button></div>
               <HomeVoiceStatus enabled={voiceEnabled} status={voiceStatus} error={voiceError} />
-              <div className="bf-chat-surface">
-                <div className="bf-chat-friend-bg" aria-hidden="true"><span>✦</span><div className="bf-character-placeholder">친구</div></div>
+              <div className="bf-chat-surface bf-chat-surface-art" style={{ backgroundImage: `url(${CHAT_BACKGROUND_URL})` }}>
+                <div className="bf-chat-friend-bg" aria-hidden="true"><span>✦</span><img src={FRIEND_MASCOT_URL} alt="" /></div>
                 <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} onSpeak={speakText} onSpeakNow={speakNow} />
                 <div className="bf-voice-row"><button className={`bf-mic-button ${isListening ? "listening" : ""}`} onPointerDown={event => { if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onClick={toggleListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={19} /> : <Mic size={19} />}</button><span>{isListening ? "듣고 있어요… 천천히 말해 주세요" : "마이크를 누르고 말해 보세요"}</span><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={17} /></button></div>
               </div>
@@ -299,10 +293,12 @@ export default function Home() {
         {activeTab === "game" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">PLAY & LEARN</span><h1>말씀 보물찾기</h1><p>한 문제씩 풀며 말씀 속 보물을 찾아요.</p></div><QuizPanel quiz={quiz} quizStarted={quizStarted} quizAnswered={quizAnswered} quizCorrect={quizCorrect} quizLoading={quizQuery.isLoading} quizError={quizQuery.isError} onStart={startQuiz} onAnswer={answerQuiz} onNext={nextQuiz} scoreLabel={scoreLabel} /> </section>}
 
         {activeTab === "more" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">MORE TOGETHER</span><h1>더 많은 놀이</h1><p>성경 친구와 오늘의 이야기를 더 만들어 봐요.</p></div><section className="bf-orchestrator-card"><div><span className="bf-kicker"><Sparkles size={12} /> GEMINI ORCHESTRATOR</span><h3>오늘의 작은 콘텐츠를 새로 만들어 볼까요?</h3><p>성경 친구가 이야기와 퀴즈를 함께 준비해요.</p></div><button className="bf-secondary-button" onClick={createTodayContent} disabled={orchestrateMutation.isPending}>{orchestrateMutation.isPending ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />} 만들기</button></section>{generatedContent && <motion.section className="bf-generated-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><span className="bf-kicker">오늘 생성된 이야기</span><h3>{generatedContent.storyTitle}</h3><p>{generatedContent.storyHook}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>마음 보물</b>{generatedContent.storyLesson}</span></div><div className="bf-generated-quiz"><b>퀴즈</b><span>{generatedContent.quizQuestion}</span><small>정답: {generatedContent.quizAnswer}</small></div><p className="bf-encouragement">{generatedContent.encouragement}</p></motion.section>}</section>}
+
+        {activeTab === "records" && <section className="bf-tab-page bf-records-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 대화로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker"><BookOpen size={12} /> MY JOURNEY</span><h1>나의 기록</h1><p>성경 친구와 함께 만든 작은 순간을 모아 봐요.</p></div>{user ? <><div className="bf-records-card"><div className="bf-records-mascot"><img src={FRIEND_MASCOT_URL} alt="" /></div><div><strong>{user.name ?? "성경 친구"}님의 마음 보물</strong><span>{scoreLabel}</span></div></div><div className="bf-records-stats"><div><b>{messages.filter(message => message.role === "user").length}</b><span>나눈 질문</span></div><div><b>{messages.filter(message => message.role === "assistant").length}</b><span>친구의 답변</span></div><div><b>{score}</b><span>모은 별</span></div></div></> : <div className="bf-records-empty"><div className="bf-records-mascot"><img src={FRIEND_MASCOT_URL} alt="" /></div><h2>기록을 남겨 볼까요?</h2><p>로그인하면 질문과 별을 다음에도 이어갈 수 있어요.</p><button className="bf-primary-button" onClick={() => startLogin()}>기록 저장하기 <ArrowRight size={14} /></button></div>}</section>}
       </main>
 
-      <div className="bf-safe-note"><ShieldCheck size={16} /><p><b>함께 지켜요</b><br />마음이 아프거나 중요한 고민은 부모님, 선생님과 함께 이야기해요.</p></div>
-      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className="bf-nav-center" onClick={toggleListening} aria-label="음성 대화 시작"><Mic size={21} /></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>퀴즈</span></button><button className={activeTab === "more" ? "active" : ""} onClick={() => setActiveTab("more")}><MoreHorizontal size={19} /><span>더보기</span></button></nav>
+      {activeTab !== "home" && <div className="bf-safe-note"><ShieldCheck size={16} /><p><b>함께 지켜요</b><br />마음이 아프거나 중요한 고민은 부모님, 선생님과 함께 이야기해요.</p></div>}
+      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className="bf-nav-center" onClick={toggleListening} aria-label="음성 대화 시작"><Mic size={21} /></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>퀴즈</span></button><button className={activeTab === "records" ? "active" : ""} onClick={() => setActiveTab("records")}><BookOpen size={18} /><span>기록</span></button></nav>
 
       <AnimatePresence>{selectedStory && <motion.div className="bf-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeStory}><motion.article className="bf-story-modal" initial={{ opacity: 0, y: 25, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: .98 }} onClick={event => event.stopPropagation()}><button className="bf-modal-close" onClick={closeStory} aria-label="닫기"><X size={17} /></button><div className={`bf-modal-art ${selectedStory.accent}`}><img src={selectedStory.imageUrl} alt="" /><span>✨</span></div><div className="bf-modal-body"><span className="bf-kicker">✦ 성경 이야기</span><h2>{selectedStory.title}</h2><p>{selectedStory.body}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>오늘의 마음 보물</b>{selectedStory.lesson}<small>{selectedStory.verse}</small></span></div><button className="bf-primary-button full" onClick={tellStory}><Volume2 size={15} /> 이야기 들려줘</button></div></motion.article></motion.div>}</AnimatePresence>
     </div>
