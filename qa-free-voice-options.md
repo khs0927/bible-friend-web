@@ -23,3 +23,13 @@ Gemini 공식 가격 페이지는 개발자 무료 티어를 제공하지만 모
 ## 모바일 터치 음성 호출 검증
 
 Playwright에서 viewport를 390×844px로 설정하고 SpeechRecognition을 mock한 뒤 `.bf-mic-button`에 `pointerdown(pointerType:"touch")`를 보냈다. 50ms 뒤 상태가 `듣고 있어요… 천천히 말해 주세요`로 바뀌었으며, 이어지는 합성 click 이후에도 같은 상태가 유지됐다. 이는 터치 제스처에서 `recognition.start()`가 즉시 호출되고, click 이벤트가 녹음을 곧바로 중지시키지 않도록 중복 방지 로직이 작동함을 의미한다. 실제 마이크 권한·음성 인식 서버는 mock 범위 밖이다.
+
+## Gemini 제한 상태 UI 검증
+
+390×844 모바일 Playwright에서 TTS 응답을 Gemini `rate_limit` 구조로 주입하고 답변 다시 듣기 버튼을 눌렀다. 상태는 `오늘의 AI 음성 사용량이 잠시 쉬고 있어요. 글로는 계속 이야기할 수 있어요.`로 표시됐고, `window.speechSynthesis.speak` 호출 횟수는 `0`이었다. 따라서 Gemini 제한 시 기계음 Web Speech를 자동 재생하지 않고 명확한 안내로 종료한다.
+
+자동 질문 경로도 같은 방식으로 확인했다. 모바일에서 질문을 제출하면 답변 텍스트가 화면에 추가되고, TTS를 Gemini `rate_limit` 응답으로 주입했을 때 상태가 사용량 안내로 바뀌며 Web Speech 호출 횟수는 `0`이었다. 즉 자동 응답과 다시 듣기 모두 제한 시 기계음으로 몰래 전환되지 않는다.
+
+브라우저 로그·네트워크 근거도 저장했다. `tts.synthesize?batch=1` 요청 152(자동 응답)와 155(다시 듣기)는 모두 HTTP 200이었지만 응답 JSON은 `success:false`, `provider:"gemini"`, `errorCode:"rate_limit"`, `fallbackSuggested:true`였다. UI에서는 이 응답을 오류 안내로 표시했고 `speechCalls:0`으로 기록됐다. Playwright 콘솔에는 오류 0개가 확인됐다.
+
+추가로 모바일 timeout 실패를 재현했다. TTS 응답을 `errorCode:"timeout"`으로 주입해 다시 듣기를 누르자 상태가 `음성 준비가 늦어지고 있어요. 잠시 후 다시 눌러 주세요.`로 표시됐고 `speechCalls:0`이었다. 따라서 timeout에서도 기계음 자동 재생 없이 재시도 안내가 표시된다.

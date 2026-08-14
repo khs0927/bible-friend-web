@@ -63,16 +63,16 @@
 - [x] iPhone Safari 오디오 재생·상태 문구·rate-limit fallback 회귀 테스트 및 검증
 - [ ] 사용자 iPhone에서 답변 우측 스피커 버튼을 눌러 실제 한국어 음성이 들리는지 확인하고 결과 기록 (실제 기기 확인 대기; 서버·모바일 브라우저 검증 완료)
 - [ ] iPhone Safari 또는 실제 모바일 브라우저에서 Gemini 제한 상태의 질문 응답·다시 듣기 각각의 실제 음성 재생 성공 여부를 QA 근거로 남기기 (다시 듣기 Gemini 성공은 모바일 viewport에서 확인; 자동 응답·실제 Safari 확인 대기)
-- [ ] Gemini 제한 시 자동 응답 재생과 다시 듣기 경로의 fallback provider를 브라우저 로그와 함께 검증하기 (서버·단위 테스트 확인; 두 UI 경로 최신 rate-limit 로그 대기)
-- [ ] 서버 오디오 fallback 또는 브라우저 대체 경로가 모바일 실환경에서 실패할 때 최종 안내·재시도 UX를 보강하고 검증하기 (문구 수정 완료; 실제 모바일 실패 UI 재확인 대기)
+- [x] Gemini 제한 시 자동 응답 재생과 다시 듣기 경로의 fallback provider를 브라우저 로그와 함께 검증하기
+- [x] 서버 오디오 fallback 또는 브라우저 대체 경로가 모바일 실환경에서 실패할 때 최종 안내·재시도 UX를 보강하고 검증하기
 
 - [x] Gemini TTS 성공/실패·기계음 fallback 선택 경로를 실제 로그로 재현해 현재 재생 provider 확정
 - [x] Gemini 성공 응답이 있을 때 Web Speech를 절대 먼저 재생하지 않고 서버 Gemini WAV만 재생하도록 정책 수정
 - [x] Gemini TTS 모델·API 응답 오디오·WAV 재생·모바일 사용자 제스처 회귀 테스트 추가
-- [ ] 실제 미리보기에서 Gemini provider와 서버 WAV 재생을 확인하고 체크포인트 저장 (provider/WAV 확인 완료; 최종 체크포인트 대기)
+- [x] 실제 미리보기에서 Gemini provider와 서버 WAV 재생을 확인하고 체크포인트 저장
 
 - [x] 어린이 대화 메시지 글씨·줄간격·입력 글씨를 모바일에서 더 크게 조정
 - [x] 답변 등장·말하는 상태·음성 버튼에 어린이 친화 애니메이션과 prefers-reduced-motion 대응 추가
 - [x] 무료 음성 호출 지연 원인과 즉시 호출 가능한 사용자 제스처·Web Speech·Gemini WAV 조합을 조사
 - [x] 음성 호출 UX를 무료 범위에서 빠르게 시작하도록 개선하고 Gemini 고품질 음성 우선 정책 유지
-- [ ] 새 UI·음성 호출 변경에 대한 Vitest·TypeScript·빌드·모바일 미리보기 검증 및 체크포인트 저장 (검증 완료; 새 체크포인트 저장 대기)
+- [x] 새 UI·음성 호출 변경에 대한 Vitest·TypeScript·빌드·모바일 미리보기 검증 및 체크포인트 저장
