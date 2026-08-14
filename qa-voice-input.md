@@ -8,3 +8,11 @@
 실제 390×844 Home live flow에서 글 질문 `하나님은 나를 사랑하시나요?`를 전송했고, 답변 텍스트가 도착한 뒤 `tts.synthesize`가 자동 호출됐다. 응답은 HTTP 200이지만 `provider: gemini`, `success: false`, `errorCode: rate_limit`이었다. 현재 `allowBrowserFallback: false` 정책 때문에 이 상태에서 Web Speech 기계음으로 자동 전환하지 않고, 글 답변은 계속 표시된다. 이는 자동 호출 경로는 정상이며 현재 실제 Gemini 음성이 들리지 않는 직접 원인이 free-tier quota 제한임을 확인한다.
 
 MediaRecorder mock·SpeechRecognition 비활성화 상태의 390×844 Home 통합 시나리오에서 touch pointerdown 직후 `listening pressed`와 `지금 듣고 있어요`가 표시됐다. 이후 DOM click으로 녹음을 중지하자 실제 호출 순서가 `transcribe → ask → tts`로 기록됐고, tts mock 응답은 `success: true`, `provider: gemini`, 유효한 최소 WAV였다. 답변 텍스트도 채팅에 표시됐다. 미리보기 전환 과정에서 `InvalidStateError: Navigated away from page` 콘솔 이벤트가 3개 있었으나, 앱의 tRPC 호출 순서와 Gemini 성공 응답 처리는 완료됐다. 실제 iPhone Safari에서는 mock이 아닌 실제 권한·Gemini quota 상태를 별도로 확인해야 한다.
+
+
+2026-08-14 Gemini TTS 제한 원인 조사:
+- 프로젝트의 자동 답변 경로는 `askAndSpeak`에서 답변당 `speak()` 1회만 호출하고, AudioPlaybackQueue가 해당 항목당 `tts.synthesize` 1회만 실행한다. 동일한 요청은 서버 in-flight deduplication과 24시간 캐시로 중복 호출을 줄인다.
+- 실제 390×844 live flow에서 텍스트 답변 후 `tts.synthesize`가 HTTP 200으로 호출되었지만 `provider: gemini`, `success: false`, `errorCode: rate_limit`을 반환했다. `allowBrowserFallback: false` 정책 때문에 이때 기계음 Web Speech를 자동 재생하지 않고 제한 안내를 표시한다.
+- 서버에는 별도의 보호 한도도 있다: 동일 프로세스 기준 기본 일일 80건·20,000자, Gemini 429 이후 기본 15초 회로 차단. 이는 Google의 프로젝트별 한도와 별개인 안전장치이며, 429를 만든 원인을 해소하지는 않는다.
+- Google 공식 문서는 Gemini 한도가 프로젝트 단위 RPM(분당 요청), TPM(분당 입력 토큰), RPD(일일 요청) 중 하나라도 초과하면 429가 발생하고, preview 모델은 더 제한적일 수 있다고 설명한다. RPD는 태평양 시간 자정에 초기화된다. `gemini-3.1-flash-tts-preview`는 음성 생성 preview 모델이며 입력 토큰 8,192·출력 토큰 16,384 한도를 갖는다.
+- 결론: 질문 직후 자동 호출 자체가 잘못된 것은 아니다. 다만 자동 답변, 다시 듣기, 새로고침 후 반복, 여러 질문을 짧은 시간에 연속 전송하면 TTS 요청 수·입력 토큰이 빠르게 누적되어 RPM/TPM/RPD 또는 preview 모델 용량 제한에 걸릴 수 있다. 이번 직접 증거는 무한 재시도가 아니라 Gemini의 실제 `429 rate_limit` 응답이다.

@@ -128,6 +128,28 @@ describe("Gemini TTS provider", () => {
     expect(getTTSRuntimeStats().quotaRemaining.requests).toBe(1);
   });
 
+  it("reuses one Gemini audio when replay styling changes for the same answer", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(geminiResponse());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const automatic = await synthesizeSpeech({
+      text: "하나님은 너를 사랑해.",
+      speaker: "CHILD_FRIEND",
+      emotion: "따뜻한 격려",
+    });
+    const replay = await synthesizeSpeech({
+      text: "하나님은 너를 사랑해.",
+      speaker: "CHILD_FRIEND",
+      emotion: "따뜻하고 또렷한 다시 듣기",
+    });
+
+    expect(automatic.success).toBe(true);
+    expect(replay.success).toBe(true);
+    expect(replay.cached).toBe(true);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(getTTSRuntimeStats().quotaRemaining.requests).toBe(1);
+  });
+
   it("returns a safe rate-limit response instead of retrying forever", async () => {
     const fetchMock = vi.fn().mockResolvedValue(geminiResponse(429));
     vi.stubGlobal("fetch", fetchMock);

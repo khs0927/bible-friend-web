@@ -383,8 +383,9 @@ function cacheKey(request: TTSRequest, resolved: ResolvedVoice) {
         text: request.text.trim(),
         speaker: resolved.speaker,
         voice: resolved.voice,
-        style: request.style,
-        emotion: request.emotion,
+        // The spoken answer is the cache identity. Playback controls may change
+        // emotion/style (automatic reply vs. manual replay), but should not spend
+        // another Gemini quota unit for the same Korean answer.
         speed: resolved.speed,
         model: ENV.geminiTtsModel,
       }),
