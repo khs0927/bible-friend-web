@@ -44,6 +44,28 @@ describe("AudioPlaybackQueue", () => {
     MockAudio.instances = [];
   });
 
+  it("automatically requests and plays Gemini audio for a new assistant reply", async () => {
+    const synthesize = vi.fn(async () => ({
+      success: true,
+      audioBase64: Buffer.from([82, 73, 70, 70]).toString("base64"),
+      mimeType: "audio/wav",
+      provider: "gemini",
+    }));
+    const playbackStarted = vi.fn();
+    vi.stubGlobal("window", { AudioContext: MockAudioContext, speechSynthesis: { cancel: vi.fn(), speak: vi.fn() } });
+    vi.stubGlobal("atob", (value: string) => Buffer.from(value, "base64").toString("binary"));
+
+    const queue = new AudioPlaybackQueue(
+      { mutateAsync: synthesize },
+      { allowBrowserFallback: false, onPlaybackStarted: playbackStarted },
+    );
+    queue.enqueue({ text: "성경 친구의 새 답변이에요.", speaker: "CHILD_FRIEND", emotion: "따뜻한 격려" });
+    await new Promise(resolve => setTimeout(resolve, 25));
+
+    expect(synthesize).toHaveBeenCalledWith(expect.objectContaining({ text: "성경 친구의 새 답변이에요.", speaker: "CHILD_FRIEND" }));
+    expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "gemini" }));
+  });
+
   it("uses Web Audio for server WAV data when AudioContext is available", async () => {
     const playbackStarted = vi.fn();
     const playbackFinished = vi.fn();
@@ -206,7 +228,7 @@ describe("AudioPlaybackQueue", () => {
       { fastFallbackMs: 5, allowBrowserFallback: true, onPlaybackStarted: playbackStarted, onPlaybackError: playbackError },
     );
     queue.enqueue({ text: "서버 음성으로 다시 이어 갈게요.", speaker: "CHILD_FRIEND" });
-    await new Promise(resolve => setTimeout(resolve, 20));
+    await new Promise(resolve => setTimeout(resolve, 60));
     expect(utterances).toHaveLength(1);
     expect(playbackError).toHaveBeenCalledWith(expect.objectContaining({ code: "synthesis-failed" }));
 

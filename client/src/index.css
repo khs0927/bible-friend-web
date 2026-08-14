@@ -197,3 +197,31 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px sol
 @media (prefers-reduced-motion: reduce) {
   .bf-bottom-nav button, .bf-bottom-nav button svg { transition: none; }
 }
+
+/* Voice capture feedback: visible above the fingertip */
+.bf-voice-row { position: relative; min-height: 78px; gap: 12px; padding: 10px 6px 8px; }
+.bf-voice-row.is-pressed::before { content: ''; position: absolute; z-index: 0; left: 0; right: 56px; top: 2px; bottom: 2px; border: 2px solid rgba(239,144,122,.28); border-radius: 25px; background: rgba(255,239,231,.38); animation: bf-voice-hold-panel .9s ease-out both; pointer-events: none; }
+.bf-mic-button { position: relative; z-index: 2; width: 70px; height: 70px; flex: 0 0 70px; border-radius: 24px; box-shadow: 0 10px 21px rgba(239,144,122,.34); transition: transform .14s cubic-bezier(.22,1,.36,1), box-shadow .14s ease-out; }
+.bf-mic-button:active, .bf-mic-button.pressed { transform: scale(1.13) translateY(-3px); box-shadow: 0 0 0 9px rgba(239,144,122,.17), 0 15px 26px rgba(239,144,122,.4); }
+.bf-mic-button.listening { background: linear-gradient(145deg, #df5a61, #ef907a); animation: bf-mic-hold-breathe 1.05s ease-in-out infinite; }
+.bf-mic-button.listening::before, .bf-mic-button.listening::after { content: ''; position: absolute; inset: -9px; border: 3px solid rgba(239,144,122,.45); border-radius: 29px; animation: bf-mic-ripple 1.6s ease-out infinite; pointer-events: none; }
+.bf-mic-button.listening::after { animation-delay: .8s; }
+.bf-mic-pulse-label { position: absolute; right: -8px; bottom: -8px; display: grid; place-items: center; min-width: 35px; height: 25px; padding: 0 6px; border: 3px solid #fffaf4; border-radius: 99px; color: #fff; background: #df5a61; font-family: 'Gowun Dodum', sans-serif; font-size: 10px; font-weight: 900; box-shadow: 0 5px 10px rgba(81,68,158,.2); }
+.bf-mic-hint { position: relative; z-index: 1; min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 3px; color: #756b84; font-family: 'Gowun Dodum', sans-serif; }
+.bf-mic-hint strong { color: #564b8e; font-size: 14px; font-weight: 900; line-height: 1.35; }
+.bf-mic-hint small { color: #a08fa0; font-size: 11px; line-height: 1.45; }
+.bf-mic-hint.is-listening strong { color: #d65f66; animation: bf-listening-text 1s ease-in-out infinite alternate; }
+.bf-voice-row .bf-text-send { position: relative; z-index: 2; width: 42px; height: 42px; flex: 0 0 42px; }
+@keyframes bf-mic-hold-breathe { 0%,100% { transform: scale(1.04); } 50% { transform: scale(1.14); } }
+@keyframes bf-mic-ripple { 0% { opacity: .75; transform: scale(.82); } 100% { opacity: 0; transform: scale(1.42); } }
+@keyframes bf-voice-hold-panel { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
+@keyframes bf-listening-text { from { opacity: .7; } to { opacity: 1; } }
+@media (max-width: 390px) {
+  .bf-mic-button { width: 66px; height: 66px; flex-basis: 66px; }
+  .bf-mic-hint strong { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-mic-button.listening, .bf-mic-button.listening::before, .bf-mic-button.listening::after, .bf-mic-hint.is-listening strong { animation: none; }
+}
+
+.bf-mic-button { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

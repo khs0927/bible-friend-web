@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { publicProcedure, router } from "./_core/trpc";
 import { getVoiceProfiles, synthesizeSpeech } from "./_core/tts";
+import { transcribeAudio } from "./_core/voiceTranscription";
 import {
   BIBLE_STORIES,
   QUIZ_BANK,
@@ -142,6 +143,18 @@ export const appRouter = router({
       await updateUserScore(ctx.user.id, score);
       return { score, saved: true };
     }),
+  }),
+  voice: router({
+    transcribe: publicProcedure
+      .input(z.object({
+        audioDataUrl: z.string().max(22_000_000),
+        language: z.string().max(8).default("ko"),
+      }))
+      .mutation(async ({ input }) => transcribeAudio({
+        audioUrl: input.audioDataUrl,
+        language: input.language,
+        prompt: "어린이가 한국어로 말한 성경 질문을 정확하고 자연스러운 문장으로 받아 적어 주세요.",
+      })),
   }),
   tts: router({
     profiles: publicProcedure.query(() => getVoiceProfiles()),

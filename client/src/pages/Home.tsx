@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AudioPlaybackQueue, type TTSMutation, type VoiceRequest } from "@/lib/audioPlaybackQueue";
+import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
+import { askAndSpeak, transcribeAndSend } from "@/lib/voiceConversationFlow";
 
 const FRIEND_MASCOT_URL = "/manus-storage/bible-friend-mascot_06125680.png";
 const CHAT_BACKGROUND_URL = "/manus-storage/bible-friend-chat-bg_371dab14.png";
@@ -54,6 +56,7 @@ export default function Home() {
   const scoreQuery = trpc.content.score.useQuery();
   const askMutation = trpc.ai.ask.useMutation();
   const ttsMutation = trpc.tts.synthesize.useMutation();
+  const transcribeMutation = trpc.voice.transcribe.useMutation();
   const orchestrateMutation = trpc.ai.orchestrate.useMutation();
   const addScoreMutation = trpc.game.addScore.useMutation({
     onSuccess: () => scoreQuery.refetch(),
@@ -64,12 +67,19 @@ export default function Home() {
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("ready");
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isMicPressed, setIsMicPressed] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "more" | "records">("home");
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizAnswered, setQuizAnswered] = useState(false);
   const [quizCorrect, setQuizCorrect] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<{ storyTitle: string; storyHook: string; storyLesson: string; quizQuestion: string; quizAnswer: string; encouragement: string } | null>(null);
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaChunksRef = useRef<Blob[]>([]);
+  const micPointerDownRef = useRef(false);
+  const handleSendRef = useRef<(content: string) => void>(() => undefined);
   const skipNextVoiceClickRef = useRef(false);
   const audioQueueRef = useRef<AudioPlaybackQueue | null>(null);
   const voiceReadyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,6 +117,9 @@ export default function Home() {
         setVoiceStatus(nextState.status);
         setVoiceError(nextState.error);
       },
+      // Automatic replies stay on server-generated audio only. This prevents
+      // iPhone's mechanical Web Speech voice from silently replacing Gemini.
+      allowBrowserFallback: false,
     });
   }
   const stories = storiesQuery.data ?? [];
@@ -144,21 +157,30 @@ export default function Home() {
     recognition.lang = "ko-KR";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-    recognition.onend = () => {
-      setIsListening(false);
-      skipNextVoiceClickRef.current = false;
-    };
-    recognition.onerror = () => {
-      setIsListening(false);
-      skipNextVoiceClickRef.current = false;
-    };
-    recognition.onresult = (event: any) => {
-      const text = event.results[0]?.[0]?.transcript?.trim();
-      if (text) handleSend(text);
-    };
+      recognition.onstart = () => {
+        setMicError(null);
+        setIsListening(true);
+        setIsMicPressed(true);
+      };
+      recognition.onend = () => {
+        setIsListening(false);
+        if (!micPointerDownRef.current) setIsMicPressed(false);
+        skipNextVoiceClickRef.current = false;
+      };
+      recognition.onerror = (event: any) => {
+        setIsListening(false);
+        if (!micPointerDownRef.current) setIsMicPressed(false);
+        skipNextVoiceClickRef.current = false;
+        const errorCode = event?.error;
+        setMicError(errorCode === "not-allowed" || errorCode === "service-not-allowed"
+          ? "마이크 권한이 필요해요. 브라우저 설정에서 마이크를 허용해 주세요."
+          : "음성을 듣지 못했어요. 잠시 후 다시 눌러 주세요.");
+        if (errorCode !== "not-allowed" && errorCode !== "service-not-allowed") void startMediaRecording();
+      };
+      recognition.onresult = (event: any) => {
+        const text = event.results[0]?.[0]?.transcript?.trim();
+        if (text) handleSendRef.current(text);
+      };
     recognitionRef.current = recognition;
     return () => recognition.stop();
   }, []);
@@ -180,43 +202,123 @@ export default function Home() {
     const nextMessages: Message[] = [...messages, { role: "user", content: question }];
     setMessages(nextMessages);
     try {
-      const result = await askMutation.mutateAsync({ question, storyId: selectedStoryContext });
-      setMessages(current => [...current, { role: "assistant", content: result.answer }]);
-      speakText({ text: result.answer, speaker: "CHILD_FRIEND", emotion: "따뜻한 격려", context: selectedStory?.title });
+      const answer = await askAndSpeak({
+        input: { question, storyId: selectedStoryContext },
+        ask: input => askMutation.mutateAsync(input).then(result => result.answer),
+        speak: speakText,
+        context: selectedStory?.title,
+      });
+      setMessages(current => [...current, { role: "assistant", content: answer }]);
     } catch {
       const fallback = "잠깐 연결이 쉬어 가고 있어요. 그래도 하나님은 우리 곁에 계셔요. 조금 뒤에 다시 물어봐 줄래?";
       setMessages(current => [...current, { role: "assistant", content: fallback }]);
       speakText({ text: fallback, speaker: "CHILD_FRIEND", emotion: "안심시키는 따뜻함" });
     }
   };
+  handleSendRef.current = handleSend;
 
-  const beginListening = (fromPointer = false) => {
-    const recognition = recognitionRef.current;
-    if (!recognition) {
-      speakText({ text: "이 브라우저에서는 음성 인식을 사용할 수 없어요. 아래 글 입력창에 질문을 적어도 괜찮아요.", speaker: "CHILD_FRIEND", emotion: "친절한 안내" });
+  useEffect(() => {
+    if (!voiceEnabled) {
+      audioQueueRef.current?.cancel();
+      stopMediaRecording();
+      recognitionRef.current?.stop?.();
+      setIsListening(false);
+      setIsMicPressed(false);
+    }
+  }, [voiceEnabled]);
+
+  const stopMediaRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    mediaStreamRef.current?.getTracks().forEach(track => track.stop());
+    mediaStreamRef.current = null;
+  };
+
+  const startMediaRecording = async () => {
+    if (mediaRecorderRef.current?.state === "recording") return;
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setMicError("이 기기에서는 마이크 인식을 사용할 수 없어요. 글로 질문해 주세요.");
+      setIsListening(false);
       return;
     }
-    if (isListening || skipNextVoiceClickRef.current) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = pickRecordingMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      mediaChunksRef.current = [];
+      recorder.ondataavailable = event => { if (event.data.size > 0) mediaChunksRef.current.push(event.data); };
+      recorder.onstop = async () => {
+        const blob = new Blob(mediaChunksRef.current, { type: recorder.mimeType || mimeType || "audio/mp4" });
+        mediaRecorderRef.current = null;
+        mediaChunksRef.current = [];
+        if (blob.size < 800) {
+          setMicError("조금 더 길게 말한 뒤 다시 눌러 주세요.");
+          setIsListening(false);
+          return;
+        }
+        setMicError(null);
+        try {
+          await transcribeAndSend({
+            audioDataUrl: await blobToDataUrl(blob),
+            transcribe: input => transcribeMutation.mutateAsync(input),
+            send: handleSendRef.current,
+          });
+        } catch {
+          setMicError("음성을 글로 바꾸지 못했어요. 글로 질문해도 괜찮아요.");
+        } finally {
+          setIsListening(false);
+          setIsMicPressed(false);
+        }
+      };
+      recorder.onerror = () => {
+        setMicError("마이크를 준비하지 못했어요. 권한을 허용한 뒤 다시 눌러 주세요.");
+        mediaRecorderRef.current = null;
+        setIsListening(false);
+        if (!micPointerDownRef.current) setIsMicPressed(false);
+      };
+      recorder.start(250);
+      setMicError(null);
+      setIsListening(true);
+      setIsMicPressed(true);
+    } catch {
+      setMicError("마이크 권한이 필요해요. 브라우저 설정에서 마이크를 허용해 주세요.");
+      setIsListening(false);
+      if (!micPointerDownRef.current) setIsMicPressed(false);
+    }
+  };
+
+  const beginListening = (fromPointer = false) => {
+    if (isListening || mediaRecorderRef.current?.state === "recording" || skipNextVoiceClickRef.current) return;
+    setMicError(null);
     audioQueueRef.current?.prime();
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      skipNextVoiceClickRef.current = fromPointer;
+      void startMediaRecording();
+      return;
+    }
     skipNextVoiceClickRef.current = fromPointer;
     try {
       recognition.start();
     } catch {
       skipNextVoiceClickRef.current = false;
+      void startMediaRecording();
     }
   };
 
   const toggleListening = () => {
-    const recognition = recognitionRef.current;
-    if (!recognition) {
-      beginListening(false);
+    if (mediaRecorderRef.current?.state === "recording") {
+      stopMediaRecording();
       return;
     }
+    const recognition = recognitionRef.current;
     if (skipNextVoiceClickRef.current) {
       skipNextVoiceClickRef.current = false;
       return;
     }
-    if (isListening) recognition.stop();
+    if (recognition && isListening) recognition.stop();
     else beginListening();
   };
 
@@ -284,7 +386,7 @@ export default function Home() {
                 </div>
                 <div className="bf-chat-friend-bg" aria-hidden="true"><span>✦</span><img src={FRIEND_MASCOT_URL} alt="" /></div>
                 <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} onSpeak={speakText} onSpeakNow={speakNow} />
-                <div className="bf-voice-row"><button className={`bf-mic-button ${isListening ? "listening" : ""}`} onPointerDown={event => { if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onClick={toggleListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={19} /> : <Mic size={19} />}</button><span>{isListening ? "듣고 있어요… 천천히 말해 주세요" : "마이크를 누르고 말해 보세요"}</span><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={17} /></button></div>
+                <div className={`bf-voice-row ${isListening ? "is-listening" : ""} ${isMicPressed ? "is-pressed" : ""}`}><button className={`bf-mic-button ${isListening ? "listening" : ""} ${isMicPressed ? "pressed" : ""}`} onPointerDown={event => { try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Safari may reject synthetic capture */ } micPointerDownRef.current = true; setIsMicPressed(true); if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onTouchStart={event => { event.preventDefault(); micPointerDownRef.current = true; setIsMicPressed(true); beginListening(true); }} onPointerUp={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onPointerCancel={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onTouchEnd={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onClick={toggleListening} aria-pressed={isListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={27} /> : <Mic size={27} />}<span className="bf-mic-pulse-label">{isListening ? "듣는 중" : "말하기"}</span></button><div className={`bf-mic-hint ${isListening ? "is-listening" : ""}`}><strong>{isListening ? "지금 듣고 있어요" : "마이크를 누르고 말해 보세요"}</strong><small>{micError ?? (isListening ? "천천히 말해 주세요" : "한 번 누르면 바로 시작해요")}</small></div><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={17} /></button></div>
               </div>
             </section>
           </section>
