@@ -105,3 +105,50 @@ const cacheKey = sha256([
 [2]: https://ai.google.dev/gemini-api/docs/pricing "Gemini Developer API pricing"
 [3]: https://ai.google.dev/gemini-api/docs/billing "Gemini API Billing"
 [4]: https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-tts-preview "Gemini 3.1 Flash TTS Preview"
+
+
+## Gemini API 제한 완화를 위한 오픈소스 도구 및 패턴 조사 (2026-08-14)
+
+### 1. 주요 오픈소스 솔루션 및 아키텍처 패턴
+
+Gemini API의 429 rate-limit 및 할당량 부족 문제를 완화하기 위해 업계에서 널리 쓰이는 오픈소스 도구와 패턴은 다음과 같다.
+
+- **LiteLLM (`BerriAI/litellm`)**: OpenAI 호환 API 게이트웨이로, Gemini를 포함한 100개 이상의 LLM/TTS 공급자에 대한 통합 라우팅, 자동 Fallback, 둥근 순환(Round-robin) 키 회전, 캐싱, Rate-limit 처리를 제공한다 [BerriAI/litellm]. 오픈소스 프록시 서버 형태로 배포하여 여러 API 키나 모델 간 자동 전환을 구성할 수 있다.
+- **AI Proxy (`labring/aiproxy`)**: 고성능 AI API 프록시로 멀티테넌트 격리, 요청 캐시 플러그인, 속도 제한(Rate limiting) 관리 기능을 제공한다 [labring/aiproxy].
+- **LLM Gateway 패턴 (예: `free-llm-gateway`, 각종 오픈소스 프록시)**: 429 발생 시 다른 모델이나 공급자로 자동 Fallback을 수행하거나, 동일 요청에 대한 캐시를 먼저 확인하여 상용 API 호출 횟수를 직접 줄인다.
+
+### 2. 비공식 우회 도구에 대한 평가와 위험성
+
+일부 비공식 데스크톱 클라이언트나 비공식 우회 프록시(예: `gemini-proxy` 계열 중 웹 UI 세션을 토큰 없이 스크래핑하는 프로젝트)는 공식 API 키 대신 웹 인터페이스의 내부 세션을 악용하거나 다중 계정을 무단으로 돌려 제한을 피하려고 시도한다. 그러나 이러한 방식은 다음과 같은 치명적인 문제가 있다:
+1. **서비스 약관 위반**: Google의 서비스 약관 및 AI Studio 이용 규칙을 위반하므로 계정이 영구 정지될 위험이 크다.
+2. **세션 불안정성**: 웹 UI 구조나 인증 메커니즘이 바뀔 때마다 프록시가 즉시 먹통이 되며, 장기적인 서비스 운영이 불가능하다.
+3. **보안 취약점**: 사용자 인증 쿠키나 세션 토큰이 중간 프록시에 노출될 위험이 있다.
+
+따라서 **공식 AI Studio API 키 기반**을 유지하되, 오픈소스 게이트웨이들이 검증한 **캐싱, 지수 백오프, 다중 모델 Fallback, 회로 차단(Circuit Breaker)** 패턴을 채택하는 것이 정석이다.
+
+### 3. Bible Friend 프로젝트에 적용할 수 있는 실질적 오픈소스 아키텍처
+
+Bible Friend는 외부 무거운 프록시 서버를 별도로 띄우지 않고도, 위 오픈소스들이 공통으로 사용하는 핵심 패턴을 앱 내부에 이미 구현해 두었다.
+- **서버 내장 인메모리 캐시 + 인플라이트 중복 제거**: LiteLLM의 캐시 플러그인과 유사하게 동일 텍스트/화자의 TTS WAV를 24시간 캐싱하고, 동시에 들어온 요청은 하나의 Promise로 합쳐서(In-flight deduplication) Google API 중복 호출을 원천 차단한다.
+- **안전한 Fallback 정책**: Gemini 429 발생 시 무한 재시도하지 않고 회로를 닫은 뒤, 글 대화를 지속하면서 수동 재생에서만 선택적 Web Speech fallback을 허용한다.
+
+### 4. 신뢰할 수 있는 오픈소스 프로젝트 크레딧
+
+- **LiteLLM** (GitHub: [BerriAI/litellm](https://github.com/BerriAI/litellm)) — AI 게이트웨이, 캐싱 및 Fallback 라우팅 표준 [BerriAI/litellm].
+- **AI Proxy** (GitHub: [labring/aiproxy](https://github.com/labring/aiproxy)) — 고성능 AI API 프록시 및 캐시 플러그인 [labring/aiproxy].
+
+
+직접 확인한 GitHub 저장소 근거:
+- LiteLLM 저장소는 GitHub 화면에서 약 56.3k stars, 10.6k forks, 43k commits 규모로 표시되며 AI Gateway, 100+ API, load balancing, logging을 주요 기능으로 설명한다. 큰 규모이지만 최신 main/staging 구조와 복잡한 배포·운영 부담이 있으므로 Bible Friend에 전체 프록시를 즉시 도입하기보다는 패턴 참고 또는 별도 운영 서비스로 검토한다. URL: https://github.com/BerriAI/litellm
+- labring/aiproxy 저장소는 약 526 stars, 110 forks, 568 commits로 표시되며 OpenAI/Claude/Gemini protocol entry point, multi-channel management, multiple model, rate limiting, multi-tenant isolation을 설명한다. README에는 Redis/in-memory dual storage, SHA256 content-based key, configurable TTL, size limit을 지원하는 Cache Plugin이 명시되어 있다. URL: https://github.com/labring/aiproxy
+- 두 도구 모두 Google 프로젝트 quota 자체를 늘리지 않는다. 캐시·공급자 전환·요청 제한으로 실제 Gemini 호출 수와 장애 영향을 줄이는 게 역할이다.
+
+
+직접 확인한 자체 호스팅 TTS 근거:
+- QwenAudio/CosyVoice GitHub 페이지는 약 22.8k stars, 2.6k forks, 552 commits로 표시된다. README는 다국어 음성 생성, inference/training/deployment full-stack 능력을 설명하고, CosyVoice 3.0에서 한국어를 포함한 9개 언어를 지원하는 것으로 검색 결과에 나타난다. Apache-2.0 LICENSE가 저장소에 표시된다. URL: https://github.com/QwenAudio/CosyVoice
+- QwenLM/Qwen3-TTS GitHub 페이지는 약 12.9k stars, 1.7k forks, 13 commits로 표시된다. README는 한국어 지원, 자연어 기반 음성 설계·음성 복제·톤/속도/감정 제어, 저지연 streaming, 로컬 Web UI와 vLLM 배포를 설명한다. Apache-2.0 LICENSE가 저장소에 표시된다. 다만 저장소가 비교적 새롭고 GPU/모델 가중치·운영 서버가 필요하므로 즉시 무료 서버리스 대체재로 보기는 어렵다. URL: https://github.com/QwenLM/Qwen3-TTS
+
+
+추가로 직접 확인한 TTS 저장소:
+- RVC-Boss/GPT-SoVITS는 약 60.9k stars, 6.6k forks, 1,049 commits로 표시되고 MIT LICENSE가 표시된다. README는 한국어·다국어 추론, 약 5초 음성 기반 zero-shot TTS, 1분 데이터 기반 few-shot 학습, WebUI와 Docker/Windows/Linux/macOS 자체 호스팅을 설명한다. 음성 클로닝에는 사용자 음성 권리와 개인정보 동의가 필수이며, 어린이 서비스의 기본 화자로 사용하기보다는 승인된 성인/합성 음성 프로필에 한정해야 한다. URL: https://github.com/RVC-Boss/GPT-SoVITS
+- myshell-ai/MeloTTS는 약 7.6k stars, 1.1k forks, 94 commits로 표시되고 MIT LICENSE다. README는 한국어를 포함한 다국어, CPU 실시간 추론, Python API 및 로컬 사용을 명시한다. 유지보수 마지막 커밋이 2024-12-24로 표시되어 최신 모델보다 보수적이지만 GPU 없이 가장 현실적인 fallback 후보다. URL: https://github.com/myshell-ai/MeloTTS
