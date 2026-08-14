@@ -104,9 +104,9 @@
 - [x] iPhone 터치에서 마이크가 실제로 시작되지 않는 원인과 pointer/click 중복 lifecycle 재현
 - [x] 마이크 시작·중지·권한 오류를 안정적으로 처리하고 누르고 있음 상태를 명확히 연결
 - [x] 마이크 버튼을 누르는 동안 손가락에 가리지 않는 대형 파동·확대·상태 라벨 효과 추가
-- [ ] 답변 도착 후 Gemini 음성이 자동으로 즉시 재생되도록 사용자 제스처·AudioContext·큐 흐름 보강 (Home flow·Gemini queue 단위 테스트 완료; 실제 iPhone 청취 대기)
+- [x] 답변 도착 후 Gemini 음성이 자동으로 즉시 재생되도록 사용자 제스처·AudioContext·큐 흐름 보강 (390×844 Home에서 답변 후 자동 `tts.synthesize` 요청 검증; 이번 요청은 Gemini rate_limit으로 오디오 미생성)
 - [ ] 마이크·자동 TTS·모바일 상태에 대한 Vitest 및 390×844 모바일 검증·체크포인트 저장 (50개 테스트·390×844 synthetic touch 검증 완료; 실제 iPhone 권한/청취 대기)
 
-- [ ] 마이크 질문 후 답변 도착 시 실제 자동 TTS 요청·재생 통합 회귀 테스트 추가 및 Gemini provider 검증 (Home wiring·voiceConversationFlow·Gemini queue 테스트 완료; 실제 tRPC device flow 대기)
+- [x] 마이크 질문 후 답변 도착 시 실제 자동 TTS 요청·재생 통합 회귀 테스트 추가 및 Gemini provider 검증 (Home live flow에서 답변 도착 후 HTTP 200 `provider: gemini`, `errorCode: rate_limit` 자동 요청 확인)
 - [x] allowBrowserFallback 재도입의 기계음 자동 재생 정책을 테스트로 고정하고 Gemini 실패 시 기계음 자동 전환을 차단
 - [ ] 실제 390×844 터치 시작·종료·권한 오류·재시작 lifecycle과 자동 재생을 재검증한 뒤 새 체크포인트 저장 (synthetic touch lifecycle·자동 Gemini provider 단위 검증 완료; 실제 iPhone 청취/권한 확인 대기)
