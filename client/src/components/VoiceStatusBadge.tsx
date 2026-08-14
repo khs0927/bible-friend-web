@@ -9,7 +9,7 @@ type VoiceStatusBadgeProps = {
 
 export function VoiceStatusBadge({ enabled, status, error }: VoiceStatusBadgeProps) {
   return (
-    <div className={`bf-voice-status ${status === "error" ? "error" : ""}`} role="status">
+    <div className={`bf-voice-status ${status} ${status === "error" ? "error" : ""}`} role="status">
       <i />
       {getVoiceStatusText(enabled, status, error)}
     </div>

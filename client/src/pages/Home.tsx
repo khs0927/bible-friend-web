@@ -66,6 +66,7 @@ export default function Home() {
   const [quizCorrect, setQuizCorrect] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<{ storyTitle: string; storyHook: string; storyLesson: string; quizQuestion: string; quizAnswer: string; encouragement: string } | null>(null);
   const recognitionRef = useRef<any>(null);
+  const skipNextVoiceClickRef = useRef(false);
   const audioQueueRef = useRef<AudioPlaybackQueue | null>(null);
   const voiceReadyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   if (!audioQueueRef.current) {
@@ -139,9 +140,17 @@ export default function Home() {
     recognition.lang = "ko-KR";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      skipNextVoiceClickRef.current = false;
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      skipNextVoiceClickRef.current = false;
+    };
     recognition.onresult = (event: any) => {
       const text = event.results[0]?.[0]?.transcript?.trim();
       if (text) handleSend(text);
@@ -177,14 +186,34 @@ export default function Home() {
     }
   };
 
-  const toggleListening = () => {
+  const beginListening = (fromPointer = false) => {
     const recognition = recognitionRef.current;
     if (!recognition) {
       speakText({ text: "이 브라우저에서는 음성 인식을 사용할 수 없어요. 아래 글 입력창에 질문을 적어도 괜찮아요.", speaker: "CHILD_FRIEND", emotion: "친절한 안내" });
       return;
     }
+    if (isListening || skipNextVoiceClickRef.current) return;
+    audioQueueRef.current?.prime();
+    skipNextVoiceClickRef.current = fromPointer;
+    try {
+      recognition.start();
+    } catch {
+      skipNextVoiceClickRef.current = false;
+    }
+  };
+
+  const toggleListening = () => {
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      beginListening(false);
+      return;
+    }
+    if (skipNextVoiceClickRef.current) {
+      skipNextVoiceClickRef.current = false;
+      return;
+    }
     if (isListening) recognition.stop();
-    else recognition.start();
+    else beginListening();
   };
 
   const startQuiz = () => {
@@ -261,7 +290,7 @@ export default function Home() {
               <HomeVoiceStatus enabled={voiceEnabled} status={voiceStatus} error={voiceError} />
               <div className="bf-chat-surface">
                 <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} onSpeak={speakText} onSpeakNow={speakNow} />
-                <div className="bf-voice-row"><button className={`bf-mic-button ${isListening ? "listening" : ""}`} onClick={toggleListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={19} /> : <Mic size={19} />}</button><span>{isListening ? "듣고 있어요… 천천히 말해 주세요" : "마이크를 누르고 말해 보세요"}</span><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={16} /></button></div>
+                <div className="bf-voice-row"><button className={`bf-mic-button ${isListening ? "listening" : ""}`} onPointerDown={event => { if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onClick={toggleListening} aria-label={isListening ? "음성 인식 중지" : "마이크로 질문하기"}>{isListening ? <Loader2 className="spin" size={19} /> : <Mic size={19} />}</button><span>{isListening ? "듣고 있어요… 천천히 말해 주세요" : "마이크를 누르고 말해 보세요"}</span><button className="bf-text-send" onClick={() => document.querySelector<HTMLTextAreaElement>(".bf-chat-panel textarea")?.focus()} aria-label="글 입력으로 질문하기"><Send size={16} /></button></div>
               </div>
             </section>
 
@@ -308,7 +337,7 @@ function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow }: 
     onSendMessage(draft);
     setDraft("");
   };
-  return <div className="bf-chat-panel"><div className="bf-chat-messages" aria-live="polite">{messages.filter(message => message.role !== "system").map((message, index) => <div className={`bf-chat-message ${message.role === "user" ? "user" : "assistant"}`} key={`${message.role}-${index}`}><span className="bf-chat-avatar">{message.role === "user" ? "나" : <Sparkles size={12} />}</span><p>{message.content}</p>{message.role === "assistant" && <button onClick={() => onSpeakNow({ text: message.content, speaker: "CHILD_FRIEND", emotion: "따뜻하고 또렷한 다시 듣기" })} aria-label="이 답변 듣기"><Volume2 size={13} /></button>}</div>)}{isLoading && <div className="bf-chat-loading"><span /><span /><span /> 성경 친구가 생각하고 있어요…</div>}</div><div className="bf-chat-composer"><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder="궁금한 것을 글로 물어봐요" aria-label="성경 질문 입력" rows={1} /><button onClick={submit} disabled={!draft.trim() || isLoading} aria-label="질문 보내기"><Send size={16} /></button></div><div className="bf-chat-suggestions"><button onClick={() => onSendMessage("노아의 방주는 어떤 이야기야?")}>노아의 방주</button><button onClick={() => onSendMessage("하나님은 나를 사랑하시나요?")}>하나님의 사랑</button></div></div>;
+  return <div className="bf-chat-panel"><div className="bf-chat-messages" aria-live="polite">{messages.filter(message => message.role !== "system").map((message, index) => <div className={`bf-chat-message ${message.role === "user" ? "user" : "assistant"}`} key={`${message.role}-${index}`}><span className="bf-chat-avatar">{message.role === "user" ? "나" : <Sparkles size={12} />}</span><p>{message.content}</p>{message.role === "assistant" && <button className="bf-answer-speak" onClick={() => onSpeakNow({ text: message.content, speaker: "CHILD_FRIEND", emotion: "따뜻하고 또렷한 다시 듣기" })} aria-label="이 답변 듣기" title="Gemini 음성으로 다시 듣기"><Volume2 size={15} /></button>}</div>)}{isLoading && <div className="bf-chat-loading"><span /><span /><span /> 성경 친구가 생각하고 있어요…</div>}</div><div className="bf-chat-composer"><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder="궁금한 것을 글로 물어봐요" aria-label="성경 질문 입력" rows={1} /><button onClick={submit} disabled={!draft.trim() || isLoading} aria-label="질문 보내기"><Send size={16} /></button></div><div className="bf-chat-suggestions"><button onClick={() => onSendMessage("노아의 방주는 어떤 이야기야?")}>노아의 방주</button><button onClick={() => onSendMessage("하나님은 나를 사랑하시나요?")}>하나님의 사랑</button></div></div>;
 }
 
 function QuizPanel({ quiz, quizStarted, quizAnswered, quizCorrect, quizLoading, quizError, onStart, onAnswer, onNext, scoreLabel }: { quiz: { question: string; options: string[]; answer: number; explanation: string } | undefined; quizStarted: boolean; quizAnswered: boolean; quizCorrect: boolean; quizLoading: boolean; quizError: boolean; onStart: () => void; onAnswer: (index: number) => void; onNext: () => void; scoreLabel: string }) {
