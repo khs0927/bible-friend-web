@@ -403,6 +403,20 @@ export default function Home() {
     <div className="bf-app">
       <div className="bf-ambient bf-ambient-one" />
       <div className="bf-ambient bf-ambient-two" />
+      <AnimatePresence>
+        {newlyCollectedCard && (
+          <motion.div className="bf-confetti-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setNewlyCollectedCard(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+            <motion.div className="bf-treasure-popup" initial={{ scale: 0.5, rotate: -10, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} style={{ background: "#fff", padding: "30px", borderRadius: "24px", textAlign: "center", maxWidth: "340px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.25)", border: "3px solid #eab308", position: "relative", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+              <div style={{ position: "absolute", top: "-10px", right: "-10px", fontSize: "60px", opacity: 0.15 }}>🌟</div>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.4, 1] }} transition={{ delay: 0.1, duration: 0.5 }} style={{ fontSize: "56px", marginBottom: "12px" }}>{newlyCollectedCard.iconEmoji}</motion.div>
+              <span className="bf-kicker" style={{ color: "#d97706", fontWeight: "bold" }}>🎉 보물 카드 획득!</span>
+              <h2 style={{ fontSize: "20px", fontWeight: "bold", margin: "8px 0 6px", color: "#1f2937" }}>{newlyCollectedCard.title}</h2>
+              <p style={{ fontSize: "14px", color: "#4b5563", marginBottom: "16px" }}>{newlyCollectedCard.verse}</p>
+              <button className="bf-primary-button full" onClick={() => setNewlyCollectedCard(null)}>말씀 보물함에 담기</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <header className="bf-topbar">
         <a href="#top" className="bf-brand" aria-label="성경 친구 홈">
           <span className="bf-brand-mark"><img src={FRIEND_MASCOT_URL} alt="" /></span>
