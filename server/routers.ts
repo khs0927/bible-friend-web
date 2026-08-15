@@ -18,6 +18,8 @@ import {
   getUserScore,
   saveChatHistory,
   updateUserScore,
+  getUserTreasureCards,
+  addUserTreasureCard,
 } from "./db";
 
 const model = "gemini-2.5-flash";
@@ -52,6 +54,26 @@ export const appRouter = router({
     story: publicProcedure.input(z.object({ id: z.string() })).query(({ input }) => getStoryById(input.id)),
     quiz: publicProcedure.query(() => randomQuiz()),
     score: publicProcedure.query(async ({ ctx }) => (ctx.user ? getUserScore(ctx.user.id) : 0)),
+    treasureCards: publicProcedure.query(async ({ ctx }) => (ctx.user ? getUserTreasureCards(ctx.user.id) : [])),
+    collectCard: publicProcedure
+      .input(
+        z.object({
+          cardId: z.string(),
+          title: z.string(),
+          verse: z.string(),
+          content: z.string(),
+          category: z.enum(["story", "quiz"]),
+          iconEmoji: z.string(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) return { success: false, collected: false };
+        const collected = await addUserTreasureCard({
+          userId: ctx.user.id,
+          ...input,
+        });
+        return { success: true, collected };
+      }),
   }),
   ai: router({
     ask: publicProcedure

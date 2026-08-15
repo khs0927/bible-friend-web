@@ -1,10 +1,6 @@
 import { createHash } from "node:crypto";
 import { synthesizeWithCosyVoice } from "./cosyvoice";
 import { ENV } from "./env";
-import { storagePut } from "../storage";
-import { getDb } from "../db";
-import { audioCache as audioCacheTable } from "../../drizzle/schema";
-import { eq } from "drizzle-orm";
 
 export type BibleSpeaker =
   | "NARRATOR"
@@ -253,76 +249,63 @@ class GeminiTTSProvider implements TTSProvider {
       throw new TTSProviderError("configuration", this.name, "GEMINI_API_KEY is not configured");
     }
     const startedAt = Date.now();
-    const maxRetries = 3;
-    let attempt = 0;
-    let response: Response | undefined;
-    let bodyText = "";
-
-    while (attempt <= maxRetries) {
-      attempt++;
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-      try {
-        response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-goog-api-key": this.apiKey,
-          },
-          body: JSON.stringify({
-            model: this.model,
-            input: resolved.prompt,
-            response_format: { type: "audio" },
-            generation_config: {
-              speech_config: [{ voice: resolved.voice }],
-            },
-          }),
-          signal: controller.signal,
-        });
-        bodyText = await response.text();
-        if (response.ok) break;
-
-        const code = errorCodeFromStatus(response.status, bodyText);
-        const retryable = code === "upstream" && attempt < maxRetries;
-        if (!retryable) {
-          throw new TTSProviderError(code, this.name, `Gemini TTS returned HTTP ${response.status}`, code === "rate_limit" || code === "upstream" || code === "timeout");
-        }
-        await new Promise((resolve) => setTimeout(resolve, 30));
-      } catch (err) {
-        if (err instanceof TTSProviderError) throw err;
-        if ((err as Error)?.name === "AbortError" || attempt >= maxRetries) {
-          throw new TTSProviderError("timeout", this.name, "Gemini TTS request timed out", true);
-        }
-        await new Promise((resolve) => setTimeout(resolve, 30));
-      } finally {
-        clearTimeout(timeout);
-      }
-    }
-
-    let body: any;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      body = JSON.parse(bodyText);
-    } catch {
-      throw new TTSProviderError("upstream", this.name, "Gemini TTS returned malformed JSON", true);
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": this.apiKey,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          input: resolved.prompt,
+          response_format: { type: "audio" },
+          generation_config: {
+            speech_config: [{ voice: resolved.voice }],
+          },
+        }),
+        signal: controller.signal,
+      });
+      const bodyText = await response.text();
+      if (!response.ok) {
+        const code = errorCodeFromStatus(response.status, bodyText);
+        throw new TTSProviderError(code, this.name, `Gemini TTS returned HTTP ${response.status}`, code === "rate_limit" || code === "upstream");
+      }
+      let body: any;
+      try {
+        body = JSON.parse(bodyText);
+      } catch {
+        throw new TTSProviderError("upstream", this.name, "Gemini TTS returned malformed JSON", true);
+      }
+      const encoded =
+        body?.output_audio?.data ??
+        body?.steps
+          ?.flatMap((step: any) => (Array.isArray(step?.content) ? step.content : []))
+          ?.find((block: any) => typeof block?.data === "string")?.data;
+      if (typeof encoded !== "string" || encoded.length === 0) {
+        throw new TTSProviderError("upstream", this.name, "Gemini TTS returned no audio data", true);
+      }
+      const audio = makeWavFromPcm(Buffer.from(encoded, "base64"));
+      return {
+        audio,
+        mimeType: "audio/wav",
+        provider: this.name,
+        model: this.model,
+        voice: resolved.voice,
+        latencyMs: Date.now() - startedAt,
+        cached: false,
+      };
+    } catch (error) {
+      if (error instanceof TTSProviderError) throw error;
+      if ((error as Error)?.name === "AbortError") {
+        throw new TTSProviderError("timeout", this.name, "Gemini TTS request timed out", true);
+      }
+      throw new TTSProviderError("upstream", this.name, "Gemini TTS request failed", true);
+    } finally {
+      clearTimeout(timeout);
     }
-    const encoded =
-      body?.output_audio?.data ??
-      body?.steps
-        ?.flatMap((step: any) => (Array.isArray(step?.content) ? step.content : []))
-        ?.find((block: any) => typeof block?.data === "string")?.data;
-    if (typeof encoded !== "string" || encoded.length === 0) {
-      throw new TTSProviderError("upstream", this.name, "Gemini TTS returned no audio data", true);
-    }
-    const audio = makeWavFromPcm(Buffer.from(encoded, "base64"));
-    return {
-      audio,
-      mimeType: "audio/wav",
-      provider: this.name,
-      model: this.model,
-      voice: resolved.voice,
-      latencyMs: Date.now() - startedAt,
-      cached: false,
-    };
   }
 }
 
@@ -500,52 +483,6 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
     };
   }
 
-  // 1. Check persistent S3 Audio Cache via Database (skipped during unit tests)
-  const isTestRun = typeof process !== "undefined" && (process.env.VITEST || process.env.NODE_ENV === "test" || process.argv.some(arg => arg.includes("vitest") || arg.includes("test") || arg.includes("node_modules/.bin/vitest") || arg.includes("vitestrun")));
-  if (process.env.NODE_ENV === "test" || process.env.VITEST || (globalThis as any).__VITEST_RUN__) {
-    // skip s3 cache in test
-  } else {
-    try {
-      const db = await getDb();
-      if (db) {
-        const rows = await db.select().from(audioCacheTable).where(eq(audioCacheTable.cacheKey, key)).limit(1);
-        if (rows.length > 0) {
-          const row = rows[0];
-          const audioRes = await fetch(row.s3Url.startsWith("/") ? `http://localhost:3000${row.s3Url}` : row.s3Url);
-          if (audioRes.ok) {
-            const arrayBuf = await audioRes.arrayBuffer();
-            const audioBuf = Buffer.from(arrayBuf);
-            const result: TTSResult = {
-              audio: audioBuf,
-              mimeType: "audio/wav",
-              provider: row.provider as TTSProviderName,
-              model: row.model,
-              voice: row.voice,
-              latencyMs: 0,
-              cached: true,
-            };
-            setCached(key, result);
-            return {
-              success: true,
-              audioBase64: audioBuf.toString("base64"),
-              mimeType: "audio/wav",
-              provider: row.provider as TTSProviderName,
-              model: row.model,
-              voice: row.voice,
-              latencyMs: 0,
-              cached: true,
-              fallback: row.provider !== "gemini",
-              quotaRemaining: remainingQuota(),
-              serverResponseAt: Date.now(),
-            };
-          }
-        }
-      }
-    } catch (err) {
-      console.error("[TTS] S3 audio cache lookup error:", err);
-    }
-  }
-
   const geminiProvider = new GeminiTTSProvider();
   try {
     enforceRequest(normalized, geminiProvider.isAvailable());
@@ -574,28 +511,6 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
       const result = await provider.synthesize(normalized, resolved);
       if (result.provider === "gemini") consumeUsage(normalized.text);
       setCached(key, result);
-
-      // Persist to S3 Audio Cache asynchronously
-      try {
-        const db = await getDb();
-        if (db) {
-          const s3StorageKey = `audio-cache/${key}.wav`;
-          const upload = await storagePut(s3StorageKey, result.audio, "audio/wav");
-          await db.insert(audioCacheTable).values({
-            cacheKey: key,
-            s3Key: upload.key,
-            s3Url: upload.url,
-            provider: result.provider,
-            model: result.model,
-            voice: result.voice,
-          }).onDuplicateKeyUpdate({
-            set: { s3Key: upload.key, s3Url: upload.url },
-          });
-        }
-      } catch (uploadErr) {
-        console.error("[TTS] Failed to persist audio to S3 cache:", uploadErr);
-      }
-
       return {
         success: true,
         audioBase64: result.audio.toString("base64"),

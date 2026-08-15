@@ -1,13 +1,12 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, chatHistory, InsertChatHistory, userScores, InsertUserScore } from "../drizzle/schema";
+import { InsertUser, users, chatHistory, InsertChatHistory, userScores, InsertUserScore, userTreasureCards, InsertUserTreasureCard } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (process.env.NODE_ENV === "test" || process.env.VITEST) return null;
   if (!_db && process.env.DATABASE_URL) {
     try {
       _db = drizzle(process.env.DATABASE_URL);
@@ -113,4 +112,25 @@ export async function updateUserScore(userId: number, score: number) {
   const db = await getDb();
   if (!db) return;
   await db.insert(userScores).values({ userId, score }).onDuplicateKeyUpdate({ set: { score } });
+}
+
+export async function getUserTreasureCards(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(userTreasureCards).where(eq(userTreasureCards.userId, userId)).orderBy(desc(userTreasureCards.createdAt));
+}
+
+export async function addUserTreasureCard(card: InsertUserTreasureCard) {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const existing = await db.select().from(userTreasureCards).where(eq(userTreasureCards.userId, card.userId)).execute();
+    const alreadyExists = existing.some(c => c.cardId === card.cardId);
+    if (alreadyExists) return false;
+    await db.insert(userTreasureCards).values(card);
+    return true;
+  } catch (err) {
+    console.error("[Database] Failed to add treasure card:", err);
+    return false;
+  }
 }

@@ -46,16 +46,17 @@ export const userScores = mysqlTable("user_scores", {
 export type UserScore = typeof userScores.$inferSelect;
 export type InsertUserScore = typeof userScores.$inferInsert;
 
-export const audioCache = mysqlTable("audio_cache", {
+export const userTreasureCards = mysqlTable("user_treasure_cards", {
   id: int("id").autoincrement().primaryKey(),
-  cacheKey: varchar("cacheKey", { length: 191 }).notNull().unique(),
-  s3Key: varchar("s3Key", { length: 255 }).notNull(),
-  s3Url: text("s3Url").notNull(),
-  provider: varchar("provider", { length: 32 }).notNull(),
-  model: varchar("model", { length: 64 }).notNull(),
-  voice: varchar("voice", { length: 64 }).notNull(),
+  userId: int("userId").notNull(),
+  cardId: varchar("cardId", { length: 64 }).notNull(),
+  title: varchar("title", { length: 128 }).notNull(),
+  verse: varchar("verse", { length: 128 }).notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 32 }).notNull(), // 'story' | 'quiz'
+  iconEmoji: varchar("iconEmoji", { length: 16 }).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export type AudioCache = typeof audioCache.$inferSelect;
-export type InsertAudioCache = typeof audioCache.$inferInsert;
+export type UserTreasureCard = typeof userTreasureCards.$inferSelect;
+export type InsertUserTreasureCard = typeof userTreasureCards.$inferInsert;

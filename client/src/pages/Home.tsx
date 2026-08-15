@@ -62,8 +62,13 @@ export default function Home() {
   const addScoreMutation = trpc.game.addScore.useMutation({
     onSuccess: () => scoreQuery.refetch(),
   });
+  const treasureQuery = trpc.content.treasureCards.useQuery();
+  const collectCardMutation = trpc.content.collectCard.useMutation({
+    onSuccess: () => treasureQuery.refetch(),
+  });
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [newlyCollectedCard, setNewlyCollectedCard] = useState<{ title: string; verse: string; iconEmoji: string } | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("ready");
   const [voiceError, setVoiceError] = useState<string | null>(null);
@@ -337,7 +342,22 @@ export default function Home() {
     setQuizCorrect(correct);
     if (correct) {
       addScoreMutation.mutate({ points: 1 });
-      speakText({ text: "정답이야! 정말 멋지게 생각했어!", speaker: "CHILD_FRIEND", emotion: "기쁘고 신나는 축하" });
+      const cardPayload = {
+        cardId: `quiz-${quiz.question.slice(0, 10)}`,
+        title: "지혜의 보물 카드",
+        verse: "잠언 2:6",
+        content: quiz.explanation,
+        category: "quiz" as const,
+        iconEmoji: "🗺️",
+      };
+      collectCardMutation.mutate(cardPayload, {
+        onSuccess: (res) => {
+          if (res.collected) {
+            setNewlyCollectedCard({ title: cardPayload.title, verse: cardPayload.verse, iconEmoji: cardPayload.iconEmoji });
+          }
+        },
+      });
+      speakText({ text: "정답이야! 말씀 보물 카드를 획득했어!", speaker: "CHILD_FRIEND", emotion: "기쁘고 신나는 축하" });
     } else if (voiceEnabled) {
       speakText({ text: `괜찮아! 정답은 ${quiz.options[quiz.answer]}야. 함께 다시 알아보자.`, speaker: "CHILD_FRIEND", emotion: "다정하게 격려" });
     }
@@ -356,6 +376,21 @@ export default function Home() {
     const storyText = `${selectedStory.title}. ${selectedStory.body} ${selectedStory.lesson}`;
     setMessages(current => [...current, { role: "assistant", content: storyText }]);
     speakText({ text: storyText, speaker: "NARRATOR", emotion: "경이롭고 따뜻한 이야기", context: selectedStory.title });
+    const cardPayload = {
+      cardId: `story-${selectedStory.id}`,
+      title: selectedStory.title,
+      verse: selectedStory.verse,
+      content: selectedStory.lesson,
+      category: "story" as const,
+      iconEmoji: "✨",
+    };
+    collectCardMutation.mutate(cardPayload, {
+      onSuccess: (res) => {
+        if (res.collected) {
+          setNewlyCollectedCard({ title: cardPayload.title, verse: cardPayload.verse, iconEmoji: cardPayload.iconEmoji });
+        }
+      },
+    });
     closeStory();
   };
 
@@ -398,7 +433,7 @@ export default function Home() {
 
         {activeTab === "more" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">MORE TOGETHER</span><h1>더 많은 놀이</h1><p>성경 친구와 오늘의 이야기를 더 만들어 봐요.</p></div><section className="bf-orchestrator-card"><div><span className="bf-kicker"><Sparkles size={12} /> GEMINI ORCHESTRATOR</span><h3>오늘의 작은 콘텐츠를 새로 만들어 볼까요?</h3><p>성경 친구가 이야기와 퀴즈를 함께 준비해요.</p></div><button className="bf-secondary-button" onClick={createTodayContent} disabled={orchestrateMutation.isPending}>{orchestrateMutation.isPending ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />} 만들기</button></section>{generatedContent && <motion.section className="bf-generated-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><span className="bf-kicker">오늘 생성된 이야기</span><h3>{generatedContent.storyTitle}</h3><p>{generatedContent.storyHook}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>마음 보물</b>{generatedContent.storyLesson}</span></div><div className="bf-generated-quiz"><b>퀴즈</b><span>{generatedContent.quizQuestion}</span><small>정답: {generatedContent.quizAnswer}</small></div><p className="bf-encouragement">{generatedContent.encouragement}</p></motion.section>}</section>}
 
-        {activeTab === "records" && <section className="bf-tab-page bf-records-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 대화로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker"><BookOpen size={12} /> MY JOURNEY</span><h1>나의 기록</h1><p>성경 친구와 함께 만든 작은 순간을 모아 봐요.</p></div>{user ? <><div className="bf-records-card"><div className="bf-records-mascot"><img src={FRIEND_MASCOT_URL} alt="" /></div><div><strong>{user.name ?? "성경 친구"}님의 마음 보물</strong><span>{scoreLabel}</span></div></div><div className="bf-records-stats"><div><b>{messages.filter(message => message.role === "user").length}</b><span>나눈 질문</span></div><div><b>{messages.filter(message => message.role === "assistant").length}</b><span>친구의 답변</span></div><div><b>{score}</b><span>모은 별</span></div></div><button className="bf-primary-button full" onClick={() => { setMessages(initialMessages); setSelectedStoryId(null); setActiveTab("home"); }}><Sparkles size={15} /> 새 대화 시작하기</button></> : <div className="bf-records-empty"><div className="bf-records-mascot"><img src={FRIEND_MASCOT_URL} alt="" /></div><h2>기록을 남겨 볼까요?</h2><p>로그인하면 질문과 별을 다음에도 이어갈 수 있어요.</p><button className="bf-primary-button" onClick={() => startLogin()}>기록 저장하기 <ArrowRight size={14} /></button><button className="bf-secondary-button full" style={{ marginTop: 10 }} onClick={() => { setMessages(initialMessages); setSelectedStoryId(null); setActiveTab("home"); }}>새 대화 시작하기</button></div>}</section>}
+        {activeTab === "records" && <section className="bf-tab-page bf-records-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 대화로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker"><BookOpen size={12} /> MY JOURNEY</span><h1>나의 기록 & 보물 카드</h1><p>성경 친구와 함께 모은 말씀 보물과 작은 순간을 모아 봐요.</p></div>{user ? <><div className="bf-records-card"><div className="bf-records-mascot"><img src={FRIEND_MASCOT_URL} alt="" /></div><div><strong>{user.name ?? "성경 친구"}님의 마음 보물</strong><span>{scoreLabel}</span></div></div><div className="bf-records-stats"><div><b>{messages.filter(message => message.role === "user").length}</b><span>나눈 질문</span></div><div><b>{score}</b><span>모은 별</span></div><div><b>{treasureQuery.data?.length ?? 0}</b><span>보물 카드</span></div></div><div className="bf-treasure-section" style={{ marginTop: "20px" }}><h3>🗺️ 수집한 말씀 보물 카드</h3><div className="bf-treasure-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px", marginTop: "12px" }}>{treasureQuery.data && treasureQuery.data.length > 0 ? treasureQuery.data.map(card => <div key={card.id} className="bf-treasure-card" style={{ background: "rgba(255,255,255,0.85)", padding: "14px", borderRadius: "14px", border: "1px solid rgba(234, 179, 8, 0.4)", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}><span style={{ fontSize: "24px" }}>{card.iconEmoji}</span><h4 style={{ fontSize: "14px", fontWeight: "bold", margin: "6px 0 4px" }}>{card.title}</h4><p style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>{card.verse}</p><small style={{ fontSize: "11px", color: "#444", display: "block" }}>{card.content}</small></div>) : <p style={{ fontSize: "13px", color: "#777", gridColumn: "1 / -1", textAlign: "center", padding: "20px" }}>아직 모은 보물 카드가 없어요! 스토리나 퀴즈를 완료해 보세요.</p>}</div></div><button className="bf-primary-button full" style={{ marginTop: "20px" }} onClick={() => { setMessages(initialMessages); setSelectedStoryId(null); setActiveTab("home"); }}><Sparkles size={15} /> 새 대화 시작하기</button></> : <div className="bf-records-empty"><div className="bf-records-mascot"><img src={FRIEND_MASCOT_URL} alt="" /></div><h2>기록을 남겨 볼까요?</h2><p>로그인하면 질문과 보물 카드를 다음에도 이어갈 수 있어요.</p><button className="bf-primary-button" onClick={() => startLogin()}>기록 저장하기 <ArrowRight size={14} /></button><button className="bf-secondary-button full" style={{ marginTop: 10 }} onClick={() => { setMessages(initialMessages); setSelectedStoryId(null); setActiveTab("home"); }}>새 대화 시작하기</button></div>}</section>}
       </main>
 
       {activeTab !== "home" && <div className="bf-safe-note"><ShieldCheck size={16} /><p><b>함께 지켜요</b><br />마음이 아프거나 중요한 고민은 부모님, 선생님과 함께 이야기해요.</p></div>}

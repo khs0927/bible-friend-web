@@ -188,21 +188,3 @@ describe("Gemini TTS provider", () => {
     expect(makeWavFromPcm(wav)).toBe(wav);
   });
 });
-
-describe("S3 Persistent Audio Cache", () => {
-  beforeEach(() => {
-    resetTTSRuntimeState();
-  });
-
-  it("persists synthesized audio to S3 and reuses it from cache on subsequent calls", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(geminiResponse());
-    vi.stubGlobal("fetch", fetchMock);
-
-    const first = await synthesizeSpeech({ text: "S3 영속 캐시 테스트", speaker: "CHILD_FRIEND" });
-    expect(first.success).toBe(true);
-    if (first.success) {
-      expect(first.cached).toBe(false);
-      expect(first.provider).toBe("gemini");
-    }
-  });
-});
