@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice" role="img" aria-label="성경 친구 채팅 배경">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff7ec"/><stop offset=".48" stop-color="#fff1df"/><stop offset="1" stop-color="#f7e7ee"/></linearGradient>
+  <radialGradient id="peach"><stop stop-color="#ffbc69" stop-opacity=".55"/><stop offset="1" stop-color="#ffb56d" stop-opacity="0"/></radialGradient>
+  <radialGradient id="lav"><stop stop-color="#9571e8" stop-opacity=".33"/><stop offset="1" stop-color="#9571e8" stop-opacity="0"/></radialGradient>
+  <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb233"/><stop offset="1" stop-color="#f47f45"/></linearGradient>
+  <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a281ed"/><stop offset="1" stop-color="#7051c9"/></linearGradient>
+  <filter id="s"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#8c62c0" flood-opacity=".14"/></filter>
+</defs>
+<rect width="1080" height="1920" fill="url(#bg)"/>
+<circle cx="110" cy="210" r="245" fill="#ffe4c9" opacity=".58"/><circle cx="935" cy="160" r="210" fill="#ffe6ce" opacity=".7"/>
+<circle cx="1015" cy="740" r="250" fill="#f7dfe1" opacity=".52"/><circle cx="45" cy="1060" r="280" fill="#f7d8da" opacity=".56"/>
+<circle cx="1000" cy="1660" r="250" fill="#efe2f5" opacity=".65"/><ellipse cx="188" cy="1750" rx="250" ry="190" fill="#f1e5f7" opacity=".6"/>
+<circle cx="145" cy="145" r="180" fill="url(#peach)"/><circle cx="890" cy="440" r="210" fill="url(#lav)"/>
+<g filter="url(#s)">
+  <g transform="translate(850 300) rotate(-8)"><path d="M0 58C0 20 28 0 62 0c43 0 76 33 76 82v98c0 38-22 65-58 65-48 0-80-40-80-92V58Z" fill="url(#orange)"/><circle cx="49" cy="81" r="7" fill="#41261e"/><circle cx="87" cy="81" r="7" fill="#41261e"/><path d="M55 103c9 9 18 9 27 0" fill="none" stroke="#5b3027" stroke-width="5" stroke-linecap="round"/></g>
+  <g transform="translate(95 880) rotate(-10)"><path d="M0 62C0 24 29 0 68 0c48 0 88 37 88 87v69c0 51-35 88-86 88-43 0-70-30-70-74V62Z" fill="url(#purple)"/><circle cx="54" cy="84" r="7" fill="#34204f"/><circle cx="96" cy="84" r="7" fill="#34204f"/><path d="M60 106c10 9 20 9 30 0" fill="none" stroke="#4f3574" stroke-width="5" stroke-linecap="round"/></g>
+  <g transform="translate(800 1510) rotate(8)"><path d="M0 60C0 23 29 0 66 0c47 0 86 36 86 85v84c0 46-31 79-78 79-45 0-74-32-74-80V60Z" fill="url(#purple)"/><circle cx="53" cy="82" r="7" fill="#34204f"/><circle cx="94" cy="82" r="7" fill="#34204f"/><path d="M59 104c9 8 19 8 29 0" fill="none" stroke="#4f3574" stroke-width="5" stroke-linecap="round"/></g>
+</g>
+<g fill="#ff9f41"><circle cx="115" cy="520" r="14"/><circle cx="930" cy="1160" r="18"/><circle cx="150" cy="1510" r="12"/></g>
+<g fill="#8863db"><circle cx="872" cy="980" r="13"/><circle cx="266" cy="1335" r="10"/><circle cx="935" cy="1370" r="15"/></g>
+<g fill="#ffb257"><path d="M300 235l13 30 30 13-30 13-13 30-13-30-30-13 30-13 13-30Z"/><path d="M760 670l10 24 24 10-24 10-10 24-10-24-24-10 24-10 10-24Z"/><path d="M690 1320l9 21 21 9-21 9-9 21-9-21-21-9 21-9 9-21Z"/></g>
+<g fill="#8e68dc"><path d="M185 690l12 27 27 12-27 12-12 27-12-27-27-12 27-12 12-27Z"/><path d="M920 870l9 21 21 9-21 9-9 21-9-21-21-9 21-9 9-21Z"/></g>
+</svg>
