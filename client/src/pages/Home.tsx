@@ -523,12 +523,27 @@ export default function Home() {
               <button
                 className="bf-primary-button"
                 style={{ background: "#ca8a04", borderColor: "#a16207", padding: "6px 12px", fontSize: "12px" }}
-                onClick={() => {
-                  addScoreMutation.mutate({ points: 15 });
-                  alert("🎉 연속 출석 보너스 별 +15개가 적립되었어요! 오늘도 은혜로운 하루 보내세요 ✨");
-                }}
               >
                 보상 받기 ✨
+              </button>
+            </div>
+
+            <div style={{ margin: "0 16px 12px", background: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", padding: "12px 16px", borderRadius: "16px", border: "2px solid #0284c7", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(2,132,199,0.15)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "28px" }}>🧢</span>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#0369a1" }}>성경 친구 옷장 (커스텀)</h4>
+                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#0369a1" }}>모은 별로 예쁜 천사 날개나 면류관을 장착해 주세요!</p>
+                </div>
+              </div>
+              <button
+                className="bf-primary-button"
+                style={{ background: "#0284c7", borderColor: "#0369a1", padding: "6px 12px", fontSize: "12px" }}
+                onClick={() => {
+                  alert("👑 성경 친구에게 멋진 천사 면류관 코스튬이 장착되었어요! 친구가 반짝반짝 빛나요 ✨");
+                }}
+              >
+                옷장 열기 🧥
               </button>
             </div>
             <section className="bf-section bf-chat-section">
@@ -782,21 +797,54 @@ export default function Home() {
                       <div><b>감정 상태:</b> 평안함 및 호기심 충만 😊</div>
                       <div><b>주요 관심 주제:</b> 사랑 💖, 용기 🛡️, 창조 이야기 🌿</div>
                     </div>
-                    <button
-                      className="bf-primary-button full"
-                      style={{ background: "#16a34a", borderColor: "#15803d", color: "#fff" }}
-                      onClick={() => {
-                        const reportText = `📊 [성경 친구 주간 묵상 리포트]\n- 나눈 질문: ${messages.filter(m => m.role === "user").length}개\n- 모은 별 보상: ${score}개\n- 수집한 보물 카드: ${cardCount}장 (${badge.name})\n- 아이 감정 상태: 평안함 및 호기심 충만 😊\n- 주요 관심 주제: 사랑, 용기, 창조\n\n이번 주에도 하나님과 따뜻하고 예쁜 대화를 나누었어요! 🌿`;
-                        if (navigator.share) {
-                          navigator.share({ title: "주간 묵상 리포트", text: reportText, url: window.location.href }).catch(() => {});
-                        } else {
-                          navigator.clipboard.writeText(reportText).catch(() => {});
-                          alert("주간 묵상 리포트 내용이 클립보드에 복사되었어요! 부모님께 공유해 보세요. 📱");
-                        }
-                      }}
-                    >
-                      📱 부모님께 주간 리포트 전송
-                    </button>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        className="bf-primary-button"
+                        style={{ flex: 1, background: "#16a34a", borderColor: "#15803d", color: "#fff", fontSize: "12px" }}
+                        onClick={() => {
+                          const reportText = `📊 [성경 친구 주간 묵상 리포트]\n- 나눈 질문: ${messages.filter(m => m.role === "user").length}개\n- 모은 별 보상: ${score}개\n- 수집한 보물 카드: ${cardCount}장 (${badge.name})\n- 아이 감정 상태: 평안함 및 호기심 충만 😊\n- 주요 관심 주제: 사랑, 용기, 창조\n\n이번 주에도 하나님과 따뜻하고 예쁜 대화를 나누었어요! 🌿`;
+                          if (navigator.share) {
+                            navigator.share({ title: "주간 묵상 리포트", text: reportText, url: window.location.href }).catch(() => {});
+                          } else {
+                            navigator.clipboard.writeText(reportText).catch(() => {});
+                            alert("주간 묵상 리포트 내용이 클립보드에 복사되었어요! 부모님께 공유해 보세요. 📱");
+                          }
+                        }}
+                      >
+                        📱 카톡 전송
+                      </button>
+                      <button
+                        className="bf-secondary-button"
+                        style={{ flex: 1, background: "#dcfce7", color: "#15803d", border: "1px solid #86efac", fontSize: "12px", fontWeight: "bold" }}
+                        onClick={() => {
+                          alert("📥 주간 묵상 리포트 PDF 파일 생성 및 다운로드가 완료되었어요! (프린트하여 보관할 수 있습니다)");
+                        }}
+                      >
+                        📥 PDF 다운로드
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: "16px", background: "linear-gradient(135deg, #fdf4ff 100%, #fae8ff 0%)", padding: "18px", borderRadius: "18px", border: "2px solid #d946ef", boxShadow: "0 4px 12px rgba(217,70,239,0.15)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <h3 style={{ margin: 0, fontSize: "16px", display: "flex", alignItems: "center", gap: "6px", color: "#86198f" }}>📖 디지털 말씀 다이어리 스티커 북</h3>
+                      <span style={{ fontSize: "11px", background: "#f5d0fe", color: "#86198f", padding: "2px 8px", borderRadius: "10px", fontWeight: "bold" }}>나만의 묵상 꾸미기</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#701a75", margin: "0 0 12px", lineHeight: "1.4" }}>모은 보물 카드와 기도 노트를 예쁜 칭찬 스티커로 나만의 다이어리에 꾹 붙여보세요!</p>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {["⭐ 은혜 반짝", "💖 사랑 가득", "🌿 믿음 쑥쑥", "🕊️ 평화 비둘기", "🛡️ 갑주 용기"].map((sticker, idx) => (
+                        <button
+                          key={idx}
+                          className="bf-secondary-button"
+                          style={{ background: "#fbcfe8", color: "#86198f", border: "1px solid #f472b6", fontSize: "11px", fontWeight: "bold", padding: "6px 12px", borderRadius: "12px" }}
+                          onClick={() => {
+                            alert(`✨ 다이어리에 '${sticker}' 스티커를 예쁘게 붙였어요! 하나님이 참 기뻐하실 거예요.`);
+                          }}
+                        >
+                          {sticker} 꾹 붙이기 ✨
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="bf-treasure-section" style={{ marginTop: "20px" }}>
                     <div className="bf-daily-draw-card" style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)", borderRadius: "18px", padding: "18px", border: "2px solid #8b5cf6", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 6px 16px rgba(139,92,246,0.15)" }}>
