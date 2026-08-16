@@ -485,7 +485,84 @@ export default function Home() {
 
         {activeTab === "stories" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">STORY GARDEN</span><h1>성경 이야기 정원</h1><p>마음에 닿는 이야기를 골라 천천히 만나 보세요.</p></div><div className="bf-story-grid">{stories.map(story => <button key={story.id} className={`bf-story-card ${story.accent}`} onClick={() => openStory(story.id)}><div className="bf-story-art"><img src={story.imageUrl} alt="" /><span>✨</span></div><div className="bf-story-copy"><strong>{story.title}</strong><span>{story.subtitle}</span><small>이야기 열기 <ArrowRight size={11} /></small></div></button>)}</div></section>}
 
-        {activeTab === "game" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">PLAY & LEARN</span><h1>말씀 보물찾기</h1><p>한 문제씩 풀며 말씀 속 보물을 찾아요.</p></div><QuizPanel quiz={quiz} quizStarted={quizStarted} quizAnswered={quizAnswered} quizCorrect={quizCorrect} quizLoading={quizQuery.isLoading} quizError={quizQuery.isError} onStart={startQuiz} onAnswer={answerQuiz} onNext={nextQuiz} scoreLabel={scoreLabel} /> </section>}
+        {activeTab === "game" && (() => {
+          const [miniGameStarted, setMiniGameStarted] = useState(false);
+          const [cardIndex, setCardIndex] = useState(0);
+          const [matchedCount, setMatchedCount] = useState(0);
+          const [gameDone, setGameDone] = useState(false);
+          const gameCards = [
+            { title: "사랑의 선물", verse: "요한복음 3:16", hint: "하나님이 세상을 이처럼 사랑하사..." },
+            { title: "두려움 없는 용기", verse: "여호수아 1:9", hint: "강하고 담대하라 두려워하지 말며..." },
+            { title: "빛나는 지혜", verse: "잠언 3:5", hint: "너는 마음을 다하여 여호와를 신뢰하고..." },
+          ];
+          const currentCard = gameCards[cardIndex];
+          const options = [currentCard.verse, "시편 23:1", "창세기 1:1", "마태복음 6:9"].sort(() => Math.random() - 0.5);
+          const [selectedOpt, setSelectedOpt] = useState<string | null>(null);
+
+          return (
+            <section className="bf-tab-page">
+              <button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button>
+              <div className="bf-tab-title">
+                <span className="bf-kicker">TREASURE MATCH</span>
+                <h1>보물 카드 짝맞추기 미니게임</h1>
+                <p>수집한 보물 카드의 성경 구절과 힌트를 맞춰보세요!</p>
+              </div>
+              {!miniGameStarted ? (
+                <div style={{ textAlign: "center", padding: "30px 20px", background: "rgba(255,255,255,0.9)", borderRadius: "20px", border: "2px solid #ddd" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "12px" }}>🧩</div>
+                  <h3>보물 카드 맞추기 놀이</h3>
+                  <p style={{ fontSize: "13px", color: "#666", marginBottom: "20px" }}>설명을 읽고 알맞은 성경 구절을 찾아 별 보상을 받아요!</p>
+                  <button className="bf-primary-button" onClick={() => { setMiniGameStarted(true); setCardIndex(0); setMatchedCount(0); setGameDone(false); setSelectedOpt(null); }}>게임 시작하기 🚀</button>
+                </div>
+              ) : gameDone ? (
+                <div style={{ textAlign: "center", padding: "30px 20px", background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", borderRadius: "20px", border: "2px solid #ca8a04" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "12px" }}>🎉</div>
+                  <h3>짝맞추기 성공!</h3>
+                  <p style={{ fontSize: "14px", color: "#713f12", marginBottom: "20px" }}>모든 보물 카드 짝을 멋지게 맞췄어요! 별 +30개 획득!</p>
+                  <button className="bf-primary-button" onClick={() => { addScoreMutation.mutate({ points: 30 }); setMiniGameStarted(false); }} style={{ background: "#ca8a04", borderColor: "#a16207" }}>보상 받고 홈으로 🌟</button>
+                </div>
+              ) : (
+                <div style={{ background: "white", padding: "24px", borderRadius: "20px", border: "2px solid #8b5cf6", boxShadow: "0 8px 20px rgba(139,92,246,0.1)" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "bold", color: "#7c3aed" }}>문제 {cardIndex + 1} / {gameCards.length}</span>
+                  <h3 style={{ fontSize: "18px", color: "#4c1d95", margin: "8px 0 4px" }}>{currentCard.title}</h3>
+                  <p style={{ fontSize: "14px", color: "#374151", background: "#f3e8ff", padding: "12px", borderRadius: "12px", marginBottom: "16px" }}>"{currentCard.hint}"</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {options.map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setSelectedOpt(opt);
+                          if (opt === currentCard.verse) {
+                            setTimeout(() => {
+                              setSelectedOpt(null);
+                              if (cardIndex + 1 < gameCards.length) {
+                                setCardIndex(c => c + 1);
+                              } else {
+                                setGameDone(true);
+                              }
+                            }, 800);
+                          }
+                        }}
+                        style={{
+                          padding: "12px 16px",
+                          borderRadius: "12px",
+                          border: selectedOpt === opt ? (opt === currentCard.verse ? "2px solid #10b981" : "2px solid #ef4444") : "1px solid #d1d5db",
+                          background: selectedOpt === opt ? (opt === currentCard.verse ? "#d1fae5" : "#fee2e2") : "#faf5ff",
+                          fontWeight: "bold",
+                          color: "#4c1d95",
+                          cursor: "pointer",
+                          textAlign: "left"
+                        }}
+                      >
+                        {opt} {selectedOpt === opt && (opt === currentCard.verse ? " ✅ 맞았어요!" : " ❌ 다시 생각해보세요!")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          );
+        })()}
 
         {activeTab === "more" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">MORE TOGETHER</span><h1>더 많은 놀이</h1><p>성경 친구와 오늘의 이야기를 더 만들어 봐요.</p></div><section className="bf-orchestrator-card"><div><span className="bf-kicker"><Sparkles size={12} /> GEMINI ORCHESTRATOR</span><h3>오늘의 작은 콘텐츠를 새로 만들어 볼까요?</h3><p>성경 친구가 이야기와 퀴즈를 함께 준비해요.</p></div><button className="bf-secondary-button" onClick={createTodayContent} disabled={orchestrateMutation.isPending}>{orchestrateMutation.isPending ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />} 만들기</button></section>{generatedContent && <motion.section className="bf-generated-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><span className="bf-kicker">오늘 생성된 이야기</span><h3>{generatedContent.storyTitle}</h3><p>{generatedContent.storyHook}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>마음 보물</b>{generatedContent.storyLesson}</span></div><div className="bf-generated-quiz"><b>퀴즈</b><span>{generatedContent.quizQuestion}</span><small>정답: {generatedContent.quizAnswer}</small></div><p className="bf-encouragement">{generatedContent.encouragement}</p></motion.section>}</section>}
 
@@ -516,6 +593,21 @@ export default function Home() {
                   <div className="bf-records-card">
                     <div className="bf-records-mascot"><img src={FRIEND_MASCOT_URL} alt="" /></div>
                     <div><strong>{user.name ?? "성경 친구"}님의 마음 보물</strong><span>{scoreLabel}</span></div>
+                    <button
+                      className="bf-secondary-button"
+                      onClick={() => {
+                        const shareCardText = `🌟 [성경 친구 - 가족 공유 묵상] 오늘 우리 아이와 함께 나눈 말씀 보물과 기도를 전해요! 📖 함께 사랑을 나누어요 ✨`;
+                        if (navigator.share) {
+                          navigator.share({ title: "가족 묵상 카드", text: shareCardText, url: window.location.href }).catch(() => {});
+                        } else {
+                          navigator.clipboard.writeText(shareCardText).catch(() => {});
+                          alert("가족 공유 묵상 카드 문구가 클립보드에 복사되었어요! 가족 단톡방에 공유해 보세요. 👨‍👩‍👧‍👦");
+                        }
+                      }}
+                      style={{ marginLeft: "auto", padding: "6px 12px", fontSize: "11px", background: "#fef08a", color: "#854d0e", border: "1px solid #ca8a04", borderRadius: "8px", fontWeight: "bold" }}
+                    >
+                      💌 가족 묵상 공유
+                    </button>
                   </div>
                   <div className="bf-records-stats">
                     <div><b>{messages.filter(message => message.role === "user").length}</b><span>나눈 질문</span></div>
@@ -601,7 +693,28 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="bf-prayer-section" style={{ marginTop: "24px", background: "rgba(255,255,255,0.9)", padding: "18px", borderRadius: "18px", border: "1px solid rgba(124, 58, 237, 0.3)", boxShadow: "0 4px 12px rgba(0,0,0,0.04)" }}>
-                    <h3 style={{ margin: "0 0 6px", display: "flex", alignItems: "center", gap: "6px" }}><MessageCircleHeart size={18} color="#7c3aed" /> 나만의 기도 노트</h3>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "6px" }}><MessageCircleHeart size={18} color="#7c3aed" /> 나만의 기도 노트</h3>
+                      <button
+                        className="bf-secondary-button"
+                        onClick={async () => {
+                          if (!("Notification" in window)) {
+                            alert("이 브라우저는 알림 기능을 지원하지 않아요.");
+                            return;
+                          }
+                          const perm = await Notification.requestPermission();
+                          if (perm === "granted") {
+                            alert("아침/저녁 말씀 알림이 켜졌어요! 🔔");
+                            new Notification("성경 친구 🔔", { body: "오늘도 하나님과 따뜻한 대화를 나누어 볼까요?" });
+                          } else {
+                            alert("알림 권한이 거부되었거나 지원되지 않습니다.");
+                          }
+                        }}
+                        style={{ padding: "6px 10px", fontSize: "11px", background: "#f3e8ff", color: "#7c3aed", border: "1px solid #d8b4fe", borderRadius: "8px" }}
+                      >
+                        🔔 말씀 알림 켜기
+                      </button>
+                    </div>
                     <p style={{ fontSize: "12px", color: "#666", margin: "0 0 12px" }}>성경 친구와 대화하며 느낀 감동이나 하나님께 드리고 싶은 기도를 적어보세요.</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "14px" }}>
                       <input
