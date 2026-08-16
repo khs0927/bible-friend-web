@@ -36,7 +36,7 @@ client/src/
     └── comic-adventure.css     # 모바일 우선 게임 레이아웃
 ```
 
-프로토타입은 `/comic-adventure` 경로에서 기존 Home/Game 상태와 분리해 검증합니다. 안정화 후 기존 `게임` 탭에서 이 경로 또는 공용 컴포넌트로 진입시킵니다.
+프로토타입은 `/comic-adventure` 경로에서 기존 Home/Game 상태와 분리해 검증합니다. 홈에는 코믹 어드벤처 진입 버튼이 연결되어 있습니다.
 
 ## 아트 파이프라인
 
@@ -44,11 +44,32 @@ client/src/
 ChatGPT-controlled generation
   → visual QA / character consistency
   → approved master image
-  → resize & compression
+  → AppDeploy Storage staging
+  → same-origin validated asset proxy
+  → optional resize & compression
   → optional Figma/Canva layout edit
-  → repository-owned asset
+  → repository-owned master asset (final target)
   → React game scene
 ```
+
+### 현재 런타임 자산 경로
+
+클라이언트는 Adobe/생성 서비스의 임시 URL을 직접 사용하지 않습니다.
+
+```text
+/api/comic-assets/scene1
+/api/comic-assets/scene2
+```
+
+배포 PR #3의 서버 프록시가 위 경로를 받아 다음 순서로 처리합니다.
+
+1. `scene1`, `scene2` 승인 키만 허용
+2. AppDeploy Asset Bridge에서 최신 signed storage URL 조회
+3. URL이 정확한 HTTPS AppDeploy S3 storage host인지 검증
+4. 검증된 경우에만 307 redirect
+5. 임의 URL proxy는 허용하지 않음
+
+장기 목표는 승인된 PNG/WebP를 저장소에 직접 보관하는 것입니다. 이때 에피소드 데이터의 URL 상수만 repository-owned 경로로 교체하면 됩니다.
 
 ### 역할 분리
 
@@ -61,9 +82,19 @@ ChatGPT-controlled generation
 
 원본 이미지 생성 권한을 외부 디자인 툴에 위임하지 않고, 디자인 툴은 후처리와 레이아웃에 사용합니다.
 
+## 보상 저장
+
+`믿음의 망치`는 기존 성경 친구의 보물함/점수 시스템과 연결되어 있습니다.
+
+- 로그인 사용자만 영구 저장
+- treasure card가 처음 수집될 때만 `+20점`
+- 이미 수집한 동일 카드는 다시 점수를 지급하지 않음
+- 저장 후 score / treasureCards query cache 갱신
+- 비로그인 사용자는 에피소드 플레이와 완료는 가능하지만 보상 영구 저장은 생략
+
 ## 자산 규칙
 
-프로덕션 승인 이미지의 목표 경로:
+프로덕션 승인 이미지의 최종 목표 경로:
 
 ```text
 client/public/comic-assets/
@@ -78,7 +109,7 @@ client/public/comic-assets/
         └── faith-hammer.webp
 ```
 
-파일명은 영문 kebab-case, UI 문구는 코드/콘텐츠 데이터에 둡니다. 생성 서비스의 임시 URL은 프로토타입에서만 허용합니다.
+파일명은 영문 kebab-case, UI 문구는 코드/콘텐츠 데이터에 둡니다.
 
 ## 이미지 QA 체크
 
@@ -95,15 +126,23 @@ client/public/comic-assets/
 
 ## 현재 vertical slice
 
-`client/src/game/comicAdventure.ts`의 `NOAH_EPISODE`가 최초 구현입니다. 현재 첫 장면 이미지는 생성 서비스의 프로토타입 URL을 사용하며, 프로덕션 병합 전 저장소 자산으로 교체합니다.
+`client/src/game/comicAdventure.ts`의 `NOAH_EPISODE`가 최초 구현입니다.
+
+현재 완료된 항목:
+
+- 장면 01 방주 제작 장면 생성/검수
+- 장면 02 망치·밧줄·나무 탐색 장면 생성/검수
+- 같은 도메인의 안정된 아트 URL로 전환
+- 동물 자기 자신 매칭 방지
+- `믿음의 망치` 보상과 기존 점수/보물함 연결
+- Vercel Preview production build 통과
+- 서버 아트 프록시 allowlist/host guard 테스트 통과
 
 ## 다음 구현 순서
 
-1. Noah Character Bible 생성 및 승인
-2. 장면 01 master art 저장소 동기화
-3. 장면 02–04 전용 이미지 생성
-4. 보물 카드 아트 생성
-5. `pnpm check` + `pnpm test` + 모바일 브라우저 검증
-6. 기존 Home 게임 탭에 `코믹 어드벤처 시작` 진입점 추가
-7. 진행도/보상 저장을 기존 tRPC/DB 게임 상태와 연결
-8. 노아 에피소드 완성 후 다윗/다니엘/에스더 에피소드로 데이터만 확장
+1. Noah Character Bible 최종본 승인
+2. 모바일 390px 실제 브라우저 플레이 QA
+3. 장면 03–04 전용 이미지 생성
+4. `믿음의 망치` 보물 카드 전용 아트 생성
+5. 승인 아트를 repository-owned PNG/WebP로 최종 이전
+6. 노아 에피소드 완성 후 다윗/다니엘/에스더 에피소드로 데이터 기반 확장
