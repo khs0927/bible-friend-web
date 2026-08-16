@@ -501,51 +501,82 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
-      <header className="bf-topbar">
+      <header className="bf-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <a href="#top" className="bf-brand" aria-label="성경 친구 홈">
           <span className="bf-brand-mark"><img src={FRIEND_MASCOT_URL} alt="" /></span>
           <span><strong>성경 친구</strong></span>
         </a>
-        <p className="bf-top-copy">궁금한 건 뭐든 성경친구에게 물어봐요</p>
+        <button
+          className="bf-secondary-button"
+          style={{ background: "#fef08a", color: "#854d0e", border: "1px solid #ca8a04", fontSize: "12px", fontWeight: "bold", padding: "6px 12px", borderRadius: "14px" }}
+          onClick={() => {
+            const rewardModal = document.getElementById("bf-reward-wardrobe-modal");
+            if (rewardModal) rewardModal.style.display = "flex";
+          }}
+        >
+          🎁 보상·옷장 🧥
+        </button>
       </header>
+
+      <div id="bf-reward-wardrobe-modal" style={{ display: "none", position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, justifyContent: "center", alignItems: "center", padding: "16px" }}>
+        <div style={{ background: "#fff", width: "100%", maxWidth: "380px", borderRadius: "24px", padding: "20px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)", position: "relative", maxHeight: "85vh", overflowY: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "18px", color: "#713f12" }}>🎁 보상 및 성경 친구 옷장</h3>
+            <button
+              style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#666" }}
+              onClick={() => {
+                const modal = document.getElementById("bf-reward-wardrobe-modal");
+                if (modal) modal.style.display = "none";
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div style={{ marginBottom: "16px", background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", padding: "14px", borderRadius: "16px", border: "2px solid #ca8a04" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "24px" }}>🔥</span>
+              <div>
+                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#713f12" }}>3일 연속 출석 보상!</h4>
+                <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#854d0e" }}>매일 방문하고 보너스 별 +15개 받기</p>
+              </div>
+            </div>
+            <button
+              className="bf-primary-button full"
+              style={{ background: "#ca8a04", borderColor: "#a16207", fontSize: "12px", padding: "8px" }}
+              onClick={() => {
+                addScoreMutation.mutate({ points: 15 });
+                alert("🎉 연속 출석 보너스 별 +15개가 적립되었어요!");
+              }}
+            >
+              출석 보상 받기 ✨
+            </button>
+          </div>
+
+          <div style={{ background: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", padding: "14px", borderRadius: "16px", border: "2px solid #0284c7" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "24px" }}>🧢</span>
+              <div>
+                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#0369a1" }}>성경 친구 옷장 (코스튬)</h4>
+                <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#0369a1" }}>천사 날개와 면류관 장착하기</p>
+              </div>
+            </div>
+            <button
+              className="bf-primary-button full"
+              style={{ background: "#0284c7", borderColor: "#0369a1", fontSize: "12px", padding: "8px" }}
+              onClick={() => {
+                alert("👑 성경 친구에게 멋진 천사 면류관 코스튬이 장착되었어요!");
+              }}
+            >
+              옷장 코스튬 장착하기 🧥
+            </button>
+          </div>
+        </div>
+      </div>
 
       <main id="top" className="bf-main">
         {activeTab === "home" && (
           <section className="bf-home-screen">
-            <div style={{ margin: "0 16px 12px", background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", padding: "12px 16px", borderRadius: "16px", border: "2px solid #ca8a04", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(202,138,4,0.15)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "28px" }}>🔥</span>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#713f12" }}>3일 연속 출석 보상!</h4>
-                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#854d0e" }}>매일 방문하고 보너스 별 +15개와 특별 카드를 받으세요.</p>
-                </div>
-              </div>
-              <button
-                className="bf-primary-button"
-                style={{ background: "#ca8a04", borderColor: "#a16207", padding: "6px 12px", fontSize: "12px" }}
-              >
-                보상 받기 ✨
-              </button>
-            </div>
-
-            <div style={{ margin: "0 16px 12px", background: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", padding: "12px 16px", borderRadius: "16px", border: "2px solid #0284c7", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(2,132,199,0.15)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "28px" }}>🧢</span>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#0369a1" }}>성경 친구 옷장 (커스텀)</h4>
-                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#0369a1" }}>모은 별로 예쁜 천사 날개나 면류관을 장착해 주세요!</p>
-                </div>
-              </div>
-              <button
-                className="bf-primary-button"
-                style={{ background: "#0284c7", borderColor: "#0369a1", padding: "6px 12px", fontSize: "12px" }}
-                onClick={() => {
-                  alert("👑 성경 친구에게 멋진 천사 면류관 코스튬이 장착되었어요! 친구가 반짝반짝 빛나요 ✨");
-                }}
-              >
-                옷장 열기 🧥
-              </button>
-            </div>
             <section className="bf-section bf-chat-section">
               <div className="bf-chat-surface bf-chat-surface-art" style={{ backgroundImage: `url(${CHAT_BACKGROUND_URL})` }}>
                 <div className="bf-chat-utility">
