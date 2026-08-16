@@ -134,6 +134,43 @@ export const appRouter = router({
         }
         return { answer, model, saved: Boolean(ctx.user) };
       }),
+    suggestPrayerVerse: publicProcedure
+      .input(z.object({ prayerText: z.string().min(1).max(300) }))
+      .mutation(async ({ input }) => {
+        try {
+          const response = await invokeLLM({
+            model,
+            messages: [
+              { role: "system", content: "너는 어린이 성경 친구야. 아이가 적은 기도 내용을 읽고 그 마음에 꼭 어울리는 성경 구절과 따뜻한 위로 한마디를 JSON으로 추천해 줘." },
+              { role: "user", content: `기도 내용: "${input.prayerText}"` },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "prayer_suggestion",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    verseRef: { type: "string" },
+                    verseText: { type: "string" },
+                    encouragement: { type: "string" },
+                  },
+                  required: ["verseRef", "verseText", "encouragement"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+          const raw = readLLMText(response.choices?.[0]?.message?.content);
+          if (raw) return JSON.parse(raw);
+        } catch {}
+        return {
+          verseRef: "시편 23:1",
+          verseText: "여호와는 나의 목자시니 내게 부족함이 없으리로다",
+          encouragement: "하나님은 언제나 네 곁에서 따뜻하게 안아주신단다. 힘내렴!",
+        };
+      }),
     history: publicProcedure.query(async ({ ctx }) => {
       if (!ctx.user) return [];
       return getChatHistory(ctx.user.id, 30);

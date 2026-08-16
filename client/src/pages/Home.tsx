@@ -89,6 +89,7 @@ export default function Home() {
       }
     }
   });
+  const suggestPrayerVerseMutation = trpc.ai.suggestPrayerVerse.useMutation();
   const [newPrayerText, setNewPrayerText] = useState("");
   const [newPrayerVerse, setNewPrayerVerse] = useState("");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -885,10 +886,31 @@ export default function Home() {
                         rows={2}
                         style={{ padding: "10px 12px", borderRadius: "10px", border: "1px solid #d1d5db", fontSize: "13px", outline: "none", resize: "none" }}
                       />
-                      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", flexWrap: "wrap" }}>
                         <button
                           className="bf-secondary-button"
-                          style={{ background: "#f3e8ff", color: "#7c3aed", border: "1px solid #d8b4fe", fontSize: "12px", fontWeight: "bold", padding: "8px 12px", borderRadius: "10px" }}
+                          style={{ background: "#fef08a", color: "#854d0e", border: "1px solid #ca8a04", fontSize: "11px", fontWeight: "bold", padding: "8px 10px", borderRadius: "10px" }}
+                          onClick={async () => {
+                            if (!newPrayerText.trim()) {
+                              alert("먼저 기도 내용을 적거나 음성 녹음을 해보세요!");
+                              return;
+                            }
+                            try {
+                              const res = await suggestPrayerVerseMutation.mutateAsync({ prayerText: newPrayerText });
+                              if (res?.verseRef) {
+                                setNewPrayerVerse(res.verseRef);
+                                alert(`✨ AI 추천 구절: [${res.verseRef}] ${res.verseText}\n\n💡 ${res.encouragement}`);
+                              }
+                            } catch {
+                              alert("AI 추천을 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.");
+                            }
+                          }}
+                        >
+                          ✨ AI 기도 구절 추천
+                        </button>
+                        <button
+                          className="bf-secondary-button"
+                          style={{ background: "#f3e8ff", color: "#7c3aed", border: "1px solid #d8b4fe", fontSize: "11px", fontWeight: "bold", padding: "8px 10px", borderRadius: "10px" }}
                           onClick={() => {
                             const voicePrayers = [
                               "하나님, 오늘 하루도 친구들과 사이좋게 지내게 도와주셔서 감사해요.",
@@ -913,9 +935,9 @@ export default function Home() {
                             addPrayerNoteMutation.mutate({ noteText: newPrayerText.trim(), verseRef: newPrayerVerse.trim() || undefined });
                           }}
                           disabled={addPrayerNoteMutation.isPending}
-                          style={{ padding: "8px 16px", fontSize: "13px" }}
+                          style={{ padding: "8px 14px", fontSize: "12px" }}
                         >
-                          {addPrayerNoteMutation.isPending ? <Loader2 className="spin" size={14} /> : <Sparkles size={14} />} 기도 노트 저장 📝
+                          {addPrayerNoteMutation.isPending ? <Loader2 className="spin" size={14} /> : <Sparkles size={14} />} 기도 저장 📝
                         </button>
                       </div>
                     </div>
