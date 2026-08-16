@@ -340,3 +340,20 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px sol
   0%, 100% { transform: scale(1.05); }
   50% { transform: scale(1.15) rotate(2deg); }
 }
+
+/* Composer mic listening and status animation */
+.bf-composer-mic.is-listening {
+  background: #ef4444 !important;
+  animation: bf-composer-mic-pulse 1s ease-in-out infinite;
+  box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.25), 0 4px 12px rgba(239, 68, 68, 0.4) !important;
+  transform: scale(1.08);
+}
+.bf-composer-mic.is-speaking {
+  background: #8b5cf6 !important;
+  animation: bf-composer-mic-pulse 1.2s ease-in-out infinite;
+  box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.25), 0 4px 12px rgba(139, 92, 246, 0.4) !important;
+}
+@keyframes bf-composer-mic-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}

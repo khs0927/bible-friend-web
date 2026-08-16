@@ -1469,7 +1469,17 @@ function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow, is
       </div>
       <div className="bf-chat-composer">
         <textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder="궁금한 것을 글로 물어봐요" aria-label="성경 질문 입력" rows={1} />
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
+          {isListening && (
+            <span style={{ position: "absolute", top: "-28px", right: "0", background: "#ef4444", color: "#fff", fontSize: "11px", fontWeight: "700", padding: "2px 8px", borderRadius: "10px", boxShadow: "0 2px 6px rgba(239,68,68,0.3)", whiteSpace: "nowrap", animation: "bf-composer-mic-pulse 1s infinite" }}>
+              🔴 듣는 중...
+            </span>
+          )}
+          {isSpeaking && (
+            <span style={{ position: "absolute", top: "-28px", right: "0", background: "#8b5cf6", color: "#fff", fontSize: "11px", fontWeight: "700", padding: "2px 8px", borderRadius: "10px", boxShadow: "0 2px 6px rgba(139,92,246,0.3)", whiteSpace: "nowrap" }}>
+              🔊 말하는 중
+            </span>
+          )}
           <button
             type="button"
             className={`bf-composer-mic ${isSpeaking ? "is-speaking" : isListening ? "is-listening" : ""}`}
