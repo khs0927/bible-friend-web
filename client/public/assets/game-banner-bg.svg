@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" role="img" aria-label="성경 친구 게임 배너 배경">
+<defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0b6"/><stop offset=".5" stop-color="#ffd9a8"/><stop offset="1" stop-color="#e8d7ff"/></linearGradient>
+  <linearGradient id="o"><stop stop-color="#ffb52f"/><stop offset="1" stop-color="#f47d45"/></linearGradient>
+  <linearGradient id="p"><stop stop-color="#9b7aea"/><stop offset="1" stop-color="#6544c1"/></linearGradient>
+  <filter id="s"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#7652bd" flood-opacity=".18"/></filter>
+</defs>
+<rect width="1200" height="420" rx="54" fill="url(#g)"/>
+<circle cx="130" cy="40" r="180" fill="#fff" opacity=".3"/><circle cx="1090" cy="380" r="210" fill="#fff" opacity=".28"/>
+<g filter="url(#s)">
+ <g transform="translate(82 122)"><path d="M0 50C0 18 24 0 56 0c42 0 74 32 74 78v92c0 36-24 62-60 62-42 0-70-34-70-82V50Z" fill="url(#p)"/><circle cx="44" cy="78" r="6" fill="#34204f"/><circle cx="82" cy="78" r="6" fill="#34204f"/><path d="M50 99c9 8 18 8 27 0" fill="none" stroke="#4f3574" stroke-width="5" stroke-linecap="round"/></g>
+ <g transform="translate(1000 98)"><path d="M0 50C0 18 24 0 56 0c42 0 74 32 74 78v92c0 36-24 62-60 62-42 0-70-34-70-82V50Z" fill="url(#o)"/><circle cx="44" cy="78" r="6" fill="#4b2b1f"/><circle cx="82" cy="78" r="6" fill="#4b2b1f"/><path d="M50 99c9 8 18 8 27 0" fill="none" stroke="#5b3027" stroke-width="5" stroke-linecap="round"/></g>
+</g>
+<g fill="#ff9d3e"><path d="M252 68l12 27 27 12-27 12-12 27-12-27-27-12 27-12 12-27Z"/><circle cx="915" cy="92" r="10"/><circle cx="344" cy="332" r="12"/></g>
+<g fill="#8763d7"><path d="M884 270l10 23 23 10-23 10-10 23-10-23-23-10 23-10 10-23Z"/><circle cx="720" cy="72" r="10"/></g>
+<path d="M596 64l22 41 46 8-33 32 7 46-42-22-42 22 8-46-34-32 46-8 22-41Z" fill="#fff8dd" opacity=".95"/>
+</svg>
