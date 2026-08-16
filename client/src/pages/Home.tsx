@@ -104,6 +104,7 @@ export default function Home() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isMicPressed, setIsMicPressed] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "more" | "records">("home");
   const [treasureThemeFilter, setTreasureThemeFilter] = useState<"all" | "love" | "wisdom" | "courage">("all");
@@ -135,6 +136,7 @@ export default function Home() {
     audioQueueRef.current = new AudioPlaybackQueue(ttsMutation as TTSMutation, {
       onPlaybackStarted: info => {
         if (voiceReadyTimerRef.current) clearTimeout(voiceReadyTimerRef.current);
+        setIsSpeaking(true);
         const nextState = getVoiceStateFromPlaybackStarted(info.provider);
         setVoiceStatus(nextState.status);
         setVoiceError(nextState.error);
@@ -147,6 +149,7 @@ export default function Home() {
       },
       onPlaybackFinished: () => {
         if (voiceReadyTimerRef.current) clearTimeout(voiceReadyTimerRef.current);
+        setIsSpeaking(false);
         voiceReadyTimerRef.current = setTimeout(() => setVoiceStatus("ready"), 800);
       },
       onServerResponse: info => {
@@ -161,6 +164,7 @@ export default function Home() {
       },
       onPlaybackError: info => {
         if (voiceReadyTimerRef.current) clearTimeout(voiceReadyTimerRef.current);
+        setIsSpeaking(false);
         const nextState = getVoiceStateFromPlaybackError(info.code, info.message);
         setVoiceStatus(nextState.status);
         setVoiceError(nextState.error);
@@ -1261,7 +1265,7 @@ export default function Home() {
       </main>
 
       {activeTab !== "home" && <div className="bf-safe-note"><ShieldCheck size={16} /><p><b>함께 지켜요</b><br />마음이 아프거나 중요한 고민은 부모님, 선생님과 함께 이야기해요.</p></div>}
-      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className={`bf-nav-center ${getVoiceMicStateClass({ isListening, isPressed: isMicPressed })}`} onPointerDown={event => { try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Safari may reject synthetic capture */ } micPointerDownRef.current = true; setIsMicPressed(true); if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onTouchStart={event => { event.preventDefault(); micPointerDownRef.current = true; setIsMicPressed(true); beginListening(true); }} onPointerUp={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onPointerCancel={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onTouchEnd={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onClick={toggleListening} aria-pressed={isListening} aria-label={getVoiceMicAriaLabel(isListening)} title={getVoiceMicAriaLabel(isListening)}>{isListening ? <Loader2 className="spin" size={22} /> : <Mic size={22} />}<span className="bf-nav-mic-label">{getVoiceMicLabel({ isListening, isPressed: isMicPressed })}</span></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>게임</span></button><button className={activeTab === "records" ? "active" : ""} onClick={() => setActiveTab("records")}><BookOpen size={18} /><span>기록</span></button></nav>
+      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className={`bf-nav-center ${isSpeaking ? "is-speaking" : getVoiceMicStateClass({ isListening, isPressed: isMicPressed })}`} onPointerDown={event => { try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Safari may reject synthetic capture */ } micPointerDownRef.current = true; setIsMicPressed(true); if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onTouchStart={event => { event.preventDefault(); micPointerDownRef.current = true; setIsMicPressed(true); beginListening(true); }} onPointerUp={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onPointerCancel={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onTouchEnd={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onClick={toggleListening} aria-pressed={isListening} aria-label={isSpeaking ? "성경 친구가 말하는 중" : getVoiceMicAriaLabel(isListening)} title={isSpeaking ? "성경 친구가 말하는 중" : getVoiceMicAriaLabel(isListening)}>{isSpeaking ? <Volume2 className="spin" size={22} /> : isListening ? <Loader2 className="spin" size={22} /> : <Mic size={22} />}<span className="bf-nav-mic-label">{isSpeaking ? "말하는 중" : getVoiceMicLabel({ isListening, isPressed: isMicPressed })}</span></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>게임</span></button><button className={activeTab === "records" ? "active" : ""} onClick={() => setActiveTab("records")}><BookOpen size={18} /><span>기록</span></button></nav>
 
       <AnimatePresence>{selectedStory && <motion.div className="bf-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeStory}><motion.article className="bf-story-modal" initial={{ opacity: 0, y: 25, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: .98 }} onClick={event => event.stopPropagation()}><button className="bf-modal-close" onClick={closeStory} aria-label="닫기"><X size={17} /></button><div className={`bf-modal-art ${selectedStory.accent}`}><img src={selectedStory.imageUrl} alt="" /><span>✨</span></div><div className="bf-modal-body"><span className="bf-kicker">✦ 성경 이야기</span><h2>{selectedStory.title}</h2><p>{selectedStory.body}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>오늘의 마음 보물</b>{selectedStory.lesson}<small>{selectedStory.verse}</small></span></div><button className="bf-primary-button full" onClick={tellStory}><Volume2 size={15} /> 이야기 들려줘</button></div></motion.article></motion.div>}</AnimatePresence>
     </div>

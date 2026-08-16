@@ -315,3 +315,28 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px sol
   .bf-bottom-nav .bf-nav-center.is-listening::before,
   .bf-bottom-nav .bf-nav-center.is-listening::after { animation: none; }
 }
+
+/* Voice speaking animation for assistant audio playback */
+.bf-bottom-nav .bf-nav-center.is-speaking {
+  background: linear-gradient(145deg, #7c3aed, #8b5cf6);
+  animation: bf-nav-mic-speaking 1.2s ease-in-out infinite;
+  box-shadow: 0 0 0 10px rgba(139,92,246,0.22), 0 16px 30px rgba(139,92,246,0.45);
+}
+.bf-bottom-nav .bf-nav-center.is-speaking::before,
+.bf-bottom-nav .bf-nav-center.is-speaking::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border: 3px solid rgba(139,92,246,0.5);
+  border-radius: 31px;
+  animation: bf-nav-mic-ripple 1.5s ease-out infinite;
+  pointer-events: none;
+}
+.bf-bottom-nav .bf-nav-center.is-speaking::after { animation-delay: .75s; }
+.bf-bottom-nav .bf-nav-center.is-speaking .bf-nav-mic-label {
+  background: #7c3aed;
+}
+@keyframes bf-nav-mic-speaking {
+  0%, 100% { transform: scale(1.05); }
+  50% { transform: scale(1.15) rotate(2deg); }
+}
