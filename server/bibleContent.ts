@@ -130,6 +130,65 @@ export const QUIZ_BANK: BibleQuiz[] = [
   { id: "q-thanksgiving", question: "하나님의 은혜에 감사드리며 열매를 나누는 절기는 무엇인가요?", options: ["추수감사절", "여름방학", "운동회", "새해 첫날"], answer: 0, explanation: "한 해 동안 베풀어주신 은혜에 감사하는 추수감사절이에요." },
 ];
 
+export type BibleCharacterMission = {
+  id: string;
+  characterName: string;
+  title: string;
+  missionDesc: string;
+  question: string;
+  options: string[];
+  answer: number;
+  rewardStars: number;
+  badgeTitle: string;
+};
+
+export const BIBLE_CHARACTER_MISSIONS: BibleCharacterMission[] = [
+  {
+    id: "mission-noah",
+    characterName: "노아 할아버지",
+    title: "방주에 동물 태우기 미션",
+    missionDesc: "빗속에서 방주를 짓고 동물들을 안전하게 맞이한 노아의 순종을 배워봐요!",
+    question: "노아가 방주를 만들 때 가장 의지한 분은 누구인가요?",
+    options: ["하나님", "지나가는 이웃", "동물 친구들", "바람의 요정"],
+    answer: 0,
+    rewardStars: 20,
+    badgeTitle: "🕊️ 믿음의 방주지기"
+  },
+  {
+    id: "mission-david",
+    characterName: "다윗 왕",
+    title: "물매돌로 골리앗 이기기 미션",
+    missionDesc: "두려움을 이기고 하나님 이름으로 용기를 낸 다윗의 모험에 동참해요!",
+    question: "다윗이 골리앗 앞에 나아갈 때 붙잡은 이름은 무엇인가요?",
+    options: ["만군의 여호와 이름", "자신의 힘", "황금 칼", "바람의 힘"],
+    answer: 0,
+    rewardStars: 25,
+    badgeTitle: "🛡️ 용기 있는 다윗"
+  },
+  {
+    id: "mission-solomon",
+    characterName: "솔로몬 왕",
+    title: "하나님께 지혜 구하기 미션",
+    missionDesc: "부귀영화보다 지혜로운 마음을 구했던 솔로몬의 지혜를 퀴즈로 풀어봐요!",
+    question: "솔로몬이 하나님께 가장 먼저 구한 것은 무엇인가요?",
+    options: ["지혜로운 마음", "커다란 성", "맛있는 음식", "세상 부자"],
+    answer: 0,
+    rewardStars: 30,
+    badgeTitle: "👑 지혜의 왕관"
+  },
+  {
+    id: "mission-daniel",
+    characterName: "다니엘",
+    title: "사자굴 속 믿음 지키기 미션",
+    missionDesc: "위험한 순간에도 하나님께 하루 세 번 기도했던 다니엘의 믿음을 지켜줘요!",
+    question: "다니엘이 사자굴에 던져졌을 때 누가 지켜주었나요?",
+    options: ["하나님의 천사", "친절한 사자", "왕의 군사", "날아가는 새"],
+    answer: 0,
+    rewardStars: 30,
+    badgeTitle: "🦁 사자굴의 믿음 수호자"
+  }
+];
+
 export const CHILD_SAFE_SYSTEM_PROMPT = `너는 '성경 친구'라는 이름의 따뜻한 어린이 성경 안내자야. 모든 답변은 반드시 한국어로 작성해.
 
 답변 규칙:

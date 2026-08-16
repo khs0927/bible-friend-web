@@ -1,6 +1,7 @@
 import React from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
+import { BIBLE_CHARACTER_MISSIONS } from "../../../server/bibleContent";
 
 type Message = { role: "system" | "user" | "assistant"; content: string };
 import { trpc } from "@/lib/trpc";
@@ -623,6 +624,10 @@ export default function Home() {
         })}</div></section>}
 
         {activeTab === "game" && (() => {
+          const [activeMissionId, setActiveMissionId] = useState<string>("mission-noah");
+          const [missionSolved, setMissionSolved] = useState<Record<string, boolean>>({});
+          const currentMission = BIBLE_CHARACTER_MISSIONS.find(m => m.id === activeMissionId) || BIBLE_CHARACTER_MISSIONS[0];
+          const [missionSelectedOpt, setMissionSelectedOpt] = useState<number | null>(null);
           const gameCards = quizLevel === "toddler" ? [
             { title: "사랑의 선물", verse: "요한복음 3:16", hint: "하나님이 세상을 이처럼 사랑하사..." },
             { title: "두려움 없는 용기", verse: "여호수아 1:9", hint: "강하고 담대하라 두려워하지 말며..." },
@@ -696,6 +701,69 @@ export default function Home() {
                   챌린지 완료 🎁
                 </button>
               </div>
+              <div style={{ marginTop: "24px", background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)", padding: "16px 18px", borderRadius: "18px", border: "2px solid #059669", marginBottom: "20px", boxShadow: "0 6px 16px rgba(5,150,105,0.15)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "bold", color: "#065f46", background: "#a7f3d0", padding: "2px 8px", borderRadius: "10px" }}>🛡️ 주간 성경 인물 미션 챌린지</span>
+                  <span style={{ fontSize: "12px", fontWeight: "bold", color: "#047857" }}>클리어 보상: 별 ⭐ +{currentMission.rewardStars}개</span>
+                </div>
+                <h3 style={{ margin: "0 0 4px", fontSize: "16px", color: "#064e3b" }}>{currentMission.characterName}의 "{currentMission.title}"</h3>
+                <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#047857" }}>{currentMission.missionDesc}</p>
+                <div style={{ display: "flex", gap: "6px", marginBottom: "14px", overflowX: "auto", paddingBottom: "4px" }}>
+                  {BIBLE_CHARACTER_MISSIONS.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => { setActiveMissionId(m.id); setMissionSelectedOpt(null); }}
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: "10px",
+                        fontSize: "11px",
+                        fontWeight: "bold",
+                        whiteSpace: "nowrap",
+                        border: activeMissionId === m.id ? "2px solid #059669" : "1px solid #a7f3d0",
+                        background: activeMissionId === m.id ? "#059669" : "#fff",
+                        color: activeMissionId === m.id ? "#fff" : "#065f46",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {m.characterName} {missionSolved[m.id] ? "👑" : ""}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ background: "white", padding: "16px", borderRadius: "14px", border: "1px solid #6ee7b7" }}>
+                  <p style={{ fontSize: "14px", fontWeight: "bold", color: "#064e3b", margin: "0 0 12px" }}>Q. {currentMission.question}</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {currentMission.options.map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setMissionSelectedOpt(i);
+                          if (i === currentMission.answer) {
+                            if (!missionSolved[currentMission.id]) {
+                              setMissionSolved(prev => ({ ...prev, [currentMission.id]: true }));
+                              addScoreMutation.mutate({ points: currentMission.rewardStars });
+                              alert(`🎉 ${currentMission.characterName} 미션 성공! 칭호 [${currentMission.badgeTitle}] 획득 및 별 ⭐ +${currentMission.rewardStars}개 적립!`);
+                            }
+                          }
+                        }}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: "10px",
+                          border: missionSelectedOpt === i ? (i === currentMission.answer ? "2px solid #10b981" : "2px solid #ef4444") : "1px solid #d1d5db",
+                          background: missionSelectedOpt === i ? (i === currentMission.answer ? "#d1fae5" : "#fee2e2") : "#f9fafb",
+                          fontWeight: "bold",
+                          color: "#065f46",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          fontSize: "13px"
+                        }}
+                      >
+                        {opt} {missionSelectedOpt === i && (i === currentMission.answer ? " ✅ 정답이에요!" : " ❌ 다시 생각해보세요!")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="bf-tab-title">
                 <span className="bf-kicker">TREASURE MATCH</span>
                 <h1>보물 카드 짝맞추기 미니게임</h1>
