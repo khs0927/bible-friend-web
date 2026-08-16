@@ -1483,34 +1483,9 @@ function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow, is
           <button
             type="button"
             className={`bf-composer-mic ${isSpeaking ? "is-speaking" : isListening ? "is-listening" : ""}`}
-            onPointerDown={event => {
-              try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch {}
-              micPointerDownRef.current = true;
-              setIsMicPressed(true);
-              if (event.pointerType === "touch" || event.pointerType === "pen") {
-                event.preventDefault();
-                beginListening(true);
-              }
+            onClick={() => {
+              toggleListening();
             }}
-            onTouchStart={event => {
-              event.preventDefault();
-              micPointerDownRef.current = true;
-              setIsMicPressed(true);
-              beginListening(true);
-            }}
-            onPointerUp={() => {
-              micPointerDownRef.current = false;
-              setIsMicPressed(false);
-            }}
-            onPointerCancel={() => {
-              micPointerDownRef.current = false;
-              setIsMicPressed(false);
-            }}
-            onTouchEnd={() => {
-              micPointerDownRef.current = false;
-              setIsMicPressed(false);
-            }}
-            onClick={toggleListening}
             aria-pressed={isListening}
             aria-label={isSpeaking ? "성경 친구가 말하는 중" : getVoiceMicAriaLabel(isListening)}
             title="음성으로 질문하기"
