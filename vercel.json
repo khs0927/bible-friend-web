@@ -4,6 +4,22 @@
   "outputDirectory": "dist/public",
   "routes": [
     {
+      "src": "/manus-storage/bible-friend-mascot_06125680.png",
+      "dest": "/assets/bible-friend-mascot.svg"
+    },
+    {
+      "src": "/manus-storage/bible-friend-chat-bg_371dab14.png",
+      "dest": "/assets/bible-friend-chat-bg.svg"
+    },
+    {
+      "src": "/manus-storage/game_banner_bg_51b6ddc7.png",
+      "dest": "/assets/game-banner-bg.svg"
+    },
+    {
+      "src": "/manus-storage/game_icon_trophy_8a4e9737.png",
+      "dest": "/assets/game-icon-trophy.svg"
+    },
+    {
       "src": "/manus-storage/(.*)",
       "dest": "/api/manus-storage/$1"
     },
