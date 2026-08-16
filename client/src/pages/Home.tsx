@@ -596,6 +596,23 @@ export default function Home() {
 
           return (
             <section className="bf-tab-page">
+              <div style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)", padding: "14px 18px", borderRadius: "16px", border: "2px solid #8b5cf6", marginBottom: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(139,92,246,0.15)" }}>
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: "bold", color: "#6d28d9", display: "block", marginBottom: "2px" }}>🎯 오늘의 일일 말씀 챌린지</span>
+                  <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "bold", color: "#4c1d95" }}>매일 새로 리셋되는 보물 퀴즈</h4>
+                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#5b21b6" }}>오늘의 챌린지를 완료하고 보너스 별 +20개를 받으세요!</p>
+                </div>
+                <button
+                  className="bf-primary-button"
+                  style={{ background: "#7c3aed", borderColor: "#6d28d9", padding: "8px 14px", fontSize: "12px" }}
+                  onClick={() => {
+                    addScoreMutation.mutate({ points: 20 });
+                    alert("🌟 오늘의 일일 챌린지 완료! 보너스 별 +20개가 적립되었어요!");
+                  }}
+                >
+                  챌린지 완료 🎁
+                </button>
+              </div>
               <div className="bf-tab-title">
                 <span className="bf-kicker">TREASURE MATCH</span>
                 <h1>보물 카드 짝맞추기 미니게임</h1>
@@ -681,7 +698,7 @@ export default function Home() {
 
         {activeTab === "records" && (() => {
           const cardCount = treasureQuery.data?.length ?? 0;
-          const badge = cardCount >= 5 ? { name: "✨ 말씀 보물 왕중왕", desc: "보물 카드 5장 이상 수집 완료!" } : cardCount >= 3 ? { name: "🌟 반짝이는 제자", desc: "보물 카드 3장 이상 수집!" } : cardCount >= 1 ? { name: "🌱 새싹 탐험가", desc: "첫 번째 보물 카드 획득!" } : { name: "🧭 준비된 탐험가", desc: "스토리와 퀴즈를 시작해 보세요!" };
+          const badge = cardCount >= 8 ? { name: "👑 천국 보물 마스터", desc: "전설의 보물 카드 8장 이상 수집 완료!" } : cardCount >= 5 ? { name: "✨ 말씀 보물 왕중왕", desc: "보물 카드 5장 이상 수집 완료!" } : cardCount >= 3 ? { name: "🌟 반짝이는 제자", desc: "보물 카드 3장 이상 수집!" } : cardCount >= 1 ? { name: "🌱 새싹 탐험가", desc: "첫 번째 보물 카드 획득!" } : { name: "🧭 준비된 탐험가", desc: "스토리와 퀴즈를 시작해 보세요!" };
           const handleShare = async () => {
             const shareText = `✨ [성경 친구] 나는 성경 친구와 함께 보물 카드 ${cardCount}장(${badge.name})을 모았어요! 함께 성경 속 보물을 찾아봐요. 📖`;
             if (navigator.share) {
@@ -760,12 +777,16 @@ export default function Home() {
                       <h3 style={{ margin: 0, fontSize: "16px", color: "#166534", display: "flex", alignItems: "center", gap: "6px" }}>📊 부모님용 주간 묵상 리포트</h3>
                       <span style={{ fontSize: "11px", background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: "10px", fontWeight: "bold" }}>매주 일요일 요약</span>
                     </div>
-                    <p style={{ fontSize: "12px", color: "#15803d", margin: "0 0 12px", lineHeight: "1.4" }}>이번 주 아이가 나눈 성경 질문과 모은 보물 카드, 마음의 기도를 부모님 카카오톡이나 메시지로 간편하게 요약 전송합니다.</p>
+                    <p style={{ fontSize: "12px", color: "#15803d", margin: "0 0 10px", lineHeight: "1.4" }}>이번 주 아이가 나눈 성경 질문과 모은 보물 카드, 마음의 기도를 부모님 카카오톡이나 메시지로 간편하게 요약 전송합니다.</p>
+                    <div style={{ background: "#dcfce7", padding: "10px 12px", borderRadius: "10px", marginBottom: "12px", fontSize: "12px", color: "#166534" }}>
+                      <div><b>감정 상태:</b> 평안함 및 호기심 충만 😊</div>
+                      <div><b>주요 관심 주제:</b> 사랑 💖, 용기 🛡️, 창조 이야기 🌿</div>
+                    </div>
                     <button
                       className="bf-primary-button full"
                       style={{ background: "#16a34a", borderColor: "#15803d", color: "#fff" }}
                       onClick={() => {
-                        const reportText = `📊 [성경 친구 주간 묵상 리포트]\n- 나눈 질문: ${messages.filter(m => m.role === "user").length}개\n- 모은 별 보상: ${score}개\n- 수집한 보물 카드: ${cardCount}장 (${badge.name})\n\n이번 주에도 하나님과 따뜻하고 예쁜 대화를 나누었어요! 🌿`;
+                        const reportText = `📊 [성경 친구 주간 묵상 리포트]\n- 나눈 질문: ${messages.filter(m => m.role === "user").length}개\n- 모은 별 보상: ${score}개\n- 수집한 보물 카드: ${cardCount}장 (${badge.name})\n- 아이 감정 상태: 평안함 및 호기심 충만 😊\n- 주요 관심 주제: 사랑, 용기, 창조\n\n이번 주에도 하나님과 따뜻하고 예쁜 대화를 나누었어요! 🌿`;
                         if (navigator.share) {
                           navigator.share({ title: "주간 묵상 리포트", text: reportText, url: window.location.href }).catch(() => {});
                         } else {
