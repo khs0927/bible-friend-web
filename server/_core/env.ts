@@ -8,7 +8,7 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-  geminiTtsModel: process.env.GEMINI_TTS_MODEL ?? "gemini-3.1-flash-tts-preview",
+  geminiTtsModel: process.env.GEMINI_TTS_MODEL ?? "gemini-2.5-flash",
   geminiTtsTimeoutMs: Number(process.env.GEMINI_TTS_TIMEOUT_MS ?? 30_000),
   geminiTtsHardTimeoutMs: Number(process.env.GEMINI_TTS_HARD_TIMEOUT_MS ?? 30_000),
 };

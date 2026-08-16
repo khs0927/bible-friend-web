@@ -174,6 +174,7 @@ export default function Home() {
       },
       // Allow graceful fallback to Web Speech audio if server TTS hits rate limits or quota limits
       allowBrowserFallback: true,
+      fastFallbackMs: 400,
     });
   }
   const stories = storiesQuery.data ?? [];
