@@ -481,6 +481,21 @@ export default function Home() {
               <button className="bf-primary-button full" onClick={() => {
                 speakNow({ text: `${activeTreasureCard.title}. ${activeTreasureCard.verse}. ${activeTreasureCard.content}`, speaker: "CHILD_FRIEND", emotion: "따뜻하고 다정한 목소리" });
               }}><Volume2 size={16} /> 성경 친구 목소리로 듣기</button>
+              <button
+                className="bf-secondary-button full"
+                style={{ marginTop: "10px", background: "#fef08a", color: "#854d0e", border: "1px solid #ca8a04", fontWeight: "bold" }}
+                onClick={() => {
+                  const shareText = `🌟 [성경 친구 보물 카드] "${activeTreasureCard.title}" (${activeTreasureCard.verse})\n${activeTreasureCard.content}\n\n함께 성경 속 보물을 찾아봐요! ✨`;
+                  if (navigator.share) {
+                    navigator.share({ title: activeTreasureCard.title, text: shareText, url: window.location.href }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(shareText).catch(() => {});
+                    alert("보물 카드 내용이 클립보드에 복사되었어요! 친구에게 카드를 공유해 보세요. 💌");
+                  }
+                }}
+              >
+                💌 친구에게 카드 자랑하기
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -512,16 +527,24 @@ export default function Home() {
         {activeTab === "stories" && <section className="bf-tab-page"><div className="bf-tab-title"><span className="bf-kicker">STORY GARDEN</span><h1>성경 이야기 정원</h1><p>마음에 닿는 이야기를 골라 천천히 만나 보세요.</p></div><div className="bf-story-grid">{stories.map(story => <button key={story.id} className={`bf-story-card ${story.accent}`} onClick={() => openStory(story.id)}><div className="bf-story-art"><img src={story.imageUrl} alt="" /><span>✨</span></div><div className="bf-story-copy"><strong>{story.title}</strong><span>{story.subtitle}</span><small>이야기 열기 <ArrowRight size={11} /></small></div></button>)}</div></section>}
 
         {activeTab === "game" && (() => {
+          const [quizLevel, setQuizLevel] = useState<"toddler" | "junior" | "senior">("toddler");
           const [miniGameStarted, setMiniGameStarted] = useState(false);
           const [cardIndex, setCardIndex] = useState(0);
           const [matchedCount, setMatchedCount] = useState(0);
           const [gameDone, setGameDone] = useState(false);
-          const gameCards = [
+          const gameCards = quizLevel === "toddler" ? [
             { title: "사랑의 선물", verse: "요한복음 3:16", hint: "하나님이 세상을 이처럼 사랑하사..." },
             { title: "두려움 없는 용기", verse: "여호수아 1:9", hint: "강하고 담대하라 두려워하지 말며..." },
+          ] : quizLevel === "junior" ? [
             { title: "빛나는 지혜", verse: "잠언 3:5", hint: "너는 마음을 다하여 여호와를 신뢰하고..." },
+            { title: "다윗과 골리앗", verse: "사무엘상 17:45", hint: "너는 칼과 창으로 내게 오거니와 나는 만군의 여호와 이름으로..." },
+            { title: "착한 사마리아인", verse: "누가복음 10:27", hint: "네 마음을 다하여 주 너의 하나님을 사랑하고..." },
+          ] : [
+            { title: "믿음의 정의", verse: "히브리서 11:1", hint: "믿음은 바라는 것들의 실상이요 보이지 않는 것들의 증거니..." },
+            { title: "성령의 열매", verse: "갈라디아서 5:22", hint: "오직 성령의 열매는 사랑과 희락과 화평과..." },
+            { title: "하나님의 갑주", verse: "에베소서 6:11", hint: "마귀의 간계를 능히 대적하기 위하여 하나님의 전신 갑주를 입으라" },
           ];
-          const currentCard = gameCards[cardIndex];
+          const currentCard = gameCards[cardIndex] || gameCards[0];
           const options = [currentCard.verse, "시편 23:1", "창세기 1:1", "마태복음 6:9"].sort(() => Math.random() - 0.5);
           const [selectedOpt, setSelectedOpt] = useState<string | null>(null);
 
@@ -530,7 +553,26 @@ export default function Home() {
               <div className="bf-tab-title">
                 <span className="bf-kicker">TREASURE MATCH</span>
                 <h1>보물 카드 짝맞추기 미니게임</h1>
-                <p>수집한 보물 카드의 성경 구절과 힌트를 맞춰보세요!</p>
+                <p>연령별 난이도를 선택하고 알맞은 성경 구절을 맞춰보세요!</p>
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px", justifyContent: "center" }}>
+                {(["toddler", "junior", "senior"] as const).map(lvl => (
+                  <button
+                    key={lvl}
+                    onClick={() => { setQuizLevel(lvl); setMiniGameStarted(false); }}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      border: quizLevel === lvl ? "2px solid #7c3aed" : "1px solid #d1d5db",
+                      background: quizLevel === lvl ? "#f3e8ff" : "#fff",
+                      color: quizLevel === lvl ? "#6b21a8" : "#4b5563"
+                    }}
+                  >
+                    {lvl === "toddler" ? "👶 유아용 (쉬움)" : lvl === "junior" ? "👦 초등 저학년" : "🧑 초등 고학년 (도전)"}
+                  </button>
+                ))}
               </div>
               {!miniGameStarted ? (
                 <div style={{ textAlign: "center", padding: "30px 20px", background: "rgba(255,255,255,0.9)", borderRadius: "20px", border: "2px solid #ddd" }}>
@@ -632,6 +674,26 @@ export default function Home() {
                       style={{ marginLeft: "auto", padding: "6px 12px", fontSize: "11px", background: "#fef08a", color: "#854d0e", border: "1px solid #ca8a04", borderRadius: "8px", fontWeight: "bold" }}
                     >
                       💌 가족 묵상 공유
+                    </button>
+                  </div>
+                  <div style={{ marginTop: "16px", background: "linear-gradient(135deg, #312e81 0%, #1e1b4b 100%)", padding: "18px", borderRadius: "18px", color: "white", boxShadow: "0 4px 12px rgba(49,46,129,0.2)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                      <h3 style={{ margin: 0, fontSize: "16px", display: "flex", alignItems: "center", gap: "6px" }}>🌙 취침 전 묵상 오디오</h3>
+                      <span style={{ fontSize: "11px", background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: "10px" }}>잠들기 전 5분</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#c7d2fe", margin: "0 0 14px", lineHeight: "1.4" }}>오늘 하루를 지켜주신 하나님께 감사하며 성경 친구가 읽어주는 포근한 묵상 음성을 들어요.</p>
+                    <button
+                      className="bf-primary-button full"
+                      style={{ background: "#4338ca", borderColor: "#6366f1", color: "#fff" }}
+                      onClick={() => {
+                        speakNow({
+                          text: "오늘 하루도 순하고 예쁘게 지내줘서 참 고마워. 밤사이에 하나님의 따뜻한 품 안에서 포근하고 평안하게 코 자렴. 하나님이 늘 우리 곁에서 지켜주신단다. 사랑해.",
+                          speaker: "CHILD_FRIEND",
+                          emotion: "차분하고 다정하며 잠이 오는 자장가 톤"
+                        });
+                      }}
+                    >
+                      🌙 포근한 잠자리 묵상 듣기
                     </button>
                   </div>
                   <div className="bf-records-stats">
