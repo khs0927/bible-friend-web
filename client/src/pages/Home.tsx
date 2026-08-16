@@ -483,7 +483,7 @@ export default function Home() {
           </section>
         )}
 
-        {activeTab === "stories" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">STORY GARDEN</span><h1>성경 이야기 정원</h1><p>마음에 닿는 이야기를 골라 천천히 만나 보세요.</p></div><div className="bf-story-grid">{stories.map(story => <button key={story.id} className={`bf-story-card ${story.accent}`} onClick={() => openStory(story.id)}><div className="bf-story-art"><img src={story.imageUrl} alt="" /><span>✨</span></div><div className="bf-story-copy"><strong>{story.title}</strong><span>{story.subtitle}</span><small>이야기 열기 <ArrowRight size={11} /></small></div></button>)}</div></section>}
+        {activeTab === "stories" && <section className="bf-tab-page"><div className="bf-tab-title"><span className="bf-kicker">STORY GARDEN</span><h1>성경 이야기 정원</h1><p>마음에 닿는 이야기를 골라 천천히 만나 보세요.</p></div><div className="bf-story-grid">{stories.map(story => <button key={story.id} className={`bf-story-card ${story.accent}`} onClick={() => openStory(story.id)}><div className="bf-story-art"><img src={story.imageUrl} alt="" /><span>✨</span></div><div className="bf-story-copy"><strong>{story.title}</strong><span>{story.subtitle}</span><small>이야기 열기 <ArrowRight size={11} /></small></div></button>)}</div></section>}
 
         {activeTab === "game" && (() => {
           const [miniGameStarted, setMiniGameStarted] = useState(false);
@@ -501,7 +501,6 @@ export default function Home() {
 
           return (
             <section className="bf-tab-page">
-              <button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button>
               <div className="bf-tab-title">
                 <span className="bf-kicker">TREASURE MATCH</span>
                 <h1>보물 카드 짝맞추기 미니게임</h1>
@@ -564,7 +563,7 @@ export default function Home() {
           );
         })()}
 
-        {activeTab === "more" && <section className="bf-tab-page"><button className="bf-back-button" onClick={() => setActiveTab("home")}><ArrowLeft size={15} /> 홈으로 돌아가기</button><div className="bf-tab-title"><span className="bf-kicker">MORE TOGETHER</span><h1>더 많은 놀이</h1><p>성경 친구와 오늘의 이야기를 더 만들어 봐요.</p></div><section className="bf-orchestrator-card"><div><span className="bf-kicker"><Sparkles size={12} /> GEMINI ORCHESTRATOR</span><h3>오늘의 작은 콘텐츠를 새로 만들어 볼까요?</h3><p>성경 친구가 이야기와 퀴즈를 함께 준비해요.</p></div><button className="bf-secondary-button" onClick={createTodayContent} disabled={orchestrateMutation.isPending}>{orchestrateMutation.isPending ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />} 만들기</button></section>{generatedContent && <motion.section className="bf-generated-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><span className="bf-kicker">오늘 생성된 이야기</span><h3>{generatedContent.storyTitle}</h3><p>{generatedContent.storyHook}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>마음 보물</b>{generatedContent.storyLesson}</span></div><div className="bf-generated-quiz"><b>퀴즈</b><span>{generatedContent.quizQuestion}</span><small>정답: {generatedContent.quizAnswer}</small></div><p className="bf-encouragement">{generatedContent.encouragement}</p></motion.section>}</section>}
+        {activeTab === "more" && <section className="bf-tab-page"><div className="bf-tab-title"><span className="bf-kicker">MORE TOGETHER</span><h1>더 많은 놀이</h1><p>성경 친구와 오늘의 이야기를 더 만들어 봐요.</p></div><section className="bf-orchestrator-card"><div><span className="bf-kicker"><Sparkles size={12} /> GEMINI ORCHESTRATOR</span><h3>오늘의 작은 콘텐츠를 새로 만들어 볼까요?</h3><p>성경 친구가 이야기와 퀴즈를 함께 준비해요.</p></div><button className="bf-secondary-button" onClick={createTodayContent} disabled={orchestrateMutation.isPending}>{orchestrateMutation.isPending ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />} 만들기</button></section>{generatedContent && <motion.section className="bf-generated-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><span className="bf-kicker">오늘 생성된 이야기</span><h3>{generatedContent.storyTitle}</h3><p>{generatedContent.storyHook}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>마음 보물</b>{generatedContent.storyLesson}</span></div><div className="bf-generated-quiz"><b>퀴즈</b><span>{generatedContent.quizQuestion}</span><small>정답: {generatedContent.quizAnswer}</small></div><p className="bf-encouragement">{generatedContent.encouragement}</p></motion.section>}</section>}
 
         {activeTab === "records" && (() => {
           const cardCount = treasureQuery.data?.length ?? 0;
@@ -790,7 +789,84 @@ function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow }: 
     onSendMessage(draft);
     setDraft("");
   };
-  return <div className="bf-chat-panel"><div className="bf-chat-messages" aria-live="polite">{messages.filter(message => message.role !== "system").map((message, index) => <div className={`bf-chat-message ${message.role === "user" ? "user" : "assistant"}`} key={`${message.role}-${index}`}><span className="bf-chat-avatar">{message.role === "user" ? "나" : <Sparkles size={12} />}</span><p>{message.content}</p>{message.role === "assistant" && <button className="bf-answer-speak" onClick={() => onSpeakNow({ text: message.content, speaker: "CHILD_FRIEND", emotion: "따뜻하고 또렷한 다시 듣기" })} aria-label="이 답변 듣기" title="Gemini 음성으로 다시 듣기"><Volume2 size={15} /></button>}</div>)}{isLoading && <div className="bf-chat-loading"><span /><span /><span /> 성경 친구가 생각하고 있어요…</div>}</div><div className="bf-chat-composer"><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder="궁금한 것을 글로 물어봐요" aria-label="성경 질문 입력" rows={1} /><button onClick={submit} disabled={!draft.trim() || isLoading} aria-label="질문 보내기"><Send size={16} /></button></div><div className="bf-chat-suggestions"><button onClick={() => onSendMessage("노아의 방주는 어떤 이야기야?")}>노아의 방주</button><button onClick={() => onSendMessage("하나님은 나를 사랑하시나요?")}>하나님의 사랑</button></div></div>;
+
+  // Derive contextual follow-up suggestions from the last assistant message
+  const lastAssistant = messages.slice().reverse().find(m => m.role === "assistant")?.content || "";
+  let suggestions = [
+    { title: "노아의 방주", prompt: "노아의 방주에는 왜 동물들이 타게 되었나요?" },
+    { title: "하나님의 사랑", prompt: "하나님은 나를 어떤 모습으로 사랑하시나요?" },
+    { title: "다윗과 골리앗", prompt: "다윗은 작은 몸으로 어떻게 골리앗을 이겼나요?" },
+    { title: "천지창조", prompt: "하나님은 세상을 만들 때 어떤 마음이셨나요?" },
+  ];
+
+  if (lastAssistant.includes("사랑") || lastAssistant.includes("고린도전서")) {
+    suggestions = [
+      { title: "친구를 사랑하는 법", prompt: "내 주변 친구들에게 하나님의 사랑을 어떻게 전할 수 있을까요?" },
+      { title: "부모님 마음 속 사랑", prompt: "우리 부모님은 어떤 마음으로 나를 사랑해 주시는 걸까요?" },
+      { title: "기도로 사랑 전하기", prompt: "친구를 위한 축복 기도를 함께 드려주세요." },
+    ];
+  } else if (lastAssistant.includes("방주") || lastAssistant.includes("노아")) {
+    suggestions = [
+      { title: "무지개 약속의 의미", prompt: "노아의 방주 후에 나타난 무지개는 어떤 약속인가요?" },
+      { title: "방주 안의 동물들", prompt: "방주 안에서 동물들은 어떻게 지냈을까요?" },
+    ];
+  } else if (lastAssistant.includes("다윗") || lastAssistant.includes("용기")) {
+    suggestions = [
+      { title: "두려울 때 기도", prompt: "무섭고 떨릴 때 하나님께 어떻게 기도해야 하나요?" },
+      { title: "작은 나의 큰 용기", prompt: "내가 학교에서 용기를 낼 수 있는 일이 무엇이 있을까요?" },
+    ];
+  }
+
+  return (
+    <div className="bf-chat-panel">
+      <div className="bf-chat-messages" aria-live="polite">
+        {messages.filter(message => message.role !== "system").map((message, index) => (
+          <div className={`bf-chat-message ${message.role === "user" ? "user" : "assistant"}`} key={`${message.role}-${index}`}>
+            <span className="bf-chat-avatar">{message.role === "user" ? "나" : <Sparkles size={12} />}</span>
+            <p>{message.content}</p>
+            {message.role === "assistant" && (
+              <button className="bf-answer-speak" onClick={() => onSpeakNow({ text: message.content, speaker: "CHILD_FRIEND", emotion: "따뜻하고 또렷한 다시 듣기" })} aria-label="이 답변 듣기" title="Gemini 음성으로 다시 듣기">
+                <Volume2 size={15} />
+              </button>
+            )}
+          </div>
+        ))}
+        {isLoading && <div className="bf-chat-loading"><span /><span /><span /> 성경 친구가 생각하고 있어요…</div>}
+      </div>
+      <div className="bf-chat-composer">
+        <textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder="궁금한 것을 글로 물어봐요" aria-label="성경 질문 입력" rows={1} />
+        <button onClick={submit} disabled={!draft.trim() || isLoading} aria-label="질문 보내기"><Send size={16} /></button>
+      </div>
+      <div className="bf-chat-suggestions" style={{ display: "flex", overflowX: "auto", gap: "8px", paddingBottom: "4px", scrollbarWidth: "none" }}>
+        {suggestions.map((item, idx) => (
+          <button
+            key={idx}
+            onClick={() => onSendMessage(item.prompt)}
+            style={{
+              flex: "0 0 auto",
+              whiteSpace: "normal",
+              textAlign: "left",
+              padding: "8px 12px",
+              borderRadius: "14px",
+              background: "#faf5ff",
+              border: "1px solid #d8b4fe",
+              color: "#6b21a8",
+              fontSize: "12px",
+              fontWeight: "600",
+              boxShadow: "0 2px 6px rgba(107,33,168,0.06)",
+              maxWidth: "220px",
+              lineHeight: "1.4"
+            }}
+          >
+            {item.title}
+            <div style={{ fontSize: "10px", color: "#9333ea", fontWeight: "normal", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+              {item.prompt}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function QuizPanel({ quiz, quizStarted, quizAnswered, quizCorrect, quizLoading, quizError, onStart, onAnswer, onNext, scoreLabel }: { quiz: { question: string; options: string[]; answer: number; explanation: string } | undefined; quizStarted: boolean; quizAnswered: boolean; quizCorrect: boolean; quizLoading: boolean; quizError: boolean; onStart: () => void; onAnswer: (index: number) => void; onNext: () => void; scoreLabel: string }) {
