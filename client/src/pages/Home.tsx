@@ -593,6 +593,7 @@ export default function Home() {
           const [cardIndex, setCardIndex] = useState(0);
           const [matchedCount, setMatchedCount] = useState(0);
           const [gameDone, setGameDone] = useState(false);
+          const [reciteDone, setReciteDone] = useState(false);
           const gameCards = quizLevel === "toddler" ? [
             { title: "사랑의 선물", verse: "요한복음 3:16", hint: "하나님이 세상을 이처럼 사랑하사..." },
             { title: "두려움 없는 용기", verse: "여호수아 1:9", hint: "강하고 담대하라 두려워하지 말며..." },
@@ -611,6 +612,45 @@ export default function Home() {
 
           return (
             <section className="bf-tab-page">
+              <div style={{ background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", padding: "16px 18px", borderRadius: "18px", border: "2px solid #ca8a04", marginBottom: "16px", boxShadow: "0 6px 16px rgba(202,138,4,0.15)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "bold", color: "#854d0e", background: "#fef9c3", padding: "2px 8px", borderRadius: "10px" }}>📖 오늘의 말씀 암송 챌린지</span>
+                  <span style={{ fontSize: "12px", fontWeight: "bold", color: "#713f12" }}>보상: 별 ⭐ +15개</span>
+                </div>
+                <h3 style={{ margin: "0 0 4px", fontSize: "16px", color: "#713f12" }}>"여호와는 나의 목자시니 내게 부족함이 없으리로다"</h3>
+                <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#854d0e" }}>시편 23:1 • 목소리로 따라 읽고 암송 완료 버튼을 눌러보세요!</p>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    className="bf-secondary-button"
+                    style={{ flex: 1, background: "#fff", color: "#854d0e", border: "1px solid #ca8a04", fontSize: "12px", fontWeight: "bold" }}
+                    onClick={() => {
+                      speakNow({
+                        text: "여호와는 나의 목자시니 내게 부족함이 없으리로다. 시편 23편 1절 말씀.",
+                        speaker: "CHILD_FRIEND",
+                        emotion: "따뜻하고 또또박 읽어주는 목소리"
+                      });
+                    }}
+                  >
+                    🔊 성경 친구 음성 듣기
+                  </button>
+                  <button
+                    className="bf-primary-button"
+                    style={{ flex: 1, background: "#ca8a04", borderColor: "#a16207", color: "#fff", fontSize: "12px" }}
+                    onClick={() => {
+                      if (reciteDone) {
+                        alert("오늘의 암송 챌린지는 이미 완료했어요! 내일 또 도전해 봐요 ✨");
+                        return;
+                      }
+                      setReciteDone(true);
+                      addScoreMutation.mutate({ points: 15 });
+                      alert("🎉 오늘의 말씀 암송 챌린지 성공! 별 ⭐ +15개가 적립되었어요!");
+                    }}
+                  >
+                    {reciteDone ? "✅ 암송 완료됨" : "✨ 암송 완료하기"}
+                  </button>
+                </div>
+              </div>
+
               <div style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)", padding: "14px 18px", borderRadius: "16px", border: "2px solid #8b5cf6", marginBottom: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(139,92,246,0.15)" }}>
                 <div>
                   <span style={{ fontSize: "11px", fontWeight: "bold", color: "#6d28d9", display: "block", marginBottom: "2px" }}>🎯 오늘의 일일 말씀 챌린지</span>
