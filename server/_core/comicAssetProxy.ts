@@ -1,9 +1,10 @@
 import type { Express } from "express";
 
-const ASSET_KEYS = new Set(["scene1", "scene2"]);
-const APPDEPLOY_STATUS_BASE =
+export const COMIC_ASSET_KEYS = ["scene1", "scene2"] as const;
+const ASSET_KEYS = new Set<string>(COMIC_ASSET_KEYS);
+export const APPDEPLOY_STATUS_BASE =
   "https://api-v2.appdeploy.ai/app/bible-friend-asset-bridge-6xd7bg/api/status/";
-const APPDEPLOY_STORAGE_HOST = "appdeployai-v2-storage.s3.us-east-1.amazonaws.com";
+export const APPDEPLOY_STORAGE_HOST = "appdeployai-v2-storage.s3.us-east-1.amazonaws.com";
 const UPSTREAM_TIMEOUT_MS = 8_000;
 
 type AssetStatus = {
@@ -13,7 +14,18 @@ type AssetStatus = {
   url?: string;
 };
 
-function validateSignedAssetUrl(rawUrl: string): string {
+export function isAllowedComicAssetKey(key: string): boolean {
+  return ASSET_KEYS.has(key);
+}
+
+export function buildComicAssetStatusUrl(key: string): string {
+  if (!isAllowedComicAssetKey(key)) {
+    throw new Error("Unknown comic asset key");
+  }
+  return `${APPDEPLOY_STATUS_BASE}${encodeURIComponent(key)}`;
+}
+
+export function validateComicAssetSignedUrl(rawUrl: string): string {
   const url = new URL(rawUrl);
   if (url.protocol !== "https:" || url.hostname !== APPDEPLOY_STORAGE_HOST) {
     throw new Error("Unexpected comic asset storage URL");
@@ -24,7 +36,7 @@ function validateSignedAssetUrl(rawUrl: string): string {
 export function registerComicAssetProxy(app: Express) {
   app.get("/api/comic-assets/:key", async (req, res) => {
     const key = String(req.params.key ?? "");
-    if (!ASSET_KEYS.has(key)) {
+    if (!isAllowedComicAssetKey(key)) {
       res.status(404).json({ error: "comic_asset_not_found" });
       return;
     }
@@ -33,7 +45,7 @@ export function registerComicAssetProxy(app: Express) {
     const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
     try {
-      const upstream = await fetch(`${APPDEPLOY_STATUS_BASE}${encodeURIComponent(key)}`, {
+      const upstream = await fetch(buildComicAssetStatusUrl(key), {
         headers: { accept: "application/json" },
         signal: controller.signal,
       });
@@ -49,7 +61,7 @@ export function registerComicAssetProxy(app: Express) {
         return;
       }
 
-      const signedUrl = validateSignedAssetUrl(status.url);
+      const signedUrl = validateComicAssetSignedUrl(status.url);
       res.set("Cache-Control", "no-store");
       res.redirect(307, signedUrl);
     } catch (error) {
