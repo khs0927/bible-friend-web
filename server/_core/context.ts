@@ -2,9 +2,13 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 
+type ExpressContextResponse = CreateExpressContextOptions["res"] & {
+  clearCookie: (name: string, options?: Record<string, unknown>) => unknown;
+};
+
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  res: ExpressContextResponse;
   user: User | null;
 };
 
@@ -22,7 +26,7 @@ export async function createContext(
 
   return {
     req: opts.req,
-    res: opts.res,
+    res: opts.res as ExpressContextResponse,
     user,
   };
 }
