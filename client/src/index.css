@@ -34,8 +34,8 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; background: #fffaf4; color: #2d2946; font-family: 'Gowun Dodum', 'Nunito', sans-serif; }
-h1, h2, h3, .bf-brand-title { font-family: 'Jua', 'Gowun Dodum', sans-serif; letter-spacing: 0.02em; }
+body { margin: 0; min-width: 320px; background: #fffaf4; color: #2d2946; font-family: 'Gowun Dodum', 'Gamja Flower', sans-serif; font-size: 16px; line-height: 1.6; }
+h1, h2, h3, .bf-brand-title, .bf-tab-title h1 { font-family: 'Jua', 'Gamja Flower', sans-serif; letter-spacing: 0.03em; }
 @keyframes bfChatPop {
   0% { opacity: 0; transform: translateY(10px) scale(.97); }
   65% { opacity: 1; transform: translateY(-2px) scale(1.01); }
