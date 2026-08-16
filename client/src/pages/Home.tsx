@@ -165,9 +165,8 @@ export default function Home() {
         setVoiceStatus(nextState.status);
         setVoiceError(nextState.error);
       },
-      // Automatic replies stay on server-generated audio only. This prevents
-      // iPhone's mechanical Web Speech voice from silently replacing Gemini.
-      allowBrowserFallback: false,
+      // Allow graceful fallback to Web Speech audio if server TTS hits rate limits or quota limits
+      allowBrowserFallback: true,
     });
   }
   const stories = storiesQuery.data ?? [];
