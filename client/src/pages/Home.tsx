@@ -1415,7 +1415,7 @@ export default function Home() {
   );
 }
 
-function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow }: { messages: Message[]; onSendMessage: (content: string) => void; isLoading: boolean; onSpeak: (request: VoiceRequest) => void; onSpeakNow: (request: VoiceRequest) => void }) {
+function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow, isSpeaking, isListening, beginListening, toggleListening, isMicPressed, micPointerDownRef }: { messages: Message[]; onSendMessage: (content: string) => void; isLoading: boolean; onSpeak: (request: VoiceRequest) => void; onSpeakNow: (request: VoiceRequest) => void; isSpeaking: boolean; isListening: boolean; beginListening: (autoSpeak?: boolean) => void; toggleListening: () => void; isMicPressed: boolean; micPointerDownRef: React.MutableRefObject<boolean> }) {
   const [draft, setDraft] = useState("");
   const submit = () => {
     if (!draft.trim() || isLoading) return;
