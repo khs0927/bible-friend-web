@@ -3,6 +3,7 @@ import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "../server/_core/oauth";
 import { registerStorageProxy } from "../server/_core/storageProxy";
+import { registerComicAssetProxy } from "../server/_core/comicAssetProxy";
 import { createContext } from "../server/_core/context";
 import { appRouter } from "../server/routers";
 
@@ -15,6 +16,7 @@ app.get("/api/health", (_req, res) => {
   res.status(200).json({ ok: true, runtime: "vercel-express" });
 });
 
+registerComicAssetProxy(app);
 registerStorageProxy(app);
 registerOAuthRoutes(app);
 
