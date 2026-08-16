@@ -106,7 +106,10 @@ export default function Home() {
   const [isMicPressed, setIsMicPressed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "more" | "records">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "records" | "growth">("home");
+  const [spiritFoodCount, setSpiritFoodCount] = useState(3);
+  const [equippedOutfit, setEquippedOutfit] = useState<string>("default");
+  const [unlockedOutfits, setUnlocksOutfits] = useState<string[]>(["default"]);
   const [treasureThemeFilter, setTreasureThemeFilter] = useState<"all" | "love" | "wisdom" | "courage">("all");
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizAnswered, setQuizAnswered] = useState(false);
@@ -866,6 +869,140 @@ export default function Home() {
 
         {activeTab === "more" && <section className="bf-tab-page"><div className="bf-tab-title"><span className="bf-kicker">MORE TOGETHER</span><h1>더 많은 놀이</h1><p>성경 친구와 오늘의 이야기를 더 만들어 봐요.</p></div><section className="bf-orchestrator-card"><div><span className="bf-kicker"><Sparkles size={12} /> GEMINI ORCHESTRATOR</span><h3>오늘의 작은 콘텐츠를 새로 만들어 볼까요?</h3><p>성경 친구가 이야기와 퀴즈를 함께 준비해요.</p></div><button className="bf-secondary-button" onClick={createTodayContent} disabled={orchestrateMutation.isPending}>{orchestrateMutation.isPending ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />} 만들기</button></section>{generatedContent && <motion.section className="bf-generated-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><span className="bf-kicker">오늘 생성된 이야기</span><h3>{generatedContent.storyTitle}</h3><p>{generatedContent.storyHook}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>마음 보물</b>{generatedContent.storyLesson}</span></div><div className="bf-generated-quiz"><b>퀴즈</b><span>{generatedContent.quizQuestion}</span><small>정답: {generatedContent.quizAnswer}</small></div><p className="bf-encouragement">{generatedContent.encouragement}</p></motion.section>}</section>}
 
+        {activeTab === "growth" && (() => {
+          const outfitOptions = [
+            { id: "default", name: "기본 친구 옷", cost: 0, emoji: "🧡", desc: "귀여운 오렌지 & 퍼플 기본 마스코트" },
+            { id: "armor", name: "🛡️ 하나님의 전신 갑주", cost: 30, emoji: "🛡️", desc: "믿음의 방패와 투구로 든든한 용사 의상" },
+            { id: "crown", name: "👑 다윗의 왕관", cost: 50, emoji: "👑", desc: "빛나는 지혜와 찬양의 왕관 모자" },
+            { id: "wings", name: "🕊️ 평화의 비둘기 날개", cost: 80, emoji: "🕊️", desc: "하늘의 따뜻한 사랑을 전하는 천사 날개" },
+          ];
+          const currentLevel = score >= 150 ? 4 : score >= 100 ? 3 : score >= 50 ? 2 : 1;
+          const levelTitles = ["새싹 성경 친구 🌱", "쑥쑥 자라는 제자 🌿", "지혜로운 믿음 용사 🛡️", "천국 보물 마스터 👑"];
+          return (
+            <section className="bf-tab-page bf-growth-page">
+              <div className="bf-tab-title">
+                <span className="bf-kicker"><Sparkles size={12} /> SPIRITUAL TAMAGOTCHI</span>
+                <h1>성경 친구 성장 정원</h1>
+                <p>말씀과 기도로 영혼의 양식을 먹이고 멋진 성경 의상을 입혀주세요!</p>
+              </div>
+
+              <div style={{ background: "linear-gradient(135deg, #fef3c7 0%, #fde047 100%)", borderRadius: "24px", padding: "24px", textAlign: "center", border: "3px solid #f59e0b", boxShadow: "0 10px 25px rgba(245,158,11,0.25)", marginBottom: "20px" }}>
+                <span style={{ fontSize: "12px", fontWeight: "bold", background: "#fef9c3", color: "#b45309", padding: "4px 12px", borderRadius: "12px", border: "1px solid #fcd34d" }}>
+                  Lv.{currentLevel} • {levelTitles[currentLevel - 1]}
+                </span>
+                <div style={{ margin: "18px auto", width: "120px", height: "120px", background: "white", borderRadius: "50%", display: "grid", placeItems: "center", boxShadow: "0 8px 20px rgba(0,0,0,0.1)", border: "3px solid #fbbf24", position: "relative" }}>
+                  <img src={FRIEND_MASCOT_URL} alt="성경 친구" style={{ width: "90px", height: "90px", objectFit: "contain", transform: "scale(1.05)" }} />
+                  <span style={{ position: "absolute", top: "-5px", right: "-5px", fontSize: "28px", background: "#fff", borderRadius: "50%", padding: "2px", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+                    {outfitOptions.find(o => o.id === equippedOutfit)?.emoji ?? "🧡"}
+                  </span>
+                </div>
+                <h2 style={{ margin: "0 0 4px", fontSize: "20px", color: "#78350f" }}>성경 친구</h2>
+                <p style={{ margin: "0 0 14px", fontSize: "13px", color: "#92400e" }}>"오늘도 하나님 말씀 안에서 기쁘게 자라나요!"</p>
+
+                <div style={{ background: "rgba(255,255,255,0.85)", padding: "12px 16px", borderRadius: "14px", display: "flex", justifyContent: "space-around", marginBottom: "16px", border: "1px solid #fcd34d" }}>
+                  <div>
+                    <span style={{ fontSize: "11px", color: "#b45309", display: "block" }}>보유 별 ⭐</span>
+                    <strong style={{ fontSize: "16px", color: "#b45309" }}>{score}개</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: "11px", color: "#b45309", display: "block" }}>영혼의 양식 🌾</span>
+                    <strong style={{ fontSize: "16px", color: "#b45309" }}>{spiritFoodCount}개</strong>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    className="bf-primary-button"
+                    style={{ flex: 1, background: "#f59e0b", borderColor: "#d97706", color: "#fff", fontWeight: "bold" }}
+                    onClick={() => {
+                      if (spiritFoodCount <= 0) {
+                        alert("영혼의 양식(🌾)이 부족해요! 퀴즈를 풀거나 성경 이야기를 읽고 양식을 얻어오세요.");
+                        return;
+                      }
+                      setSpiritFoodCount(c => c - 1);
+                      addScoreMutation.mutate({ points: 10 });
+                      speakNow({
+                        text: "냠냠! 맛있는 영혼의 양식을 먹고 기운이 쑥쑥 자라나요! 감사합니다!",
+                        speaker: "CHILD_FRIEND",
+                        emotion: "기쁘고 신나는 목소리"
+                      });
+                      alert("🌾 영혼의 양식을 먹였습니다! 별 ⭐ +10개 획득 및 친밀도가 쑥쑥 자라났어요!");
+                    }}
+                  >
+                    🌾 양식 먹이기 (+별 10개)
+                  </button>
+                  <button
+                    className="bf-secondary-button"
+                    style={{ flex: 1, background: "#fff", color: "#b45309", border: "1px solid #f59e0b", fontWeight: "bold" }}
+                    onClick={() => {
+                      speakNow({
+                        text: "와아! 쓰담쓰담 해주시니 정말 기뻐요! 하나님 안에서 함께 행복하게 지내요.",
+                        speaker: "CHILD_FRIEND",
+                        emotion: "사랑스럽고 다정한 목소리"
+                      });
+                      alert("✨ 성경 친구와 즐겁게 놀아주었습니다! 마음이 따뜻해졌어요.");
+                    }}
+                  >
+                    💖 쓰담쓰담 놀아주기
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ background: "white", padding: "20px", borderRadius: "20px", border: "2px solid #e5e7eb", boxShadow: "0 6px 16px rgba(0,0,0,0.06)" }}>
+                <h3 style={{ margin: "0 0 6px", fontSize: "16px", color: "#1f2937", display: "flex", alignItems: "center", gap: "6px" }}>
+                  👑 성경 친구 의상실 (옷장)
+                </h3>
+                <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 16px" }}>모은 별을 사용하여 성경 속 멋진 의상과 장식을 선물해 주세요.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {outfitOptions.map(outfit => {
+                    const isUnlocked = unlockedOutfits.includes(outfit.id);
+                    const isEquipped = equippedOutfit === outfit.id;
+                    return (
+                      <div key={outfit.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: "14px", border: isEquipped ? "2px solid #f59e0b" : "1px solid #e5e7eb", background: isEquipped ? "#fef3c7" : "#f9fafb" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <span style={{ fontSize: "28px" }}>{outfit.emoji}</span>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#111827" }}>{outfit.name} {isEquipped && "(착용 중)"}</h4>
+                            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#6b7280" }}>{outfit.desc}</p>
+                          </div>
+                        </div>
+                        {isUnlocked ? (
+                          <button
+                            disabled={isEquipped}
+                            onClick={() => {
+                              setEquippedOutfit(outfit.id);
+                              alert(`✨ ${outfit.name}을(를) 착용했습니다!`);
+                            }}
+                            style={{ padding: "6px 14px", borderRadius: "10px", background: isEquipped ? "#d97706" : "#10b981", color: "#fff", border: "none", fontSize: "12px", fontWeight: "bold", cursor: isEquipped ? "default" : "pointer" }}
+                          >
+                            {isEquipped ? "착용 중" : "착용하기"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (score < outfit.cost) {
+                                alert(`별이 부족해요! (필요: 별 ${outfit.cost}개, 현재: 별 ${score}개)`);
+                                return;
+                              }
+                              addScoreMutation.mutate({ points: -outfit.cost });
+                              setUnlocksOutfits(prev => [...prev, outfit.id]);
+                              setEquippedOutfit(outfit.id);
+                              alert(`🎉 축하합니다! ${outfit.name} 의상을 해제하고 바로 착용했어요!`);
+                            }}
+                            style={{ padding: "6px 14px", borderRadius: "10px", background: "#7c3aed", color: "#fff", border: "none", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}
+                          >
+                            ⭐ 별 {outfit.cost}개로 해제
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          );
+        })()}
+
         {activeTab === "records" && (() => {
           const cardCount = treasureQuery.data?.length ?? 0;
           const badge = cardCount >= 8 ? { name: "👑 천국 보물 마스터", desc: "전설의 보물 카드 8장 이상 수집 완료!" } : cardCount >= 5 ? { name: "✨ 말씀 보물 왕중왕", desc: "보물 카드 5장 이상 수집 완료!" } : cardCount >= 3 ? { name: "🌟 반짝이는 제자", desc: "보물 카드 3장 이상 수집!" } : cardCount >= 1 ? { name: "🌱 새싹 탐험가", desc: "첫 번째 보물 카드 획득!" } : { name: "🧭 준비된 탐험가", desc: "스토리와 퀴즈를 시작해 보세요!" };
@@ -1265,7 +1402,7 @@ export default function Home() {
       </main>
 
       {activeTab !== "home" && <div className="bf-safe-note"><ShieldCheck size={16} /><p><b>함께 지켜요</b><br />마음이 아프거나 중요한 고민은 부모님, 선생님과 함께 이야기해요.</p></div>}
-      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className={`bf-nav-center ${isSpeaking ? "is-speaking" : getVoiceMicStateClass({ isListening, isPressed: isMicPressed })}`} onPointerDown={event => { try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Safari may reject synthetic capture */ } micPointerDownRef.current = true; setIsMicPressed(true); if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onTouchStart={event => { event.preventDefault(); micPointerDownRef.current = true; setIsMicPressed(true); beginListening(true); }} onPointerUp={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onPointerCancel={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onTouchEnd={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onClick={toggleListening} aria-pressed={isListening} aria-label={isSpeaking ? "성경 친구가 말하는 중" : getVoiceMicAriaLabel(isListening)} title={isSpeaking ? "성경 친구가 말하는 중" : getVoiceMicAriaLabel(isListening)}>{isSpeaking ? <Volume2 className="spin" size={22} /> : isListening ? <Loader2 className="spin" size={22} /> : <Mic size={22} />}<span className="bf-nav-mic-label">{isSpeaking ? "말하는 중" : getVoiceMicLabel({ isListening, isPressed: isMicPressed })}</span></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>게임</span></button><button className={activeTab === "records" ? "active" : ""} onClick={() => setActiveTab("records")}><BookOpen size={18} /><span>기록</span></button></nav>
+      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className={`bf-nav-center ${isSpeaking ? "is-speaking" : getVoiceMicStateClass({ isListening, isPressed: isMicPressed })}`} onPointerDown={event => { try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Safari may reject synthetic capture */ } micPointerDownRef.current = true; setIsMicPressed(true); if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onTouchStart={event => { event.preventDefault(); micPointerDownRef.current = true; setIsMicPressed(true); beginListening(true); }} onPointerUp={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onPointerCancel={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onTouchEnd={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onClick={toggleListening} aria-pressed={isListening} aria-label={isSpeaking ? "성경 친구가 말하는 중" : getVoiceMicAriaLabel(isListening)} title={isSpeaking ? "성경 친구가 말하는 중" : getVoiceMicAriaLabel(isListening)}>{isSpeaking ? <Volume2 className="spin" size={22} /> : isListening ? <Loader2 className="spin" size={22} /> : <Mic size={22} />}<span className="bf-nav-mic-label">{isSpeaking ? "말하는 중" : getVoiceMicLabel({ isListening, isPressed: isMicPressed })}</span></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>게임</span></button><button className={activeTab === "growth" ? "active" : ""} onClick={() => setActiveTab("growth")}><Sparkles size={18} /><span>성장</span></button><button className={activeTab === "records" ? "active" : ""} onClick={() => setActiveTab("records")}><BookOpen size={18} /><span>기록</span></button></nav>
 
       <AnimatePresence>{selectedStory && <motion.div className="bf-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeStory}><motion.article className="bf-story-modal" initial={{ opacity: 0, y: 25, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: .98 }} onClick={event => event.stopPropagation()}><button className="bf-modal-close" onClick={closeStory} aria-label="닫기"><X size={17} /></button><div className={`bf-modal-art ${selectedStory.accent}`}><img src={selectedStory.imageUrl} alt="" /><span>✨</span></div><div className="bf-modal-body"><span className="bf-kicker">✦ 성경 이야기</span><h2>{selectedStory.title}</h2><p>{selectedStory.body}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>오늘의 마음 보물</b>{selectedStory.lesson}<small>{selectedStory.verse}</small></span></div><button className="bf-primary-button full" onClick={tellStory}><Volume2 size={15} /> 이야기 들려줘</button></div></motion.article></motion.div>}</AnimatePresence>
     </div>
