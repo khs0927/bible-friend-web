@@ -21,6 +21,7 @@ import {
   updateUserScore,
   getUserTreasureCards,
   addUserTreasureCard,
+  claimUserTreasureCardReward,
   hasDrawnToday,
   getUserPrayerNotes,
   addUserPrayerNote,
@@ -68,15 +69,20 @@ export const appRouter = router({
           content: z.string(),
           category: z.enum(["story", "quiz"]),
           iconEmoji: z.string(),
+          points: z.number().int().min(0).max(100).default(0),
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        if (!ctx.user) return { success: false, collected: false };
-        const collected = await addUserTreasureCard({
-          userId: ctx.user.id,
-          ...input,
-        });
-        return { success: true, collected };
+        if (!ctx.user) return { success: false, collected: false, score: 0, saved: false };
+        const { points, ...card } = input;
+        const result = await claimUserTreasureCardReward(
+          {
+            userId: ctx.user.id,
+            ...card,
+          },
+          points,
+        );
+        return { success: true, ...result };
       }),
     drawDailyCard: publicProcedure.mutation(async ({ ctx }) => {
       if (!ctx.user) return { success: false, card: null, alreadyDrawn: false };

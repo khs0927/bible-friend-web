@@ -1,35 +1,62 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Link, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import ComicAdventure from "./pages/ComicAdventure";
+
+function HomeWithComicEntry() {
+  return (
+    <>
+      <Home />
+      <Link
+        href="/comic-adventure"
+        aria-label="성경 코믹 어드벤처 시작"
+        style={{
+          position: "fixed",
+          right: "14px",
+          bottom: "88px",
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          gap: "7px",
+          minHeight: "44px",
+          padding: "10px 14px",
+          borderRadius: "999px",
+          border: "2px solid #f5c451",
+          background: "linear-gradient(135deg, #fff4b8 0%, #ffe0c2 48%, #e8dbff 100%)",
+          color: "#4f347d",
+          boxShadow: "0 10px 26px rgba(79, 52, 125, 0.2)",
+          fontSize: "12px",
+          fontWeight: 900,
+          textDecoration: "none",
+        }}
+      >
+        <span aria-hidden="true" style={{ fontSize: "18px" }}>📖</span>
+        코믹 어드벤처
+        <span aria-hidden="true">›</span>
+      </Link>
+    </>
+  );
+}
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/"} component={HomeWithComicEntry} />
+      <Route path={"/comic-adventure"} component={ComicAdventure} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />
