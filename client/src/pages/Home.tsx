@@ -511,6 +511,25 @@ export default function Home() {
       <main id="top" className="bf-main">
         {activeTab === "home" && (
           <section className="bf-home-screen">
+            <div style={{ margin: "0 16px 12px", background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", padding: "12px 16px", borderRadius: "16px", border: "2px solid #ca8a04", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(202,138,4,0.15)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "28px" }}>🔥</span>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#713f12" }}>3일 연속 출석 보상!</h4>
+                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#854d0e" }}>매일 방문하고 보너스 별 +15개와 특별 카드를 받으세요.</p>
+                </div>
+              </div>
+              <button
+                className="bf-primary-button"
+                style={{ background: "#ca8a04", borderColor: "#a16207", padding: "6px 12px", fontSize: "12px" }}
+                onClick={() => {
+                  addScoreMutation.mutate({ points: 15 });
+                  alert("🎉 연속 출석 보너스 별 +15개가 적립되었어요! 오늘도 은혜로운 하루 보내세요 ✨");
+                }}
+              >
+                보상 받기 ✨
+              </button>
+            </div>
             <section className="bf-section bf-chat-section">
               <div className="bf-chat-surface bf-chat-surface-art" style={{ backgroundImage: `url(${CHAT_BACKGROUND_URL})` }}>
                 <div className="bf-chat-utility">
@@ -903,9 +922,24 @@ export default function Home() {
                     <div className="bf-prayer-list" style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto" }}>
                       {prayerNotesQuery.data && prayerNotesQuery.data.length > 0 ? (
                         prayerNotesQuery.data.map(note => (
-                          <div key={note.id} style={{ background: "#fdf4ff", padding: "12px", borderRadius: "12px", border: "1px solid #f3e8ff" }}>
-                            {note.verseRef && <small style={{ color: "#7c3aed", fontWeight: "bold", display: "block", marginBottom: "2px" }}>📖 {note.verseRef}</small>}
-                            <p style={{ fontSize: "13px", color: "#374151", margin: 0, whiteSpace: "pre-wrap" }}>{note.noteText}</p>
+                          <div key={note.id} style={{ background: "#fdf4ff", padding: "12px", borderRadius: "12px", border: "1px solid #f3e8ff", display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <div>
+                              {note.verseRef && <small style={{ color: "#7c3aed", fontWeight: "bold", display: "block", marginBottom: "2px" }}>📖 {note.verseRef}</small>}
+                              <p style={{ fontSize: "13px", color: "#374151", margin: 0, whiteSpace: "pre-wrap" }}>{note.noteText}</p>
+                            </div>
+                            <button
+                              className="bf-secondary-button"
+                              style={{ alignSelf: "flex-end", background: "#ede9fe", color: "#6d28d9", border: "1px solid #c4b5fd", fontSize: "11px", padding: "4px 10px", borderRadius: "8px", fontWeight: "bold" }}
+                              onClick={() => {
+                                speakNow({
+                                  text: `우리가 함께 드린 기도예요. ${note.verseRef ? `${note.verseRef}.` : ""} ${note.noteText}. 하나님이 이 기도를 기쁘게 들으실 거예요.`,
+                                  speaker: "CHILD_FRIEND",
+                                  emotion: "따뜻하고 다정하며 격려해 주는 목소리"
+                                });
+                              }}
+                            >
+                              🔊 성경 친구 목소리로 듣기
+                            </button>
                           </div>
                         ))
                       ) : (

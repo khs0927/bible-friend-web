@@ -1,6 +1,6 @@
 export type BibleStory = {
   id: string;
-  title: "노아의 방주" | "다윗과 골리앗" | "예수님의 사랑" | "천지창조" | "꿈꾸는 요셉";
+  title: "노아의 방주" | "다윗과 골리앗" | "예수님의 사랑" | "천지창조" | "꿈꾸는 요셉" | "사자굴의 다니엘" | "지혜의 왕 솔로몬";
   subtitle: string;
   body: string;
   lesson: string;
@@ -73,6 +73,28 @@ export const BIBLE_STORIES: BibleStory[] = [
     accent: "gold",
     imageUrl: "/manus-storage/story_joseph_aa32c037.png",
     illustrationPrompt: "A hopeful child-friendly 3D animated illustration of young Joseph wearing a colorful coat beneath a magical night sky with friendly glowing stars, gentle desert hills, warm hopeful lighting, expressive kind eyes, biblical storybook art, no text.",
+  },
+  {
+    id: "daniel",
+    title: "사자굴의 다니엘",
+    subtitle: "어려움 속에서도 지켜주시는 하나님",
+    body: "다니엘은 온 세상의 창조이신 하나님께 매일 기도하는 것을 멈추지 않았어요. 위험한 사자굴에 던져졌을 때도 하나님은 천사를 보내어 다니엘을 안전하게 지켜 주셨답니다.",
+    lesson: "누가 뭐라 해도 하나님을 향한 믿음과 기도를 지켜요.",
+    verse: "다니엘 6:22",
+    accent: "violet",
+    imageUrl: "/manus-storage/story_david_0b7c9097.png",
+    illustrationPrompt: "A warm, child-friendly 3D animated illustration of Daniel praying peacefully inside a bright cave with friendly lions resting around him, soft golden heavenly light, reassuring biblical storybook art, no text.",
+  },
+  {
+    id: "solomon",
+    title: "지혜의 왕 솔로몬",
+    subtitle: "하나님께 지혜를 구한 왕",
+    body: "솔로몬은 왕이 되었을 때 큰 부나 명예보다 백성들을 바르게 이끌 수 있는 '지혜로운 마음'을 하나님께 간구했어요. 하나님은 솔로몬의 예쁜 마음을 기뻐하시며 넘치는 지혜와 축복을 주셨답니다.",
+    lesson: "가장 소중한 것은 하나님이 주시는 지혜와 바른 마음이에요.",
+    verse: "열왕기상 3:9",
+    accent: "mint",
+    imageUrl: "/manus-storage/story_creation_3e9569ce.png",
+    illustrationPrompt: "A bright, joyful child-friendly 3D animated illustration of young King Solomon smiling wisely in a beautiful ancient palace with scrolls and gentle warm lighting, inspiring biblical storybook art, no text.",
   },
 ];
 
