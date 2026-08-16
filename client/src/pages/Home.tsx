@@ -77,6 +77,7 @@ export default function Home() {
   const [isMicPressed, setIsMicPressed] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "more" | "records">("home");
+  const [treasureThemeFilter, setTreasureThemeFilter] = useState<"all" | "love" | "wisdom" | "courage">("all");
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizAnswered, setQuizAnswered] = useState(false);
   const [quizCorrect, setQuizCorrect] = useState(false);
@@ -505,21 +506,63 @@ export default function Home() {
                     <button className="bf-primary-button" onClick={handleShare} style={{ background: "#ca8a04", borderColor: "#a16207", padding: "8px 14px", fontSize: "13px" }}>친구에게 공유 📤</button>
                   </div>
                   <div className="bf-treasure-section" style={{ marginTop: "20px" }}>
-                    <h3>🗺️ 수집한 말씀 보물 카드</h3>
-                    <p style={{ fontSize: "12px", color: "#666", margin: "4px 0 12px" }}>카드를 터치하면 상세 내용과 함께 성경 친구의 목소리로 들을 수 있어요.</p>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
+                      <div>
+                        <h3 style={{ margin: 0 }}>🗺️ 수집한 말씀 보물 카드</h3>
+                        <p style={{ fontSize: "12px", color: "#666", margin: "2px 0 0" }}>테마별로 카드를 모아보고 성경 친구 목소리로 들어요.</p>
+                      </div>
+                    </div>
+                    <div className="bf-theme-filters" style={{ display: "flex", gap: "6px", marginBottom: "14px", flexWrap: "wrap" }}>
+                      {[
+                        { key: "all", label: "전체" },
+                        { key: "love", label: "❤️ 사랑" },
+                        { key: "wisdom", label: "🌟 지혜" },
+                        { key: "courage", label: "🛡️ 용기" },
+                      ].map(theme => (
+                        <button
+                          key={theme.key}
+                          onClick={() => setTreasureThemeFilter(theme.key as any)}
+                          style={{
+                            background: treasureThemeFilter === theme.key ? "#7c3aed" : "rgba(255,255,255,0.8)",
+                            color: treasureThemeFilter === theme.key ? "#fff" : "#4b5563",
+                            border: "1px solid",
+                            borderColor: treasureThemeFilter === theme.key ? "#6d28d9" : "rgba(0,0,0,0.1)",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            fontSize: "13px",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                          }}
+                        >
+                          {theme.label}
+                        </button>
+                      ))}
+                    </div>
                     <div className="bf-treasure-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px" }}>
-                      {treasureQuery.data && treasureQuery.data.length > 0 ? (
-                        treasureQuery.data.map(card => (
-                          <div key={card.id} className="bf-treasure-card" onClick={() => setActiveTreasureCard(card)} style={{ background: "rgba(255,255,255,0.85)", padding: "14px", borderRadius: "14px", border: "1px solid rgba(234, 179, 8, 0.4)", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer", transition: "transform 0.15s ease" }} role="button" tabIndex={0}>
-                            <span style={{ fontSize: "24px" }}>{card.iconEmoji}</span>
-                            <h4 style={{ fontSize: "14px", fontWeight: "bold", margin: "6px 0 4px" }}>{card.title}</h4>
-                            <p style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>{card.verse}</p>
-                            <small style={{ fontSize: "11px", color: "#444", display: "block" }}>{card.content}</small>
-                          </div>
-                        ))
-                      ) : (
-                        <p style={{ fontSize: "13px", color: "#777", gridColumn: "1 / -1", textAlign: "center", padding: "20px" }}>아직 모은 보물 카드가 없어요! 스토리나 퀴즈를 완료해 보세요.</p>
-                      )}
+                      {(() => {
+                        const allCards = treasureQuery.data ?? [];
+                        const filtered = allCards.filter(card => {
+                          if (treasureThemeFilter === "all") return true;
+                          const txt = (card.title + card.content + card.verse).toLowerCase();
+                          if (treasureThemeFilter === "love") return txt.includes("사랑") || txt.includes("마음") || card.iconEmoji === "✨";
+                          if (treasureThemeFilter === "wisdom") return txt.includes("지혜") || txt.includes("생각") || txt.includes("잠언") || card.iconEmoji === "🗺️";
+                          if (treasureThemeFilter === "courage") return txt.includes("용기") || txt.includes("두려워") || txt.includes("믿음");
+                          return true;
+                        });
+                        return filtered.length > 0 ? (
+                          filtered.map(card => (
+                            <div key={card.id} className="bf-treasure-card" onClick={() => setActiveTreasureCard(card)} style={{ background: "rgba(255,255,255,0.85)", padding: "14px", borderRadius: "14px", border: "1px solid rgba(234, 179, 8, 0.4)", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer", transition: "transform 0.15s ease" }} role="button" tabIndex={0}>
+                              <span style={{ fontSize: "24px" }}>{card.iconEmoji}</span>
+                              <h4 style={{ fontSize: "14px", fontWeight: "bold", margin: "6px 0 4px" }}>{card.title}</h4>
+                              <p style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>{card.verse}</p>
+                              <small style={{ fontSize: "11px", color: "#444", display: "block" }}>{card.content}</small>
+                            </div>
+                          ))
+                        ) : (
+                          <p style={{ fontSize: "13px", color: "#777", gridColumn: "1 / -1", textAlign: "center", padding: "20px" }}>해당 테마에 모은 보물 카드가 없어요!</p>
+                        );
+                      })()}
                     </div>
                   </div>
                   <button className="bf-primary-button full" style={{ marginTop: "20px" }} onClick={() => { setMessages(initialMessages); setSelectedStoryId(null); setActiveTab("home"); }}><Sparkles size={15} /> 새 대화 시작하기</button>
