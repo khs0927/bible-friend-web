@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, chatHistory, InsertChatHistory, userScores, InsertUserScore, userTreasureCards, InsertUserTreasureCard, userPrayerNotes, InsertUserPrayerNote } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -133,6 +133,64 @@ export async function addUserTreasureCard(card: InsertUserTreasureCard) {
     console.error("[Database] Failed to add treasure card:", err);
     return false;
   }
+}
+
+/**
+ * Atomically claims a treasure card and awards its points exactly once.
+ *
+ * The user's unique score row is created if needed and locked with SELECT ...
+ * FOR UPDATE before checking the card. That row serializes concurrent comic
+ * reward claims for the same user without requiring a schema migration. The
+ * card insert and score update are committed or rolled back together.
+ */
+export async function claimUserTreasureCardReward(
+  card: InsertUserTreasureCard,
+  points: number,
+): Promise<{ collected: boolean; score: number; saved: boolean }> {
+  const db = await getDb();
+  if (!db) return { collected: false, score: 0, saved: false };
+
+  return db.transaction(async tx => {
+    await tx
+      .insert(userScores)
+      .values({ userId: card.userId, score: 0 })
+      .onDuplicateKeyUpdate({ set: { score: sql`${userScores.score}` } });
+
+    await tx.execute(
+      sql`select ${userScores.id} from ${userScores} where ${userScores.userId} = ${card.userId} for update`,
+    );
+
+    const [scoreRow] = await tx
+      .select({ score: userScores.score })
+      .from(userScores)
+      .where(eq(userScores.userId, card.userId))
+      .limit(1);
+    const currentScore = scoreRow?.score ?? 0;
+
+    const existing = await tx
+      .select({ id: userTreasureCards.id })
+      .from(userTreasureCards)
+      .where(
+        and(
+          eq(userTreasureCards.userId, card.userId),
+          eq(userTreasureCards.cardId, card.cardId),
+        ),
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      return { collected: false, score: currentScore, saved: true };
+    }
+
+    await tx.insert(userTreasureCards).values(card);
+    const score = currentScore + points;
+    await tx
+      .update(userScores)
+      .set({ score })
+      .where(eq(userScores.userId, card.userId));
+
+    return { collected: true, score, saved: true };
+  });
 }
 
 export async function hasDrawnToday(userId: number): Promise<boolean> {
