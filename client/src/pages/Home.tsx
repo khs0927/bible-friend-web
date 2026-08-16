@@ -40,6 +40,8 @@ import { getVoiceMicAriaLabel, getVoiceMicLabel, getVoiceMicStateClass } from "@
 
 const FRIEND_MASCOT_URL = "/manus-storage/bible-friend-mascot_06125680.png";
 const CHAT_BACKGROUND_URL = "/manus-storage/bible-friend-chat-bg_371dab14.png";
+const GAME_BANNER_BG_URL = "/manus-storage/game_banner_bg_51b6ddc7.png";
+const GAME_ICON_TROPHY_URL = "/manus-storage/game_icon_trophy_8a4e9737.png";
 
 const initialMessages: Message[] = [
   {
@@ -117,6 +119,9 @@ export default function Home() {
   const [gameDone, setGameDone] = useState(false);
   const [reciteDone, setReciteDone] = useState(false);
   const [selectedOpt, setSelectedOpt] = useState<string | null>(null);
+  const [activeMissionId, setActiveMissionId] = useState<string>("mission-noah");
+  const [missionSolved, setMissionSolved] = useState<Record<string, boolean>>({});
+  const [missionSelectedOpt, setMissionSelectedOpt] = useState<number | null>(null);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -624,10 +629,7 @@ export default function Home() {
         })}</div></section>}
 
         {activeTab === "game" && (() => {
-          const [activeMissionId, setActiveMissionId] = useState<string>("mission-noah");
-          const [missionSolved, setMissionSolved] = useState<Record<string, boolean>>({});
           const currentMission = BIBLE_CHARACTER_MISSIONS.find(m => m.id === activeMissionId) || BIBLE_CHARACTER_MISSIONS[0];
-          const [missionSelectedOpt, setMissionSelectedOpt] = useState<number | null>(null);
           const gameCards = quizLevel === "toddler" ? [
             { title: "사랑의 선물", verse: "요한복음 3:16", hint: "하나님이 세상을 이처럼 사랑하사..." },
             { title: "두려움 없는 용기", verse: "여호수아 1:9", hint: "강하고 담대하라 두려워하지 말며..." },
@@ -645,6 +647,20 @@ export default function Home() {
 
           return (
             <section className="bf-tab-page">
+              <div style={{ position: "relative", overflow: "hidden", borderRadius: "20px", border: "2px solid #f59e0b", marginBottom: "20px", boxShadow: "0 8px 24px rgba(245,158,11,0.2)" }}>
+                <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${GAME_BANNER_BG_URL})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.25, zIndex: 0 }} />
+                <div style={{ position: "relative", zIndex: 1, padding: "20px", background: "linear-gradient(135deg, rgba(254,240,138,0.92) 0%, rgba(253,224,71,0.95) 100%)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                    <img src={GAME_ICON_TROPHY_URL} alt="" style={{ width: "32px", height: "32px", objectFit: "contain" }} />
+                    <div>
+                      <span style={{ fontSize: "11px", fontWeight: "bold", color: "#b45309", background: "#fef3c7", padding: "2px 8px", borderRadius: "10px" }}>🎮 성경 친구 아케이드 랜드</span>
+                      <h2 style={{ margin: "2px 0 0", fontSize: "18px", fontWeight: "bold", color: "#78350f" }}>믿음과 보물이 가득한 게임 정원</h2>
+                    </div>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#92400e", lineHeight: "1.4" }}>말씀 암송, 성경 인물 미션, 보물 카드 짝맞추기를 통해 별을 모으고 멋진 칭호 배지를 획득해 봐요!</p>
+                </div>
+              </div>
+
               <div style={{ background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", padding: "16px 18px", borderRadius: "18px", border: "2px solid #ca8a04", marginBottom: "16px", boxShadow: "0 6px 16px rgba(202,138,4,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
                   <span style={{ fontSize: "11px", fontWeight: "bold", color: "#854d0e", background: "#fef9c3", padding: "2px 8px", borderRadius: "10px" }}>📖 오늘의 말씀 암송 챌린지</span>
@@ -1246,7 +1262,7 @@ export default function Home() {
       </main>
 
       {activeTab !== "home" && <div className="bf-safe-note"><ShieldCheck size={16} /><p><b>함께 지켜요</b><br />마음이 아프거나 중요한 고민은 부모님, 선생님과 함께 이야기해요.</p></div>}
-      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className={`bf-nav-center ${getVoiceMicStateClass({ isListening, isPressed: isMicPressed })}`} onPointerDown={event => { try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Safari may reject synthetic capture */ } micPointerDownRef.current = true; setIsMicPressed(true); if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onTouchStart={event => { event.preventDefault(); micPointerDownRef.current = true; setIsMicPressed(true); beginListening(true); }} onPointerUp={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onPointerCancel={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onTouchEnd={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onClick={toggleListening} aria-pressed={isListening} aria-label={getVoiceMicAriaLabel(isListening)} title={getVoiceMicAriaLabel(isListening)}>{isListening ? <Loader2 className="spin" size={22} /> : <Mic size={22} />}<span className="bf-nav-mic-label">{getVoiceMicLabel({ isListening, isPressed: isMicPressed })}</span></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>퀴즈</span></button><button className={activeTab === "records" ? "active" : ""} onClick={() => setActiveTab("records")}><BookOpen size={18} /><span>기록</span></button></nav>
+      <nav className="bf-bottom-nav" aria-label="주요 메뉴"><button className={activeTab === "home" ? "active" : ""} onClick={() => setActiveTab("home")}><Sparkles size={18} /><span>대화</span></button><button className={activeTab === "stories" ? "active" : ""} onClick={() => setActiveTab("stories")}><BookOpen size={18} /><span>스토리</span></button><button className={`bf-nav-center ${getVoiceMicStateClass({ isListening, isPressed: isMicPressed })}`} onPointerDown={event => { try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Safari may reject synthetic capture */ } micPointerDownRef.current = true; setIsMicPressed(true); if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); beginListening(true); } }} onTouchStart={event => { event.preventDefault(); micPointerDownRef.current = true; setIsMicPressed(true); beginListening(true); }} onPointerUp={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onPointerCancel={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onTouchEnd={() => { micPointerDownRef.current = false; setIsMicPressed(false); }} onClick={toggleListening} aria-pressed={isListening} aria-label={getVoiceMicAriaLabel(isListening)} title={getVoiceMicAriaLabel(isListening)}>{isListening ? <Loader2 className="spin" size={22} /> : <Mic size={22} />}<span className="bf-nav-mic-label">{getVoiceMicLabel({ isListening, isPressed: isMicPressed })}</span></button><button className={activeTab === "game" ? "active" : ""} onClick={() => setActiveTab("game")}><Trophy size={18} /><span>게임</span></button><button className={activeTab === "records" ? "active" : ""} onClick={() => setActiveTab("records")}><BookOpen size={18} /><span>기록</span></button></nav>
 
       <AnimatePresence>{selectedStory && <motion.div className="bf-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeStory}><motion.article className="bf-story-modal" initial={{ opacity: 0, y: 25, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: .98 }} onClick={event => event.stopPropagation()}><button className="bf-modal-close" onClick={closeStory} aria-label="닫기"><X size={17} /></button><div className={`bf-modal-art ${selectedStory.accent}`}><img src={selectedStory.imageUrl} alt="" /><span>✨</span></div><div className="bf-modal-body"><span className="bf-kicker">✦ 성경 이야기</span><h2>{selectedStory.title}</h2><p>{selectedStory.body}</p><div className="bf-lesson"><Lightbulb size={15} /><span><b>오늘의 마음 보물</b>{selectedStory.lesson}<small>{selectedStory.verse}</small></span></div><button className="bf-primary-button full" onClick={tellStory}><Volume2 size={15} /> 이야기 들려줘</button></div></motion.article></motion.div>}</AnimatePresence>
     </div>
