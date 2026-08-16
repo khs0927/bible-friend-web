@@ -108,6 +108,14 @@ export default function Home() {
   const [quizAnswered, setQuizAnswered] = useState(false);
   const [quizCorrect, setQuizCorrect] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<{ storyTitle: string; storyHook: string; storyLesson: string; quizQuestion: string; quizAnswer: string; encouragement: string } | null>(null);
+  const [rewardModalOpen, setRewardModalOpen] = useState(false);
+  const [quizLevel, setQuizLevel] = useState<"toddler" | "junior" | "senior">("toddler");
+  const [miniGameStarted, setMiniGameStarted] = useState(false);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [matchedCount, setMatchedCount] = useState(0);
+  const [gameDone, setGameDone] = useState(false);
+  const [reciteDone, setReciteDone] = useState(false);
+  const [selectedOpt, setSelectedOpt] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -509,70 +517,66 @@ export default function Home() {
         <button
           className="bf-secondary-button"
           style={{ background: "#fef08a", color: "#854d0e", border: "1px solid #ca8a04", fontSize: "12px", fontWeight: "bold", padding: "6px 12px", borderRadius: "14px" }}
-          onClick={() => {
-            const rewardModal = document.getElementById("bf-reward-wardrobe-modal");
-            if (rewardModal) rewardModal.style.display = "flex";
-          }}
+          onClick={() => setRewardModalOpen(true)}
         >
           🎁 보상·옷장 🧥
         </button>
       </header>
 
-      <div id="bf-reward-wardrobe-modal" style={{ display: "none", position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, justifyContent: "center", alignItems: "center", padding: "16px" }}>
-        <div style={{ background: "#fff", width: "100%", maxWidth: "380px", borderRadius: "24px", padding: "20px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)", position: "relative", maxHeight: "85vh", overflowY: "auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h3 style={{ margin: 0, fontSize: "18px", color: "#713f12" }}>🎁 보상 및 성경 친구 옷장</h3>
-            <button
-              style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#666" }}
-              onClick={() => {
-                const modal = document.getElementById("bf-reward-wardrobe-modal");
-                if (modal) modal.style.display = "none";
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          <div style={{ marginBottom: "16px", background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", padding: "14px", borderRadius: "16px", border: "2px solid #ca8a04" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-              <span style={{ fontSize: "24px" }}>🔥</span>
-              <div>
-                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#713f12" }}>3일 연속 출석 보상!</h4>
-                <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#854d0e" }}>매일 방문하고 보너스 별 +15개 받기</p>
-              </div>
+      {rewardModalOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", justifyContent: "center", alignItems: "center", padding: "16px" }}>
+          <div style={{ background: "#fff", width: "100%", maxWidth: "380px", borderRadius: "24px", padding: "20px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)", position: "relative", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#713f12" }}>🎁 보상 및 성경 친구 옷장</h3>
+              <button
+                style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#666" }}
+                onClick={() => setRewardModalOpen(false)}
+              >
+                ✕
+              </button>
             </div>
-            <button
-              className="bf-primary-button full"
-              style={{ background: "#ca8a04", borderColor: "#a16207", fontSize: "12px", padding: "8px" }}
-              onClick={() => {
-                addScoreMutation.mutate({ points: 15 });
-                alert("🎉 연속 출석 보너스 별 +15개가 적립되었어요!");
-              }}
-            >
-              출석 보상 받기 ✨
-            </button>
-          </div>
 
-          <div style={{ background: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", padding: "14px", borderRadius: "16px", border: "2px solid #0284c7" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-              <span style={{ fontSize: "24px" }}>🧢</span>
-              <div>
-                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#0369a1" }}>성경 친구 옷장 (코스튬)</h4>
-                <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#0369a1" }}>천사 날개와 면류관 장착하기</p>
+            <div style={{ marginBottom: "16px", background: "linear-gradient(135deg, #fef08a 0%, #fde047 100%)", padding: "14px", borderRadius: "16px", border: "2px solid #ca8a04" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "24px" }}>🔥</span>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#713f12" }}>3일 연속 출석 보상!</h4>
+                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#854d0e" }}>매일 방문하고 보너스 별 +15개 받기</p>
+                </div>
               </div>
+              <button
+                className="bf-primary-button full"
+                style={{ background: "#ca8a04", borderColor: "#a16207", fontSize: "12px", padding: "8px" }}
+                onClick={() => {
+                  addScoreMutation.mutate({ points: 15 });
+                  alert("🎉 연속 출석 보너스 별 +15개가 적립되었어요!");
+                }}
+              >
+                출석 보상 받기 ✨
+              </button>
             </div>
-            <button
-              className="bf-primary-button full"
-              style={{ background: "#0284c7", borderColor: "#0369a1", fontSize: "12px", padding: "8px" }}
-              onClick={() => {
-                alert("👑 성경 친구에게 멋진 천사 면류관 코스튬이 장착되었어요!");
-              }}
-            >
-              옷장 코스튬 장착하기 🧥
-            </button>
+
+            <div style={{ background: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", padding: "14px", borderRadius: "16px", border: "2px solid #0284c7" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "24px" }}>🧢</span>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#0369a1" }}>성경 친구 옷장 (코스튬)</h4>
+                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#0369a1" }}>천사 날개와 면류관 장착하기</p>
+                </div>
+              </div>
+              <button
+                className="bf-primary-button full"
+                style={{ background: "#0284c7", borderColor: "#0369a1", fontSize: "12px", padding: "8px" }}
+                onClick={() => {
+                  alert("👑 성경 친구에게 멋진 천사 면류관 코스튬이 장착되었어요!");
+                }}
+              >
+                옷장 코스튬 장착하기 🧥
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <main id="top" className="bf-main">
         {activeTab === "home" && (
@@ -619,12 +623,6 @@ export default function Home() {
         })}</div></section>}
 
         {activeTab === "game" && (() => {
-          const [quizLevel, setQuizLevel] = useState<"toddler" | "junior" | "senior">("toddler");
-          const [miniGameStarted, setMiniGameStarted] = useState(false);
-          const [cardIndex, setCardIndex] = useState(0);
-          const [matchedCount, setMatchedCount] = useState(0);
-          const [gameDone, setGameDone] = useState(false);
-          const [reciteDone, setReciteDone] = useState(false);
           const gameCards = quizLevel === "toddler" ? [
             { title: "사랑의 선물", verse: "요한복음 3:16", hint: "하나님이 세상을 이처럼 사랑하사..." },
             { title: "두려움 없는 용기", verse: "여호수아 1:9", hint: "강하고 담대하라 두려워하지 말며..." },
@@ -639,7 +637,6 @@ export default function Home() {
           ];
           const currentCard = gameCards[cardIndex] || gameCards[0];
           const options = [currentCard.verse, "시편 23:1", "창세기 1:1", "마태복음 6:9"].sort(() => Math.random() - 0.5);
-          const [selectedOpt, setSelectedOpt] = useState<string | null>(null);
 
           return (
             <section className="bf-tab-page">
