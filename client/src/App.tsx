@@ -18,7 +18,7 @@ function HomeWithComicEntry() {
           position: "fixed",
           right: "14px",
           bottom: "88px",
-          zIndex: 80,
+          zIndex: 50,
           display: "flex",
           alignItems: "center",
           gap: "7px",
