@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express from "express";
+import express, { type Request, type Response } from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "../server/_core/oauth";
 import { registerStorageProxy } from "../server/_core/storageProxy";
@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json({ limit: "4mb" }));
 app.use(express.urlencoded({ limit: "4mb", extended: true }));
 
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", (_req: Request, res: Response) => {
   res.status(200).json({ ok: true, runtime: "vercel-express" });
 });
 
