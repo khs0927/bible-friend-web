@@ -22,6 +22,9 @@ export type ComicReward = {
   subtitle: string;
   icon: string;
   rarity: "story" | "character" | "verse";
+  verse: string;
+  content: string;
+  points: number;
 };
 
 export type ComicStage = {
@@ -143,6 +146,9 @@ export const NOAH_EPISODE: ComicEpisode = {
         subtitle: "보이지 않아도 말씀을 믿고 한 걸음씩",
         icon: "🔨",
         rarity: "story",
+        verse: "창세기 6:22",
+        content: "노아가 하나님이 명하신 대로 행한 것처럼, 믿음은 말씀을 듣고 한 걸음씩 순종하는 마음이에요.",
+        points: 20,
       },
     },
   ],
