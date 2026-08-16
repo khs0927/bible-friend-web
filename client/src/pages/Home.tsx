@@ -69,6 +69,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newlyCollectedCard, setNewlyCollectedCard] = useState<{ title: string; verse: string; iconEmoji: string } | null>(null);
+  const [activeTreasureCard, setActiveTreasureCard] = useState<{ id: number; title: string; verse: string; content: string; iconEmoji: string } | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("ready");
   const [voiceError, setVoiceError] = useState<string | null>(null);
@@ -416,6 +417,21 @@ export default function Home() {
             </motion.div>
           </motion.div>
         )}
+        {activeTreasureCard && (
+          <motion.div className="bf-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveTreasureCard(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+            <motion.div className="bf-story-modal" initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 15, scale: 0.98 }} onClick={e => e.stopPropagation()} style={{ background: "#fff", padding: "28px", borderRadius: "24px", maxWidth: "360px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.25)", border: "2px solid #eab308", textAlign: "center", position: "relative" }}>
+              <button className="bf-modal-close" onClick={() => setActiveTreasureCard(null)} aria-label="닫기" style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer" }}><X size={18} /></button>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>{activeTreasureCard.iconEmoji}</div>
+              <span className="bf-kicker" style={{ color: "#d97706", fontWeight: "bold" }}>말씀 보물 카드</span>
+              <h2 style={{ fontSize: "20px", fontWeight: "bold", margin: "6px 0 4px" }}>{activeTreasureCard.title}</h2>
+              <p style={{ fontSize: "13px", color: "#d97706", fontWeight: "bold", marginBottom: "12px" }}>{activeTreasureCard.verse}</p>
+              <p style={{ fontSize: "14px", color: "#374151", lineHeight: "1.5", marginBottom: "20px" }}>{activeTreasureCard.content}</p>
+              <button className="bf-primary-button full" onClick={() => {
+                speakNow({ text: `${activeTreasureCard.title}. ${activeTreasureCard.verse}. ${activeTreasureCard.content}`, speaker: "CHILD_FRIEND", emotion: "따뜻하고 다정한 목소리" });
+              }}><Volume2 size={16} /> 성경 친구 목소리로 듣기</button>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
       <header className="bf-topbar">
         <a href="#top" className="bf-brand" aria-label="성경 친구 홈">
@@ -490,10 +506,11 @@ export default function Home() {
                   </div>
                   <div className="bf-treasure-section" style={{ marginTop: "20px" }}>
                     <h3>🗺️ 수집한 말씀 보물 카드</h3>
-                    <div className="bf-treasure-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px", marginTop: "12px" }}>
+                    <p style={{ fontSize: "12px", color: "#666", margin: "4px 0 12px" }}>카드를 터치하면 상세 내용과 함께 성경 친구의 목소리로 들을 수 있어요.</p>
+                    <div className="bf-treasure-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px" }}>
                       {treasureQuery.data && treasureQuery.data.length > 0 ? (
                         treasureQuery.data.map(card => (
-                          <div key={card.id} className="bf-treasure-card" style={{ background: "rgba(255,255,255,0.85)", padding: "14px", borderRadius: "14px", border: "1px solid rgba(234, 179, 8, 0.4)", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+                          <div key={card.id} className="bf-treasure-card" onClick={() => setActiveTreasureCard(card)} style={{ background: "rgba(255,255,255,0.85)", padding: "14px", borderRadius: "14px", border: "1px solid rgba(234, 179, 8, 0.4)", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", cursor: "pointer", transition: "transform 0.15s ease" }} role="button" tabIndex={0}>
                             <span style={{ fontSize: "24px" }}>{card.iconEmoji}</span>
                             <h4 style={{ fontSize: "14px", fontWeight: "bold", margin: "6px 0 4px" }}>{card.title}</h4>
                             <p style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>{card.verse}</p>
