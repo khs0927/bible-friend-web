@@ -51,16 +51,14 @@ export type ComicEpisode = {
 };
 
 /**
- * Prototype art generated for the first Comic Adventure vertical slice.
- * Adobe short links are intentionally treated as prototype sources only.
- * Before production release, sync every approved master into
- * /public/comic-assets and replace these URLs with repository-owned paths.
+ * Stable same-origin app paths for the approved Noah artwork.
+ * The server-side comic asset proxy refreshes AppDeploy Storage signed URLs,
+ * validates the storage host, and redirects the browser to the stored PNG.
+ * This keeps Adobe short links out of the runtime client. Repository-owned
+ * PNG/WebP masters can replace the proxy later without changing episode data.
  */
-export const NOAH_SCENE_01_PROTOTYPE_ART =
-  "https://at.adobe.com/qy2CAPTQXobPd1q3";
-
-export const NOAH_SCENE_02_PROTOTYPE_ART =
-  "https://at.adobe.com/m6W2aV5n1JeTowmP";
+export const NOAH_SCENE_01_ART = "/api/comic-assets/scene1";
+export const NOAH_SCENE_02_ART = "/api/comic-assets/scene2";
 
 export const NOAH_EPISODE: ComicEpisode = {
   id: "noah-last-preparation",
@@ -68,7 +66,7 @@ export const NOAH_EPISODE: ComicEpisode = {
   subtitle: "비가 오기 전의 마지막 준비",
   bibleReference: "창세기 6–9장",
   theme: "믿음으로 순종하기",
-  coverImage: NOAH_SCENE_01_PROTOTYPE_ART,
+  coverImage: NOAH_SCENE_01_ART,
   stages: [
     {
       id: "scene-arrival",
@@ -77,7 +75,7 @@ export const NOAH_EPISODE: ComicEpisode = {
       narration:
         "하나님이 말씀하신 대로 노아는 오랫동안 방주를 만들었어요. 이제 하늘의 빛이 조금씩 달라지고, 멀리서 동물들이 두 마리씩 다가오기 시작했어요.",
       objective: "그림을 살펴보고 방주 주변에서 무슨 일이 일어나고 있는지 찾아보세요.",
-      imageUrl: NOAH_SCENE_01_PROTOTYPE_ART,
+      imageUrl: NOAH_SCENE_01_ART,
       imageAlt: "노아와 가족이 큰 나무 방주를 완성하고 동물들이 다가오는 장면",
     },
     {
@@ -86,7 +84,7 @@ export const NOAH_EPISODE: ComicEpisode = {
       title: "준비물 세 가지를 찾아요",
       narration: "방주에 들어가기 전에 꼭 필요한 준비물을 찾아 노아를 도와주세요.",
       objective: "그림 속에서 망치, 밧줄, 나무를 모두 찾아 터치하세요.",
-      imageUrl: NOAH_SCENE_02_PROTOTYPE_ART,
+      imageUrl: NOAH_SCENE_02_ART,
       imageAlt: "노아가 방주 앞에서 망치와 밧줄과 나무를 준비하는 탐색 게임 장면",
       hotspots: [
         { id: "hammer", label: "망치", hint: "노아가 높이 들고 있는 도구를 살펴봐요.", x: 68, y: 17 },
@@ -101,7 +99,7 @@ export const NOAH_EPISODE: ComicEpisode = {
       narration:
         "오랫동안 비가 오지 않았기 때문에 어떤 사람들은 노아를 이해하지 못했어요. 하지만 노아는 하나님의 말씀을 기억했어요.",
       objective: "노아가 다음에 할 행동을 선택해 보세요.",
-      imageUrl: NOAH_SCENE_01_PROTOTYPE_ART,
+      imageUrl: NOAH_SCENE_01_ART,
       imageAlt: "방주 앞에 서 있는 노아가 믿음의 선택을 하는 장면",
       choices: [
         {
