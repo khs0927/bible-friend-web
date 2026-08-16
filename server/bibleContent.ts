@@ -1,6 +1,6 @@
 export type BibleStory = {
   id: string;
-  title: "노아의 방주" | "다윗과 골리앗" | "예수님의 사랑" | "천지창조" | "꿈꾸는 요셉" | "사자굴의 다니엘" | "지혜의 왕 솔로몬";
+  title: "노아의 방주" | "다윗과 골리앗" | "예수님의 사랑" | "천지창조" | "꿈꾸는 요셉" | "사자굴의 다니엘" | "지혜의 왕 솔로몬" | "부활절 아침" | "추수감사 축제";
   subtitle: string;
   body: string;
   lesson: string;
@@ -96,6 +96,28 @@ export const BIBLE_STORIES: BibleStory[] = [
     imageUrl: "/manus-storage/story_creation_3e9569ce.png",
     illustrationPrompt: "A bright, joyful child-friendly 3D animated illustration of young King Solomon smiling wisely in a beautiful ancient palace with scrolls and gentle warm lighting, inspiring biblical storybook art, no text.",
   },
+  {
+    id: "easter",
+    title: "부활절 아침",
+    subtitle: "새 생명과 승리의 기쁨",
+    body: "예수님은 우리를 위해 십자가에서 모든 아픔을 이기시고, 삼일 만에 다시 살아나셨어요! 슬퍼하던 제자들에게 찾아와 평안을 주셨고, 영원한 생명과 소망의 기쁨을 선물로 주셨답니다.",
+    lesson: "예수님의 부활은 우리 마음에 영원한 소망과 기쁨을 줘요.",
+    verse: "누가복음 24:6",
+    accent: "coral",
+    imageUrl: "/manus-storage/story_jesus_9ab7568d.png",
+    illustrationPrompt: "A radiant child-friendly 3D animated illustration of an empty tomb with bright golden morning light, blooming spring flowers, joyous angelic glow, hopeful and peaceful Easter morning atmosphere, no text.",
+  },
+  {
+    id: "thanksgiving",
+    title: "추수감사 축제",
+    subtitle: "하나님이 주신 은혜에 감사해요",
+    body: "이스라엘 백성들은 하나님이 한 해 동안 밭에 거둔 곡식과 과일로 풍성하게 채워 주신 은혜를 기억하며 기쁨의 축제를 드렸어요. 우리 삶의 모든 작은 순간도 하나님의 선물이에요.",
+    lesson: "매일의 일상과 채워주시는 은혜에 감사하는 마음을 가져요.",
+    verse: "시편 107:1",
+    accent: "gold",
+    imageUrl: "/manus-storage/story_noah_a1e0e2bf.png",
+    illustrationPrompt: "A warm, harvest-themed child-friendly 3D animated illustration of baskets filled with autumn fruits, golden wheat, smiling children and families sharing a grateful meal under warm sunshine, cozy storybook style, no text.",
+  },
 ];
 
 export const QUIZ_BANK: BibleQuiz[] = [
@@ -104,6 +126,8 @@ export const QUIZ_BANK: BibleQuiz[] = [
   { id: "q-jesus", question: "예수님은 어린이들이 가까이 오는 것을 어떻게 하셨나요?", options: ["기쁘게 맞아 주셨어요", "멀리 보내셨어요", "모른 척했어요", "숨으셨어요"], answer: 0, explanation: "예수님은 어린이들을 사랑하시고 가까이 오는 것을 기뻐하셨어요." },
   { id: "q-creation", question: "하나님이 만드신 것 중 하나가 아닌 것은 무엇인가요?", options: ["하늘의 별", "바다의 물고기", "사랑하는 마음", "자동차 경주 트랙"], answer: 3, explanation: "성경의 창조 이야기는 하늘과 땅, 생명과 사람을 말해요. 자동차 경주 트랙은 훨씬 나중에 사람이 만든 것이랍니다." },
   { id: "q-joseph", question: "요셉은 어려운 순간에도 누구와 함께했나요?", options: ["하나님", "아무도 없이 혼자", "골리앗", "바다 괴물"], answer: 0, explanation: "하나님은 요셉이 어려운 일을 만날 때도 함께하셨어요." },
+  { id: "q-easter", question: "예수님은 십자가에서 이기시고 몇 일 만에 다시 살아나셨나요?", options: ["삼일 만에", "일주일 뒤", "한 달 뒤", "바로 다음 날"], answer: 0, explanation: "예수님은 부활하셔서 우리에게 영원한 소망을 주셨어요." },
+  { id: "q-thanksgiving", question: "하나님의 은혜에 감사드리며 열매를 나누는 절기는 무엇인가요?", options: ["추수감사절", "여름방학", "운동회", "새해 첫날"], answer: 0, explanation: "한 해 동안 베풀어주신 은혜에 감사하는 추수감사절이에요." },
 ];
 
 export const CHILD_SAFE_SYSTEM_PROMPT = `너는 '성경 친구'라는 이름의 따뜻한 어린이 성경 안내자야. 모든 답변은 반드시 한국어로 작성해.

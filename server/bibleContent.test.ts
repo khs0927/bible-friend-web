@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BIBLE_STORIES, QUIZ_BANK, buildBibleSystemPrompt, getSafeFallbackAnswer } from "./bibleContent";
 
 describe("Bible Friend content", () => {
-  it("keeps the story titles in the product order including extension pack", () => {
+  it("keeps the story titles in the product order including extension pack and seasonal pack", () => {
     expect(BIBLE_STORIES.map(story => story.title)).toEqual([
       "노아의 방주",
       "다윗과 골리앗",
@@ -11,6 +11,8 @@ describe("Bible Friend content", () => {
       "꿈꾸는 요셉",
       "사자굴의 다니엘",
       "지혜의 왕 솔로몬",
+      "부활절 아침",
+      "추수감사 축제",
     ]);
   });
 
