@@ -1,0 +1,342 @@
+/* Bible Friend unified mobile-first layout layer.
+   Loaded after index.css so it can normalize legacy/inline-era component styles
+   without rewriting the existing feature-rich Home page. */
+:root {
+  --bf-shell: 760px;
+  --bf-gutter: clamp(12px, 3.6vw, 24px);
+  --bf-nav-height: 82px;
+  --bf-ink: #30294a;
+  --bf-muted: #8b8299;
+  --bf-violet: #7163c7;
+  --bf-violet-dark: #51449e;
+  --bf-coral: #ef907a;
+  --bf-gold: #e7a63d;
+  --bf-mint: #65b7a9;
+  --bf-surface: rgba(255, 253, 250, .94);
+  --bf-border: rgba(81, 68, 158, .10);
+  --bf-radius-xl: 28px;
+  --bf-radius-lg: 22px;
+  --bf-radius-md: 16px;
+  --bf-shadow: 0 16px 42px rgba(70, 55, 108, .10);
+  --bf-shadow-soft: 0 8px 24px rgba(70, 55, 108, .08);
+}
+
+html { min-height: 100%; background: #fffaf4; }
+body, #root { min-height: 100%; }
+body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
+button, [role="button"], a { touch-action: manipulation; }
+
+.bf-app {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  overflow-x: clip;
+  color: var(--bf-ink);
+}
+
+.bf-topbar,
+.bf-main {
+  width: min(calc(100% - (var(--bf-gutter) * 2)), var(--bf-shell));
+  margin-inline: auto;
+}
+
+.bf-topbar {
+  min-height: 66px;
+  padding-block: 8px;
+  gap: 10px;
+}
+
+.bf-brand { min-width: 0; }
+.bf-brand-mark {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 15px;
+}
+.bf-brand strong { font-size: clamp(16px, 4.2vw, 19px); line-height: 1.25; }
+.bf-topbar .bf-secondary-button { min-height: 44px; padding: 9px 13px !important; white-space: nowrap; }
+
+.bf-main {
+  padding-bottom: calc(var(--bf-nav-height) + 42px + env(safe-area-inset-bottom, 0px));
+}
+
+.bf-tab-page,
+.bf-home-screen {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.bf-tab-page { padding-top: 10px; }
+.bf-tab-title {
+  margin: 10px 0 24px;
+  padding-inline: 2px;
+}
+.bf-tab-title .bf-kicker { font-size: 11px; }
+.bf-tab-title h1 {
+  margin: 8px 0 8px;
+  font-size: clamp(28px, 7.5vw, 42px);
+  line-height: 1.16;
+  letter-spacing: -.055em;
+}
+.bf-tab-title p {
+  max-width: 580px;
+  margin: 0;
+  color: var(--bf-muted);
+  font-size: 14px;
+  line-height: 1.72;
+}
+.bf-back-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border: 0;
+  color: var(--bf-violet);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Conversation */
+.bf-home-screen { min-height: calc(100dvh - 72px); }
+.bf-home-screen .bf-chat-section { min-height: 0; }
+.bf-chat-surface.bf-chat-surface-art {
+  min-height: clamp(520px, calc(100dvh - 168px - env(safe-area-inset-top, 0px)), 880px);
+  border-radius: var(--bf-radius-xl);
+  background-position: center top;
+  background-size: cover;
+  overflow: hidden;
+}
+.bf-chat-messages {
+  padding: 58px 12px 128px;
+  scroll-padding-bottom: 140px;
+}
+.bf-chat-message { align-items: flex-end; gap: 8px; }
+.bf-chat-message p {
+  max-width: min(84%, 560px);
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 20px;
+  color: #37304d;
+  background: rgba(255,255,255,.94);
+  box-shadow: var(--bf-shadow-soft);
+  font-size: clamp(15px, 4.1vw, 17px);
+  line-height: 1.7;
+}
+.bf-chat-message.user p {
+  color: #fff;
+  background: linear-gradient(145deg, #7d6ed2, #6554ba);
+}
+.bf-chat-avatar { flex: 0 0 auto; }
+.bf-chat-utility { inset: 10px 10px auto; }
+.bf-chat-utility .bf-round-icon { width: 44px; height: 44px; border-radius: 15px; }
+.bf-voice-status {
+  min-height: 30px;
+  max-width: calc(100% - 58px);
+  padding: 6px 10px;
+  border-radius: 13px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 5px 16px rgba(70,55,108,.07);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.bf-voice-status.error { background: rgba(255,239,234,.94); }
+.bf-chat-composer {
+  position: sticky;
+  z-index: 12;
+  bottom: 8px;
+  width: calc(100% - 12px);
+  margin: 0 auto 5px;
+  padding: 7px;
+  border: 1px solid rgba(113,99,199,.12);
+  border-radius: 23px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 12px 34px rgba(70,55,108,.16);
+  backdrop-filter: blur(16px);
+}
+.bf-chat-composer textarea,
+.bf-ai-chat textarea {
+  min-height: 46px !important;
+  font-size: 16px !important; /* prevents iOS focus zoom */
+  line-height: 1.5;
+}
+.bf-composer-mic,
+.bf-text-send,
+.bf-round-icon,
+.bf-primary-button,
+.bf-secondary-button { min-width: 44px; min-height: 44px; }
+.bf-chat-suggestions {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: none;
+}
+.bf-chat-suggestions::-webkit-scrollbar { display: none; }
+.bf-chat-suggestions button { flex: 0 0 auto; min-height: 38px; }
+
+/* Shared cards and sections */
+.bf-section { margin-bottom: 24px; }
+.bf-section-heading { margin-bottom: 13px; }
+.bf-story-card,
+.bf-records-card,
+.bf-orchestrator-card,
+.bf-generated-card,
+.bf-game-banner {
+  border-radius: var(--bf-radius-lg);
+  box-shadow: var(--bf-shadow-soft);
+}
+.bf-story-card { min-height: 92px; padding: 12px; gap: 12px; }
+.bf-story-art { width: 68px; height: 68px; flex-basis: 68px; border-radius: 17px; }
+.bf-story-copy strong { font-size: 14px; line-height: 1.35; }
+.bf-story-copy span { margin-top: 5px; font-size: 11px; }
+.bf-primary-button,
+.bf-secondary-button {
+  border-radius: 14px;
+  padding: 10px 15px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.bf-primary-button.full { min-height: 48px; }
+
+/* Game */
+.bf-game-banner {
+  padding: 24px 20px;
+  min-height: 190px;
+  background-size: cover;
+  background-position: center;
+}
+.bf-game-banner h2 { font-size: clamp(25px, 6.8vw, 34px); }
+.bf-game-banner p { font-size: 12px; line-height: 1.55; }
+
+/* Records / growth: make the mascot and summary hierarchy intentional. */
+.bf-records-page { padding-bottom: 24px; }
+.bf-records-card {
+  display: grid;
+  grid-template-columns: minmax(96px, 28%) 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.88);
+  background: linear-gradient(145deg, rgba(255,249,238,.96), rgba(247,239,255,.96));
+}
+.bf-records-mascot {
+  width: 100%;
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+}
+.bf-records-mascot img {
+  width: min(100%, 180px);
+  max-height: 210px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 16px rgba(81,68,158,.16));
+}
+.bf-records-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.bf-records-stats > div {
+  min-width: 0;
+  padding: 14px 8px;
+  border: 1px solid var(--bf-border);
+  border-radius: 17px;
+  text-align: center;
+  background: rgba(255,255,255,.84);
+  box-shadow: 0 6px 16px rgba(70,55,108,.06);
+}
+.bf-records-stats b { display: block; font-size: 20px; }
+.bf-records-stats span { display: block; margin-top: 3px; color: var(--bf-muted); font-size: 11px; }
+.bf-badge-banner { gap: 12px; flex-wrap: wrap; }
+.bf-badge-banner > div { min-width: 0; flex: 1 1 220px; }
+
+/* Modals */
+.bf-modal-backdrop,
+.bf-confetti-overlay {
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+}
+.bf-story-modal,
+.bf-treasure-popup {
+  max-width: min(420px, 100%) !important;
+  max-height: min(84dvh, 760px);
+  overflow-y: auto;
+  border-radius: 26px !important;
+}
+.bf-modal-close { min-width: 44px; min-height: 44px; display: grid; place-items: center; }
+
+/* Persistent bottom navigation */
+.bf-bottom-nav {
+  position: fixed;
+  z-index: 80;
+  left: 50%;
+  bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(calc(100% - 16px), var(--bf-shell));
+  min-height: var(--bf-nav-height);
+  margin: 0;
+  padding: 8px 8px;
+  border: 1px solid rgba(255,255,255,.92);
+  border-radius: 27px;
+  background: rgba(255,252,249,.96);
+  box-shadow: 0 12px 40px rgba(61,47,100,.18);
+  backdrop-filter: blur(18px);
+}
+.bf-bottom-nav button {
+  min-width: 0;
+  min-height: 58px;
+  padding: 5px 2px;
+  border-radius: 16px;
+  font-size: 11px;
+  line-height: 1.1;
+}
+.bf-bottom-nav button svg { width: 36px; height: 36px; }
+.bf-bottom-nav .bf-nav-center {
+  width: 62px;
+  height: 62px;
+  flex: 0 0 62px;
+  margin: -26px 4px 0;
+  border-radius: 21px;
+}
+
+@media (max-width: 420px) {
+  :root { --bf-gutter: 11px; }
+  .bf-topbar { min-height: 62px; }
+  .bf-brand-mark { width: 40px; height: 40px; flex-basis: 40px; }
+  .bf-topbar .bf-secondary-button { max-width: 132px; font-size: 11px !important; padding-inline: 10px !important; }
+  .bf-main { padding-bottom: calc(var(--bf-nav-height) + 38px + env(safe-area-inset-bottom, 0px)); }
+  .bf-chat-surface.bf-chat-surface-art { min-height: calc(100dvh - 154px - env(safe-area-inset-top, 0px)); border-radius: 24px; }
+  .bf-chat-messages { padding-inline: 8px; }
+  .bf-chat-message p { max-width: 88%; }
+  .bf-story-scroller { grid-template-columns: 1fr; }
+  .bf-records-card { grid-template-columns: 1fr; text-align: center; }
+  .bf-records-mascot { min-height: 190px; }
+  .bf-records-mascot img { width: min(62vw, 230px); max-height: 270px; }
+  .bf-records-card .bf-secondary-button { margin-left: 0 !important; width: 100%; }
+  .bf-records-stats > div { padding-inline: 4px; }
+  .bf-records-stats b { font-size: 18px; }
+  .bf-bottom-nav { width: calc(100% - 10px); bottom: max(5px, env(safe-area-inset-bottom, 0px)); padding-inline: 5px; }
+  .bf-bottom-nav button { font-size: 10px; }
+  .bf-bottom-nav button svg { width: 33px; height: 33px; }
+  .bf-bottom-nav .bf-nav-center { width: 58px; height: 58px; flex-basis: 58px; }
+}
+
+@media (min-width: 680px) {
+  .bf-topbar { padding-block: 11px; }
+  .bf-tab-page { padding-top: 18px; }
+  .bf-story-scroller { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bf-chat-message p { font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-app *, .bf-app *::before, .bf-app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
