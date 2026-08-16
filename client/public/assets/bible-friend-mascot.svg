@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" role="img" aria-label="성경 친구 마스코트">
+<defs>
+  <linearGradient id="hood" x1=".12" y1=".05" x2=".86" y2=".92"><stop stop-color="#ffb02e"/><stop offset=".52" stop-color="#ff8c24"/><stop offset="1" stop-color="#f36a50"/></linearGradient>
+  <linearGradient id="body" x1=".18" y1="0" x2=".82" y2="1"><stop stop-color="#7656df"/><stop offset=".58" stop-color="#563bc2"/><stop offset="1" stop-color="#38228f"/></linearGradient>
+  <radialGradient id="face" cx="45%" cy="32%"><stop stop-color="#fffdf2"/><stop offset="1" stop-color="#ffe8c8"/></radialGradient>
+  <radialGradient id="shine"><stop stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#4b2796" flood-opacity=".22"/></filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
+</defs>
+<g filter="url(#shadow)">
+  <ellipse cx="260" cy="637" rx="164" ry="22" fill="#5a3bb4" opacity=".16"/>
+  <path d="M111 312C81 279 54 228 64 187c6-27 25-43 46-38 21 5 30 26 27 48 8-13 22-20 35-14 17 8 20 30 8 48-11 17-30 27-45 39l-24 42Z" fill="url(#hood)"/>
+  <path d="M393 302c33 15 53 44 55 77 2 35-13 68-37 78-23 10-42-8-40-31 2-18 15-31 18-48-10 8-24 8-34 0-14-12-13-34 2-47 10-9 23-12 36-9Z" fill="url(#hood)"/>
+  <path d="M260 32c-100 0-174 75-182 181-3 42 3 80 17 119 11 30 12 75 12 125 0 126 57 188 153 188s153-62 153-188c0-50 1-95 12-125 14-39 20-77 17-119C434 107 360 32 260 32Z" fill="url(#hood)"/>
+  <path d="M108 403c22-29 56-46 92-48 27-2 44 7 60 20 16-13 33-22 60-20 36 2 70 19 92 48 2 18 3 36 3 54 0 126-58 188-155 188S105 583 105 457c0-18 1-36 3-54Z" fill="url(#body)"/>
+  <path d="M111 401c27-31 57-43 91-44 29-1 43 10 58 23 15-13 29-24 58-23 34 1 64 13 91 44-24-10-51-9-76 2-26 12-47 20-73 20s-47-8-73-20c-25-11-52-12-76-2Z" fill="#4d31b6" opacity=".28"/>
+  <ellipse cx="260" cy="234" rx="118" ry="105" fill="url(#face)" stroke="#f2c9aa" stroke-width="3"/>
+  <ellipse cx="214" cy="233" rx="17" ry="22" fill="#3b211d"/><ellipse cx="306" cy="233" rx="17" ry="22" fill="#3b211d"/>
+  <circle cx="208" cy="225" r="6" fill="#fff"/><circle cx="300" cy="225" r="6" fill="#fff"/>
+  <ellipse cx="186" cy="267" rx="20" ry="11" fill="#ff9a91" opacity=".75"/><ellipse cx="334" cy="267" rx="20" ry="11" fill="#ff9a91" opacity=".75"/>
+  <path d="M224 269c8 31 64 31 72 0-22 8-50 8-72 0Z" fill="#7e2432"/><path d="M241 288c11 9 27 10 38 0-12-7-26-7-38 0Z" fill="#ff7180"/>
+  <path d="M197 192c8-8 19-11 29-7" fill="none" stroke="#6d3528" stroke-width="6" stroke-linecap="round"/><path d="M294 185c10-4 21-1 29 7" fill="none" stroke="#6d3528" stroke-width="6" stroke-linecap="round"/>
+  <path d="M260 465l16 28 32 8-24 22 4 33-28-16-28 16 4-33-24-22 32-8 16-28Z" fill="#fff4d9" stroke="#f3d8b2" stroke-width="3"/>
+  <ellipse cx="199" cy="108" rx="63" ry="26" fill="url(#shine)" opacity=".32" transform="rotate(-26 199 108)"/>
+  <ellipse cx="206" cy="523" rx="92" ry="45" fill="#9a82ef" opacity=".12" filter="url(#soft)"/>
+</g>
+</svg>
