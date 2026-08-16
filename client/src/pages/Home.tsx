@@ -600,7 +600,7 @@ export default function Home() {
                   <button className={`bf-round-icon ${voiceEnabled ? "is-on" : ""}`} onClick={() => setVoiceEnabled(value => !value)} aria-label={getVoiceToggleLabel(voiceEnabled)} aria-pressed={voiceEnabled} title={getVoiceToggleLabel(voiceEnabled)}>{voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
                 </div>
                 <div className="bf-chat-friend-bg" aria-hidden="true"><span>✦</span><img src={FRIEND_MASCOT_URL} alt="" /></div>
-                <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} onSpeak={speakText} onSpeakNow={speakNow} isSpeaking={isSpeaking} isListening={isListening} beginListening={beginListening} toggleListening={toggleListening} isMicPressed={isMicPressed} micPointerDownRef={micPointerDownRef} />
+                <ChatPanel messages={messages} onSendMessage={handleSend} isLoading={askMutation.isPending} onSpeak={speakText} onSpeakNow={speakNow} isSpeaking={isSpeaking} isListening={isListening} beginListening={beginListening} toggleListening={toggleListening} isMicPressed={isMicPressed} setIsMicPressed={setIsMicPressed} micPointerDownRef={micPointerDownRef} />
               </div>
             </section>
           </section>
@@ -1415,7 +1415,7 @@ export default function Home() {
   );
 }
 
-function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow, isSpeaking, isListening, beginListening, toggleListening, isMicPressed, micPointerDownRef }: { messages: Message[]; onSendMessage: (content: string) => void; isLoading: boolean; onSpeak: (request: VoiceRequest) => void; onSpeakNow: (request: VoiceRequest) => void; isSpeaking: boolean; isListening: boolean; beginListening: (autoSpeak?: boolean) => void; toggleListening: () => void; isMicPressed: boolean; micPointerDownRef: React.MutableRefObject<boolean> }) {
+function ChatPanel({ messages, onSendMessage, isLoading, onSpeak, onSpeakNow, isSpeaking, isListening, beginListening, toggleListening, isMicPressed, setIsMicPressed, micPointerDownRef }: { messages: Message[]; onSendMessage: (content: string) => void; isLoading: boolean; onSpeak: (request: VoiceRequest) => void; onSpeakNow: (request: VoiceRequest) => void; isSpeaking: boolean; isListening: boolean; beginListening: (autoSpeak?: boolean) => void; toggleListening: () => void; isMicPressed: boolean; setIsMicPressed: (val: boolean) => void; micPointerDownRef: React.MutableRefObject<boolean> }) {
   const [draft, setDraft] = useState("");
   const submit = () => {
     if (!draft.trim() || isLoading) return;
