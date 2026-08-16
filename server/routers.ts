@@ -22,6 +22,8 @@ import {
   getUserTreasureCards,
   addUserTreasureCard,
   hasDrawnToday,
+  getUserPrayerNotes,
+  addUserPrayerNote,
 } from "./db";
 
 const model = "gemini-2.5-flash";
@@ -93,6 +95,18 @@ export const appRouter = router({
       await updateUserScore(ctx.user.id, currentScore + 20);
       return { success: true, card: cardDef, collected, alreadyDrawn };
     }),
+    prayerNotes: publicProcedure.query(async ({ ctx }) => (ctx.user ? getUserPrayerNotes(ctx.user.id) : [])),
+    addPrayerNote: publicProcedure
+      .input(z.object({ noteText: z.string().min(1).max(500), verseRef: z.string().max(128).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) return { success: false };
+        const success = await addUserPrayerNote({
+          userId: ctx.user.id,
+          noteText: input.noteText,
+          verseRef: input.verseRef ?? null,
+        });
+        return { success };
+      }),
   }),
   ai: router({
     ask: publicProcedure

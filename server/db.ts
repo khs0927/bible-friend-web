@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, chatHistory, InsertChatHistory, userScores, InsertUserScore, userTreasureCards, InsertUserTreasureCard } from "../drizzle/schema";
+import { InsertUser, users, chatHistory, InsertChatHistory, userScores, InsertUserScore, userTreasureCards, InsertUserTreasureCard, userPrayerNotes, InsertUserPrayerNote } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -147,6 +147,24 @@ export async function hasDrawnToday(userId: number): Promise<boolean> {
       return new Date(c.createdAt).toDateString() === todayStr;
     });
   } catch {
+    return false;
+  }
+}
+
+export async function getUserPrayerNotes(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(userPrayerNotes).where(eq(userPrayerNotes.userId, userId)).orderBy(desc(userPrayerNotes.createdAt));
+}
+
+export async function addUserPrayerNote(note: InsertUserPrayerNote) {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    await db.insert(userPrayerNotes).values(note);
+    return true;
+  } catch (err) {
+    console.error("[Database] Failed to add prayer note:", err);
     return false;
   }
 }

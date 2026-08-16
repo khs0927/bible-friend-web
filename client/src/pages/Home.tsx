@@ -78,6 +78,19 @@ export default function Home() {
       }
     }
   });
+  const prayerNotesQuery = trpc.content.prayerNotes.useQuery(undefined, { enabled: Boolean(user) });
+  const addPrayerNoteMutation = trpc.content.addPrayerNote.useMutation({
+    onSuccess: (res) => {
+      if (res.success) {
+        setNewPrayerText("");
+        setNewPrayerVerse("");
+        prayerNotesQuery.refetch();
+        alert("기도 노트에 따뜻한 마음이 예쁘게 담겼어요! 🙏");
+      }
+    }
+  });
+  const [newPrayerText, setNewPrayerText] = useState("");
+  const [newPrayerVerse, setNewPrayerVerse] = useState("");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newlyCollectedCard, setNewlyCollectedCard] = useState<{ title: string; verse: string; iconEmoji: string } | null>(null);
@@ -585,6 +598,52 @@ export default function Home() {
                           <p style={{ fontSize: "13px", color: "#777", gridColumn: "1 / -1", textAlign: "center", padding: "20px" }}>해당 테마에 모은 보물 카드가 없어요!</p>
                         );
                       })()}
+                    </div>
+                  </div>
+                  <div className="bf-prayer-section" style={{ marginTop: "24px", background: "rgba(255,255,255,0.9)", padding: "18px", borderRadius: "18px", border: "1px solid rgba(124, 58, 237, 0.3)", boxShadow: "0 4px 12px rgba(0,0,0,0.04)" }}>
+                    <h3 style={{ margin: "0 0 6px", display: "flex", alignItems: "center", gap: "6px" }}><MessageCircleHeart size={18} color="#7c3aed" /> 나만의 기도 노트</h3>
+                    <p style={{ fontSize: "12px", color: "#666", margin: "0 0 12px" }}>성경 친구와 대화하며 느낀 감동이나 하나님께 드리고 싶은 기도를 적어보세요.</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "14px" }}>
+                      <input
+                        type="text"
+                        placeholder="성경 구절 (예: 시편 23:1)"
+                        value={newPrayerVerse}
+                        onChange={e => setNewPrayerVerse(e.target.value)}
+                        style={{ padding: "10px 12px", borderRadius: "10px", border: "1px solid #d1d5db", fontSize: "13px", outline: "none" }}
+                      />
+                      <textarea
+                        placeholder="오늘 하나님께 드리고 싶은 마음이나 감사한 일을 적어보세요..."
+                        value={newPrayerText}
+                        onChange={e => setNewPrayerText(e.target.value)}
+                        rows={2}
+                        style={{ padding: "10px 12px", borderRadius: "10px", border: "1px solid #d1d5db", fontSize: "13px", outline: "none", resize: "none" }}
+                      />
+                      <button
+                        className="bf-primary-button"
+                        onClick={() => {
+                          if (!newPrayerText.trim()) {
+                            alert("기도 내용을 적어주세요!");
+                            return;
+                          }
+                          addPrayerNoteMutation.mutate({ noteText: newPrayerText.trim(), verseRef: newPrayerVerse.trim() || undefined });
+                        }}
+                        disabled={addPrayerNoteMutation.isPending}
+                        style={{ alignSelf: "flex-end", padding: "8px 16px", fontSize: "13px" }}
+                      >
+                        {addPrayerNoteMutation.isPending ? <Loader2 className="spin" size={14} /> : <Sparkles size={14} />} 기도 노트 저장 📝
+                      </button>
+                    </div>
+                    <div className="bf-prayer-list" style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto" }}>
+                      {prayerNotesQuery.data && prayerNotesQuery.data.length > 0 ? (
+                        prayerNotesQuery.data.map(note => (
+                          <div key={note.id} style={{ background: "#fdf4ff", padding: "12px", borderRadius: "12px", border: "1px solid #f3e8ff" }}>
+                            {note.verseRef && <small style={{ color: "#7c3aed", fontWeight: "bold", display: "block", marginBottom: "2px" }}>📖 {note.verseRef}</small>}
+                            <p style={{ fontSize: "13px", color: "#374151", margin: 0, whiteSpace: "pre-wrap" }}>{note.noteText}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p style={{ fontSize: "12px", color: "#888", textAlign: "center", padding: "10px" }}>아직 저장된 기도 노트가 없어요.</p>
+                      )}
                     </div>
                   </div>
                   <button className="bf-primary-button full" style={{ marginTop: "20px" }} onClick={() => { setMessages(initialMessages); setSelectedStoryId(null); setActiveTab("home"); }}><Sparkles size={15} /> 새 대화 시작하기</button>

@@ -60,3 +60,14 @@ export const userTreasureCards = mysqlTable("user_treasure_cards", {
 
 export type UserTreasureCard = typeof userTreasureCards.$inferSelect;
 export type InsertUserTreasureCard = typeof userTreasureCards.$inferInsert;
+
+export const userPrayerNotes = mysqlTable("user_prayer_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  noteText: text("noteText").notNull(),
+  verseRef: varchar("verseRef", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserPrayerNote = typeof userPrayerNotes.$inferSelect;
+export type InsertUserPrayerNote = typeof userPrayerNotes.$inferInsert;
