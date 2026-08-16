@@ -1,9 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/comic-adventure",
-      "destination": "/"
-    }
-  ]
+  "buildCommand": "pnpm check && pnpm test && pnpm build"
 }
