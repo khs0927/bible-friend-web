@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="게임 트로피">
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff08a"/><stop offset=".42" stop-color="#ffc332"/><stop offset="1" stop-color="#e78a13"/></linearGradient>
+ <linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8d69e3"/><stop offset="1" stop-color="#5638b7"/></linearGradient>
+ <filter id="s"><feDropShadow dx="0" dy="18" stdDeviation="15" flood-color="#6f4cb7" flood-opacity=".25"/></filter>
+</defs>
+<g filter="url(#s)">
+ <path d="M142 82h228v91c0 91-45 154-114 154s-114-63-114-154V82Z" fill="url(#gold)"/>
+ <path d="M142 112H84v49c0 73 40 121 111 130l18-38c-54-4-79-34-79-88v-7h8v-46Zm228 0h58v49c0 73-40 121-111 130l-18-38c54-4 79-34 79-88v-7h-8v-46Z" fill="#f1a91f"/>
+ <path d="M256 319v74" stroke="#df9a1d" stroke-width="30" stroke-linecap="round"/>
+ <rect x="170" y="375" width="172" height="45" rx="22" fill="url(#base)"/>
+ <rect x="127" y="414" width="258" height="54" rx="27" fill="url(#base)"/>
+ <path d="M256 127l18 36 40 6-29 28 7 40-36-19-36 19 7-40-29-28 40-6 18-36Z" fill="#fff8d8"/>
+ <ellipse cx="206" cy="111" rx="52" ry="18" fill="#fff" opacity=".32" transform="rotate(-16 206 111)"/>
+</g>
+</svg>
