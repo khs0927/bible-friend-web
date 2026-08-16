@@ -431,6 +431,32 @@ export default function Home() {
       <div className="bf-ambient bf-ambient-one" />
       <div className="bf-ambient bf-ambient-two" />
       <AnimatePresence>
+        {newlyCollectedCard && (() => {
+            // Play a cheerful chime effect using Web Audio API safely
+            if (typeof window !== "undefined") {
+              try {
+                const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+                if (AudioCtx) {
+                  const ctx = new AudioCtx();
+                  const now = ctx.currentTime;
+                  const osc = ctx.createOscillator();
+                  const gain = ctx.createGain();
+                  osc.type = "sine";
+                  osc.frequency.setValueAtTime(523.25, now); // C5
+                  osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                  osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                  osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                  gain.gain.setValueAtTime(0.15, now);
+                  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                  osc.connect(gain);
+                  gain.connect(ctx.destination);
+                  osc.start(now);
+                  osc.stop(now + 0.6);
+                }
+              } catch {}
+            }
+            return null;
+          })()}
         {newlyCollectedCard && (
           <motion.div className="bf-confetti-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setNewlyCollectedCard(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
             <motion.div className="bf-treasure-popup" initial={{ scale: 0.5, rotate: -10, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} style={{ background: "#fff", padding: "30px", borderRadius: "24px", textAlign: "center", maxWidth: "340px", width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.25)", border: "3px solid #eab308", position: "relative", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
