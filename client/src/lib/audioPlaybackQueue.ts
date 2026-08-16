@@ -48,6 +48,7 @@ export class AudioPlaybackQueue {
   private playing = false;
   private currentAudio?: HTMLAudioElement;
   private currentSource?: AudioBufferSourceNode;
+  private currentUtterance?: SpeechSynthesisUtterance;
   private audioContext?: AudioContext;
   private generation = 0;
 
@@ -63,7 +64,7 @@ export class AudioPlaybackQueue {
     if (!AudioContextCtor) return;
     try {
       this.audioContext ??= new AudioContextCtor();
-      void this.audioContext.resume();
+      void this.audioContext.resume().catch(() => undefined);
     } catch {
       // HTMLAudioElement and Web Speech remain available as fallbacks.
     }
@@ -71,6 +72,7 @@ export class AudioPlaybackQueue {
 
   enqueue(request: VoiceRequest) {
     if (typeof window === "undefined") return;
+    this.prime();
     this.queue.push({ ...request, text: request.text.trim() });
     void this.flush();
   }
@@ -99,6 +101,7 @@ export class AudioPlaybackQueue {
       // The source may already have ended.
     }
     this.currentSource = undefined;
+    this.currentUtterance = undefined;
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     this.playing = false;
   }
@@ -129,7 +132,13 @@ export class AudioPlaybackQueue {
         }
       }).catch(() => undefined);
       const allowBrowserFallback = this.options.allowBrowserFallback === true;
-      const fastFallbackMs = this.options.fastFallbackMs;
+      const configuredFallbackMs = this.options.fastFallbackMs;
+      // The home screen historically passed 400ms, which meant Gemini could almost
+      // never win the race on a real phone. Keep tiny values usable in node tests,
+      // but give natural server audio a fair window in an actual browser.
+      const fastFallbackMs = typeof configuredFallbackMs === "number" && typeof document !== "undefined"
+        ? Math.max(configuredFallbackMs, 2_600)
+        : configuredFallbackMs;
       const race = allowBrowserFallback && typeof fastFallbackMs === "number"
         ? await Promise.race([
             serverPromise,
@@ -142,7 +151,7 @@ export class AudioPlaybackQueue {
         if (run === this.generation) {
           const browserPlayed = await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
           if (!browserPlayed) {
-            const recoveryMs = this.options.lateServerRecoveryMs ?? 2_500;
+            const recoveryMs = this.options.lateServerRecoveryMs ?? 6_000;
             const lateResponse = await Promise.race([
               serverPromise,
               new Promise<{ __lateRecoveryTimeout: true }>(resolve => setTimeout(() => resolve({ __lateRecoveryTimeout: true }), recoveryMs)),
@@ -191,11 +200,11 @@ export class AudioPlaybackQueue {
     if (webAudioPlayed) return;
     const url = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
     const audio = new Audio(url);
+    audio.preload = "auto";
     this.currentAudio = audio;
     let completed = false;
     try {
-      const playPromise = audio.play();
-      await playPromise;
+      await audio.play();
       if (run === this.generation) {
         this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
       }
@@ -255,24 +264,46 @@ export class AudioPlaybackQueue {
         return;
       }
       const startSpeech = () => {
+        if (run !== this.generation) {
+          resolve(false);
+          return;
+        }
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(request.text);
+        this.currentUtterance = utterance;
         utterance.lang = "ko-KR";
         utterance.rate = Math.min(1.05, Math.max(0.86, rate));
-        utterance.pitch = 1.18;
-        const started = () => {
+        utterance.pitch = 1.12;
+        utterance.volume = 1;
+        const voices = typeof window.speechSynthesis.getVoices === "function" ? window.speechSynthesis.getVoices() : [];
+        const koreanVoice = voices.find(voice => voice.lang.toLowerCase() === "ko-kr")
+          ?? voices.find(voice => voice.lang.toLowerCase().startsWith("ko"));
+        if (koreanVoice) utterance.voice = koreanVoice;
+        utterance.onstart = () => {
           this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
         };
-        utterance.onstart = started;
         utterance.onend = () => {
-          this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
+          if (this.currentUtterance === utterance) this.currentUtterance = undefined;
+          if (run === this.generation) {
+            this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
+          }
           resolve(true);
         };
         utterance.onerror = event => {
+          if (this.currentUtterance === utterance) this.currentUtterance = undefined;
           const code = event?.error ?? "browser_speech_error";
+          if (run !== this.generation || code === "canceled" || code === "interrupted") {
+            resolve(false);
+            return;
+          }
           this.options.onPlaybackError?.({ request, provider, code, message: "브라우저 음성 엔진이 재생을 시작하지 못했어요." });
           resolve(false);
         };
+        try {
+          window.speechSynthesis.resume?.();
+        } catch {
+          // Some WebViews do not expose a working resume method.
+        }
         window.speechSynthesis.speak(utterance);
       };
       if (waitForVoices) {
@@ -280,7 +311,6 @@ export class AudioPlaybackQueue {
       } else {
         startSpeech();
       }
-
     });
   }
 }
