@@ -1,6 +1,9 @@
 const GEMINI_INTERACTIONS_HOST = "generativelanguage.googleapis.com";
 const GEMINI_INTERACTIONS_PATH = "/v1beta/interactions";
 export const GEMINI_TTS_API_REVISION = "2026-05-20";
+const PATCH_FLAG = "__bibleFriendGeminiTtsFetchRevisionInstalled" as const;
+
+type PatchedGlobal = typeof globalThis & { [PATCH_FLAG]?: boolean };
 
 function isGeminiInteractionsUrl(input: RequestInfo | URL) {
   try {
@@ -31,13 +34,9 @@ export function withGeminiTtsRevision(init: RequestInit = {}): RequestInit {
   return { ...init, headers };
 }
 
-const PATCH_KEY = Symbol.for("bible-friend.gemini-tts-fetch-revision");
-
-type PatchedGlobal = typeof globalThis & { [PATCH_KEY]?: boolean };
-
 export function installGeminiTtsFetchCompat() {
   const patchedGlobal = globalThis as PatchedGlobal;
-  if (patchedGlobal[PATCH_KEY] || typeof globalThis.fetch !== "function") return;
+  if (patchedGlobal[PATCH_FLAG] || typeof globalThis.fetch !== "function") return;
 
   const originalFetch = globalThis.fetch.bind(globalThis);
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -49,7 +48,7 @@ export function installGeminiTtsFetchCompat() {
     return originalFetch(input, isTtsRequest ? withGeminiTtsRevision(init) : init);
   }) as typeof globalThis.fetch;
 
-  patchedGlobal[PATCH_KEY] = true;
+  patchedGlobal[PATCH_FLAG] = true;
 }
 
 installGeminiTtsFetchCompat();
