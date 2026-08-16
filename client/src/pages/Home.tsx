@@ -106,7 +106,7 @@ export default function Home() {
   const [isMicPressed, setIsMicPressed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "records" | "growth">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "stories" | "game" | "records" | "growth" | "more">("home");
   const [spiritFoodCount, setSpiritFoodCount] = useState(3);
   const [equippedOutfit, setEquippedOutfit] = useState<string>("default");
   const [unlockedOutfits, setUnlocksOutfits] = useState<string[]>(["default"]);
