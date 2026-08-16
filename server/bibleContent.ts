@@ -110,3 +110,19 @@ export function getSafeFallbackAnswer(question: string) {
 export function getStoryById(id: string) {
   return BIBLE_STORIES.find(story => story.id === id) ?? BIBLE_STORIES[0];
 }
+
+export type TreasureCardDef = {
+  cardId: string;
+  title: string;
+  verse: string;
+  content: string;
+  iconEmoji: string;
+};
+
+export const BIBLE_TREASURE_CARDS: TreasureCardDef[] = [
+  { cardId: "card-love-1", title: "사랑의 선물", verse: "요한복음 3:16", content: "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니", iconEmoji: "💖" },
+  { cardId: "card-courage-1", title: "두려움 없는 용기", verse: "여호수아 1:9", content: "강하고 담대하라 두려워하지 말며 놀라지 말라", iconEmoji: "🛡️" },
+  { cardId: "card-wisdom-1", title: "빛나는 지혜", verse: "잠언 3:5", content: "너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라", iconEmoji: "🌟" },
+  { cardId: "card-peace-1", title: "기쁨과 평안", verse: "빌립보서 4:4", content: "주 안에서 항상 기뻐하라 내가 다시 말하노니 기뻐하라", iconEmoji: "🕊️" },
+  { cardId: "card-shepherd-1", title: "든든한 목자", verse: "시편 23:1", content: "여호와는 나의 목자시니 내게 부족함이 없으리로다", iconEmoji: "🌿" },
+];

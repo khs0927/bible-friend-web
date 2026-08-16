@@ -66,6 +66,18 @@ export default function Home() {
   const collectCardMutation = trpc.content.collectCard.useMutation({
     onSuccess: () => treasureQuery.refetch(),
   });
+  const dailyDrawMutation = trpc.content.drawDailyCard.useMutation({
+    onSuccess: (res) => {
+      if (res.success && res.card) {
+        if (res.alreadyDrawn) {
+          alert("오늘의 보물 카드는 이미 뽑았어요! 내일 또 새로운 카드를 뽑으러 와요.");
+        } else {
+          setNewlyCollectedCard({ title: res.card.title, verse: res.card.verse, iconEmoji: res.card.iconEmoji });
+          treasureQuery.refetch();
+        }
+      }
+    }
+  });
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newlyCollectedCard, setNewlyCollectedCard] = useState<{ title: string; verse: string; iconEmoji: string } | null>(null);
@@ -506,6 +518,16 @@ export default function Home() {
                     <button className="bf-primary-button" onClick={handleShare} style={{ background: "#ca8a04", borderColor: "#a16207", padding: "8px 14px", fontSize: "13px" }}>친구에게 공유 📤</button>
                   </div>
                   <div className="bf-treasure-section" style={{ marginTop: "20px" }}>
+                    <div className="bf-daily-draw-card" style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)", borderRadius: "18px", padding: "18px", border: "2px solid #8b5cf6", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 6px 16px rgba(139,92,246,0.15)" }}>
+                      <div>
+                        <span style={{ fontSize: "12px", fontWeight: "bold", color: "#6d28d9", display: "block", marginBottom: "2px" }}>🎁 오늘의 보물 뽑기</span>
+                        <h4 style={{ fontSize: "16px", fontWeight: "bold", color: "#4c1d95", margin: 0 }}>하루 한 번 랜덤 말씀 카드</h4>
+                        <p style={{ fontSize: "12px", color: "#5b21b6", margin: "3px 0 0" }}>오늘 나를 향한 하나님의 선물을 확인해 봐요!</p>
+                      </div>
+                      <button className="bf-primary-button" onClick={() => dailyDrawMutation.mutate()} disabled={dailyDrawMutation.isPending} style={{ background: "#7c3aed", borderColor: "#6d28d9", padding: "10px 16px", fontSize: "13px" }}>
+                        {dailyDrawMutation.isPending ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />} 카드 뽑기 ✨
+                      </button>
+                    </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
                       <div>
                         <h3 style={{ margin: 0 }}>🗺️ 수집한 말씀 보물 카드</h3>

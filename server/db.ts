@@ -134,3 +134,19 @@ export async function addUserTreasureCard(card: InsertUserTreasureCard) {
     return false;
   }
 }
+
+export async function hasDrawnToday(userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const cards = await getUserTreasureCards(userId);
+    if (cards.length === 0) return false;
+    const todayStr = new Date().toDateString();
+    return cards.some(c => {
+      if (!c.createdAt) return false;
+      return new Date(c.createdAt).toDateString() === todayStr;
+    });
+  } catch {
+    return false;
+  }
+}

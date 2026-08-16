@@ -9,6 +9,7 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import {
   BIBLE_STORIES,
   QUIZ_BANK,
+  BIBLE_TREASURE_CARDS,
   buildBibleSystemPrompt,
   getSafeFallbackAnswer,
   getStoryById,
@@ -20,6 +21,7 @@ import {
   updateUserScore,
   getUserTreasureCards,
   addUserTreasureCard,
+  hasDrawnToday,
 } from "./db";
 
 const model = "gemini-2.5-flash";
@@ -74,6 +76,23 @@ export const appRouter = router({
         });
         return { success: true, collected };
       }),
+    drawDailyCard: publicProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user) return { success: false, card: null, alreadyDrawn: false };
+      const alreadyDrawn = await hasDrawnToday(ctx.user.id);
+      const cardDef = BIBLE_TREASURE_CARDS[Math.floor(Math.random() * BIBLE_TREASURE_CARDS.length)] ?? BIBLE_TREASURE_CARDS[0];
+      const collected = await addUserTreasureCard({
+        userId: ctx.user.id,
+        cardId: cardDef.cardId,
+        title: cardDef.title,
+        verse: cardDef.verse,
+        content: cardDef.content,
+        category: "story",
+        iconEmoji: cardDef.iconEmoji,
+      });
+      const currentScore = await getUserScore(ctx.user.id);
+      await updateUserScore(ctx.user.id, currentScore + 20);
+      return { success: true, card: cardDef, collected, alreadyDrawn };
+    }),
   }),
   ai: router({
     ask: publicProcedure
