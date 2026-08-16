@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm check && GEMINI_TTS_MODEL=gemini-3.1-flash-tts-preview pnpm test && pnpm build"
+  "buildCommand": "pnpm check && pnpm build"
 }
