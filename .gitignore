@@ -114,3 +114,4 @@ client/public/__manus__/version.json
 
 # Large media assets
 /assets/
+client/src/assets/*.PNG
