@@ -62,6 +62,10 @@ export default function ComicAdventure() {
       setFirstAnimal(id);
       return;
     }
+    if (firstAnimal === id) {
+      setFirstAnimal(null);
+      return;
+    }
     const first = ANIMAL_CARDS.find(card => card.id === firstAnimal);
     if (first?.pair === pair) setMatchedPairs(current => [...current, pair]);
     setFirstAnimal(null);
