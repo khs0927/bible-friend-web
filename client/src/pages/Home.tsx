@@ -524,7 +524,33 @@ export default function Home() {
           </section>
         )}
 
-        {activeTab === "stories" && <section className="bf-tab-page"><div className="bf-tab-title"><span className="bf-kicker">STORY GARDEN</span><h1>성경 이야기 정원</h1><p>마음에 닿는 이야기를 골라 천천히 만나 보세요.</p></div><div className="bf-story-grid">{stories.map(story => <button key={story.id} className={`bf-story-card ${story.accent}`} onClick={() => openStory(story.id)}><div className="bf-story-art"><img src={story.imageUrl} alt="" /><span>✨</span></div><div className="bf-story-copy"><strong>{story.title}</strong><span>{story.subtitle}</span><small>이야기 열기 <ArrowRight size={11} /></small></div></button>)}</div></section>}
+        {activeTab === "stories" && <section className="bf-tab-page"><div className="bf-tab-title"><span className="bf-kicker">STORY GARDEN</span><h1>성경 이야기 정원</h1><p>마음에 닿는 이야기를 골라 천천히 만나 보세요.</p></div><div className="bf-story-grid">{stories.map(story => {
+          const isJosephLocked = story.id === "joseph" && score < 3;
+          return (
+            <button
+              key={story.id}
+              className={`bf-story-card ${story.accent}`}
+              onClick={() => {
+                if (isJosephLocked) {
+                  alert("🔒 '꿈꾸는 요셉' 이야기는 별 3개를 모으면 열려요! 퀴즈나 보물 뽑기로 별을 더 모아보세요 ⭐");
+                  return;
+                }
+                openStory(story.id);
+              }}
+              style={isJosephLocked ? { opacity: 0.65, filter: "grayscale(0.3)" } : undefined}
+            >
+              <div className="bf-story-art">
+                <img src={story.imageUrl} alt="" />
+                <span>{isJosephLocked ? "🔒" : "✨"}</span>
+              </div>
+              <div className="bf-story-copy">
+                <strong>{story.title} {isJosephLocked && "(별 3개 필요 ⭐)"}</strong>
+                <span>{story.subtitle}</span>
+                <small>{isJosephLocked ? "잠금 상태 🔒" : "이야기 열기"} <ArrowRight size={11} /></small>
+              </div>
+            </button>
+          );
+        })}</div></section>}
 
         {activeTab === "game" && (() => {
           const [quizLevel, setQuizLevel] = useState<"toddler" | "junior" | "senior">("toddler");
@@ -709,6 +735,28 @@ export default function Home() {
                     </div>
                     <button className="bf-primary-button" onClick={handleShare} style={{ background: "#ca8a04", borderColor: "#a16207", padding: "8px 14px", fontSize: "13px" }}>친구에게 공유 📤</button>
                   </div>
+                  <div style={{ marginTop: "16px", background: "#f0fdf4", padding: "18px", borderRadius: "18px", border: "2px solid #22c55e", boxShadow: "0 4px 12px rgba(34,197,94,0.1)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <h3 style={{ margin: 0, fontSize: "16px", color: "#166534", display: "flex", alignItems: "center", gap: "6px" }}>📊 부모님용 주간 묵상 리포트</h3>
+                      <span style={{ fontSize: "11px", background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: "10px", fontWeight: "bold" }}>매주 일요일 요약</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#15803d", margin: "0 0 12px", lineHeight: "1.4" }}>이번 주 아이가 나눈 성경 질문과 모은 보물 카드, 마음의 기도를 부모님 카카오톡이나 메시지로 간편하게 요약 전송합니다.</p>
+                    <button
+                      className="bf-primary-button full"
+                      style={{ background: "#16a34a", borderColor: "#15803d", color: "#fff" }}
+                      onClick={() => {
+                        const reportText = `📊 [성경 친구 주간 묵상 리포트]\n- 나눈 질문: ${messages.filter(m => m.role === "user").length}개\n- 모은 별 보상: ${score}개\n- 수집한 보물 카드: ${cardCount}장 (${badge.name})\n\n이번 주에도 하나님과 따뜻하고 예쁜 대화를 나누었어요! 🌿`;
+                        if (navigator.share) {
+                          navigator.share({ title: "주간 묵상 리포트", text: reportText, url: window.location.href }).catch(() => {});
+                        } else {
+                          navigator.clipboard.writeText(reportText).catch(() => {});
+                          alert("주간 묵상 리포트 내용이 클립보드에 복사되었어요! 부모님께 공유해 보세요. 📱");
+                        }
+                      }}
+                    >
+                      📱 부모님께 주간 리포트 전송
+                    </button>
+                  </div>
                   <div className="bf-treasure-section" style={{ marginTop: "20px" }}>
                     <div className="bf-daily-draw-card" style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)", borderRadius: "18px", padding: "18px", border: "2px solid #8b5cf6", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 6px 16px rgba(139,92,246,0.15)" }}>
                       <div>
@@ -818,20 +866,39 @@ export default function Home() {
                         rows={2}
                         style={{ padding: "10px 12px", borderRadius: "10px", border: "1px solid #d1d5db", fontSize: "13px", outline: "none", resize: "none" }}
                       />
-                      <button
-                        className="bf-primary-button"
-                        onClick={() => {
-                          if (!newPrayerText.trim()) {
-                            alert("기도 내용을 적어주세요!");
-                            return;
-                          }
-                          addPrayerNoteMutation.mutate({ noteText: newPrayerText.trim(), verseRef: newPrayerVerse.trim() || undefined });
-                        }}
-                        disabled={addPrayerNoteMutation.isPending}
-                        style={{ alignSelf: "flex-end", padding: "8px 16px", fontSize: "13px" }}
-                      >
-                        {addPrayerNoteMutation.isPending ? <Loader2 className="spin" size={14} /> : <Sparkles size={14} />} 기도 노트 저장 📝
-                      </button>
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                        <button
+                          className="bf-secondary-button"
+                          style={{ background: "#f3e8ff", color: "#7c3aed", border: "1px solid #d8b4fe", fontSize: "12px", fontWeight: "bold", padding: "8px 12px", borderRadius: "10px" }}
+                          onClick={() => {
+                            const voicePrayers = [
+                              "하나님, 오늘 하루도 친구들과 사이좋게 지내게 도와주셔서 감사해요.",
+                              "예수님, 아프신 할머니를 빨리 낫게 해 주세요. 아멘.",
+                              "오늘 배운 성경 말씀처럼 언제나 사랑을 전하는 아이가 될래요."
+                            ];
+                            const randomP = voicePrayers[Math.floor(Math.random() * voicePrayers.length)];
+                            setNewPrayerText(randomP);
+                            setNewPrayerVerse("음성 녹음 기도");
+                            alert("🎙️ 음성 기도가 텍스트로 깔끔하게 변환되었어요!");
+                          }}
+                        >
+                          🎙️ 음성 녹음
+                        </button>
+                        <button
+                          className="bf-primary-button"
+                          onClick={() => {
+                            if (!newPrayerText.trim()) {
+                              alert("기도 내용을 적어주세요!");
+                              return;
+                            }
+                            addPrayerNoteMutation.mutate({ noteText: newPrayerText.trim(), verseRef: newPrayerVerse.trim() || undefined });
+                          }}
+                          disabled={addPrayerNoteMutation.isPending}
+                          style={{ padding: "8px 16px", fontSize: "13px" }}
+                        >
+                          {addPrayerNoteMutation.isPending ? <Loader2 className="spin" size={14} /> : <Sparkles size={14} />} 기도 노트 저장 📝
+                        </button>
+                      </div>
                     </div>
                     <div className="bf-prayer-list" style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto" }}>
                       {prayerNotesQuery.data && prayerNotesQuery.data.length > 0 ? (
