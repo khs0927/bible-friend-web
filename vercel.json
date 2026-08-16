@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm exec vite build",
+  "buildCommand": "pnpm exec vitest run server/comicAssetProxy.test.ts && pnpm exec vite build",
   "outputDirectory": "dist/public",
   "routes": [
     {
