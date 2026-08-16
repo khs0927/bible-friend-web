@@ -49,12 +49,15 @@ export type ComicEpisode = {
 
 /**
  * Prototype art generated for the first Comic Adventure vertical slice.
- * This Adobe short link is intentionally treated as a prototype source.
- * Before production release, sync the approved PNG into /public/comic-assets
- * and replace this URL with a repository-owned path.
+ * Adobe short links are intentionally treated as prototype sources only.
+ * Before production release, sync every approved master into
+ * /public/comic-assets and replace these URLs with repository-owned paths.
  */
 export const NOAH_SCENE_01_PROTOTYPE_ART =
   "https://at.adobe.com/qy2CAPTQXobPd1q3";
+
+export const NOAH_SCENE_02_PROTOTYPE_ART =
+  "https://at.adobe.com/m6W2aV5n1JeTowmP";
 
 export const NOAH_EPISODE: ComicEpisode = {
   id: "noah-last-preparation",
@@ -80,12 +83,12 @@ export const NOAH_EPISODE: ComicEpisode = {
       title: "준비물 세 가지를 찾아요",
       narration: "방주에 들어가기 전에 꼭 필요한 준비물을 찾아 노아를 도와주세요.",
       objective: "그림 속에서 망치, 밧줄, 나무를 모두 찾아 터치하세요.",
-      imageUrl: NOAH_SCENE_01_PROTOTYPE_ART,
-      imageAlt: "노아가 방주를 준비하는 장면에서 도구를 찾는 탐색 게임",
+      imageUrl: NOAH_SCENE_02_PROTOTYPE_ART,
+      imageAlt: "노아가 방주 앞에서 망치와 밧줄과 나무를 준비하는 탐색 게임 장면",
       hotspots: [
-        { id: "hammer", label: "망치", hint: "노아의 손 가까이를 살펴봐요.", x: 62, y: 21 },
-        { id: "rope", label: "밧줄", hint: "왼쪽 아래 가족이 들고 있어요.", x: 20, y: 68 },
-        { id: "timber", label: "나무", hint: "오른쪽 아래에 긴 나무가 보여요.", x: 67, y: 73 },
+        { id: "hammer", label: "망치", hint: "노아가 높이 들고 있는 도구를 살펴봐요.", x: 68, y: 17 },
+        { id: "rope", label: "밧줄", hint: "왼쪽 아래 가족이 두 손으로 들고 있어요.", x: 22, y: 72 },
+        { id: "timber", label: "나무", hint: "화면 가운데보다 조금 아래, 오른쪽에 긴 나무가 보여요.", x: 65, y: 61 },
       ],
     },
     {
