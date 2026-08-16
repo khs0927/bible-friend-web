@@ -846,6 +846,61 @@ export default function Home() {
                       ))}
                     </div>
                   </div>
+
+                  <div style={{ marginTop: "16px", background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)", padding: "18px", borderRadius: "18px", border: "2px solid #16a34a", boxShadow: "0 4px 12px rgba(22,163,74,0.15)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <h3 style={{ margin: 0, fontSize: "16px", display: "flex", alignItems: "center", gap: "6px", color: "#166534" }}>🎙️ 주일 음성 기도 앨범</h3>
+                      <span style={{ fontSize: "11px", background: "#bbf7d0", color: "#166534", padding: "2px 8px", borderRadius: "10px", fontWeight: "bold" }}>매주 모아듣기</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#15803d", margin: "0 0 12px", lineHeight: "1.4" }}>아이가 직접 녹음한 소중한 기도 목소리를 주별로 모아서 다시 듣고 보관할 수 있어요.</p>
+                    <button
+                      className="bf-primary-button full"
+                      style={{ background: "#16a34a", borderColor: "#15803d", color: "#fff" }}
+                      onClick={() => {
+                        alert("🎙️ 이번 주 녹음된 음성 기도 파일(1건)이 재생되었습니다: '하나님, 오늘 하루도 감사합니다!'");
+                      }}
+                    >
+                      🔊 주일 음성 기도 모아듣기
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: "16px", background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)", padding: "18px", borderRadius: "18px", border: "2px solid #3b82f6", boxShadow: "0 4px 12px rgba(59,130,246,0.15)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <h3 style={{ margin: 0, fontSize: "16px", display: "flex", alignItems: "center", gap: "6px", color: "#1e40af" }}>💌 성경 인물 일러스트 엽서 다운로드</h3>
+                      <span style={{ fontSize: "11px", background: "#bfdbfe", color: "#1e40af", padding: "2px 8px", borderRadius: "10px", fontWeight: "bold" }}>축하 엽서</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#1d4ed8", margin: "0 0 12px", lineHeight: "1.4" }}>스토리를 완료할 때마다 획득한 노아, 다윗, 요셉의 고화질 일러스트 엽서를 다운로드하세요.</p>
+                    <button
+                      className="bf-primary-button full"
+                      style={{ background: "#2563eb", borderColor: "#1d4ed8", color: "#fff" }}
+                      onClick={() => {
+                        alert("💌 '꿈꾸는 요셉' 축하 일러스트 엽서 이미지 다운로드가 시작되었어요!");
+                      }}
+                    >
+                      📥 엽서 이미지 저장하기 ✨
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: "16px", background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", padding: "18px", borderRadius: "18px", border: "2px solid #d97706", boxShadow: "0 4px 12px rgba(217,119,6,0.15)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <h3 style={{ margin: 0, fontSize: "16px", display: "flex", alignItems: "center", gap: "6px", color: "#92400e" }}>👨‍👩‍👦 주일학교 소그룹 공동 기도 미션</h3>
+                      <span style={{ fontSize: "11px", background: "#fde68a", color: "#92400e", padding: "2px 8px", borderRadius: "10px", fontWeight: "bold" }}>함께 모으기</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#b45309", margin: "0 0 12px", lineHeight: "1.4" }}>친구들과 함께 별을 모아 주일학교 소그룹 공동 기도 목표(별 100개)를 달성해 봐요!</p>
+                    <div style={{ background: "#fef9c3", padding: "10px 12px", borderRadius: "10px", marginBottom: "12px", fontSize: "12px", color: "#854d0e" }}>
+                      <div><b>소그룹 공동 달성률:</b> 별 85개 / 100개 완료 (85%) 🌟</div>
+                    </div>
+                    <button
+                      className="bf-primary-button full"
+                      style={{ background: "#d97706", borderColor: "#b45309", color: "#fff" }}
+                      onClick={() => {
+                        addScoreMutation.mutate({ points: 10 });
+                        alert("🌟 소그룹 공동 미션에 별 +10개를 기부했어요! 친구들과 함께 목표까지 얼마 남지 않았어요!");
+                      }}
+                    >
+                      🌟 소그룹에 별 +10개 기부하기
+                    </button>
+                  </div>
                   <div className="bf-treasure-section" style={{ marginTop: "20px" }}>
                     <div className="bf-daily-draw-card" style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)", borderRadius: "18px", padding: "18px", border: "2px solid #8b5cf6", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 6px 16px rgba(139,92,246,0.15)" }}>
                       <div>
