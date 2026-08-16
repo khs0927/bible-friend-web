@@ -21,7 +21,6 @@ export default function ComicAdventure() {
   const episode = NOAH_EPISODE;
   const utils = trpc.useUtils();
   const collectCardMutation = trpc.content.collectCard.useMutation();
-  const addScoreMutation = trpc.game.addScore.useMutation();
   const [stageIndex, setStageIndex] = useState(0);
   const [foundHotspots, setFoundHotspots] = useState<string[]>([]);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -29,7 +28,6 @@ export default function ComicAdventure() {
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
   const [imageFailed, setImageFailed] = useState(false);
   const [rewardSaveState, setRewardSaveState] = useState<RewardSaveState>("idle");
-  const [rewardCardCollected, setRewardCardCollected] = useState(false);
 
   const stage = episode.stages[stageIndex];
   const progress = Math.round(((stageIndex + 1) / episode.stages.length) * 100);
@@ -85,43 +83,30 @@ export default function ComicAdventure() {
 
     setRewardSaveState("saving");
     try {
-      let collectedForScore = rewardCardCollected;
-      if (!collectedForScore) {
-        const cardResult = await collectCardMutation.mutateAsync({
-          cardId: `comic-${episode.id}-${reward.id}`,
-          title: reward.title,
-          verse: reward.verse,
-          content: reward.content,
-          category: "story",
-          iconEmoji: reward.icon,
-        });
+      const result = await collectCardMutation.mutateAsync({
+        cardId: `comic-${episode.id}-${reward.id}`,
+        title: reward.title,
+        verse: reward.verse,
+        content: reward.content,
+        category: "story",
+        iconEmoji: reward.icon,
+        points: reward.points,
+      });
 
-        if (!cardResult.success) {
-          setRewardSaveState("guest");
-          return;
-        }
-        if (!cardResult.collected) {
-          setRewardSaveState("already");
-          await utils.content.treasureCards.invalidate();
-          return;
-        }
-
-        setRewardCardCollected(true);
-        collectedForScore = true;
+      if (!result.success) {
+        setRewardSaveState("guest");
+        return;
+      }
+      if (!result.saved) {
+        setRewardSaveState("error");
+        return;
       }
 
-      if (collectedForScore) {
-        const scoreResult = await addScoreMutation.mutateAsync({ points: reward.points });
-        if (!scoreResult.saved) {
-          setRewardSaveState("guest");
-          return;
-        }
-        await Promise.all([
-          utils.content.score.invalidate(),
-          utils.content.treasureCards.invalidate(),
-        ]);
-        setRewardSaveState("saved");
-      }
+      await Promise.all([
+        utils.content.score.invalidate(),
+        utils.content.treasureCards.invalidate(),
+      ]);
+      setRewardSaveState(result.collected ? "saved" : "already");
     } catch (error) {
       console.error("[Comic Adventure] reward save failed", error);
       setRewardSaveState("error");
@@ -144,7 +129,7 @@ export default function ComicAdventure() {
         <div className="ca-art-fallback" role="img" aria-label={stage.imageAlt ?? "성경 모험 장면"}>
           <span>🌤️</span>
           <strong>{stage.title}</strong>
-          <small>승인된 장면 이미지를 저장소 자산으로 동기화할 예정입니다.</small>
+          <small>장면 이미지를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</small>
         </div>
       );
     }
