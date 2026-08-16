@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Compass, Gem, Map, Sparkles, Star } from "lucide-reac
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { NOAH_EPISODE } from "@/game/comicAdventure";
+import { trpc } from "@/lib/trpc";
 import "./comic-adventure.css";
 
 const ANIMAL_CARDS = [
@@ -14,14 +15,21 @@ const ANIMAL_CARDS = [
   { id: "sheep-b", pair: "sheep", icon: "🐑", label: "양" },
 ] as const;
 
+type RewardSaveState = "idle" | "saving" | "saved" | "already" | "guest" | "error";
+
 export default function ComicAdventure() {
   const episode = NOAH_EPISODE;
+  const utils = trpc.useUtils();
+  const collectCardMutation = trpc.content.collectCard.useMutation();
+  const addScoreMutation = trpc.game.addScore.useMutation();
   const [stageIndex, setStageIndex] = useState(0);
   const [foundHotspots, setFoundHotspots] = useState<string[]>([]);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [firstAnimal, setFirstAnimal] = useState<string | null>(null);
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
   const [imageFailed, setImageFailed] = useState(false);
+  const [rewardSaveState, setRewardSaveState] = useState<RewardSaveState>("idle");
+  const [rewardCardCollected, setRewardCardCollected] = useState(false);
 
   const stage = episode.stages[stageIndex];
   const progress = Math.round(((stageIndex + 1) / episode.stages.length) * 100);
@@ -69,6 +77,65 @@ export default function ComicAdventure() {
     const first = ANIMAL_CARDS.find(card => card.id === firstAnimal);
     if (first?.pair === pair) setMatchedPairs(current => [...current, pair]);
     setFirstAnimal(null);
+  };
+
+  const claimReward = async () => {
+    const reward = stage.reward;
+    if (!reward || rewardSaveState === "saving" || rewardSaveState === "saved" || rewardSaveState === "already") return;
+
+    setRewardSaveState("saving");
+    try {
+      let collectedForScore = rewardCardCollected;
+      if (!collectedForScore) {
+        const cardResult = await collectCardMutation.mutateAsync({
+          cardId: `comic-${episode.id}-${reward.id}`,
+          title: reward.title,
+          verse: reward.verse,
+          content: reward.content,
+          category: "story",
+          iconEmoji: reward.icon,
+        });
+
+        if (!cardResult.success) {
+          setRewardSaveState("guest");
+          return;
+        }
+        if (!cardResult.collected) {
+          setRewardSaveState("already");
+          await utils.content.treasureCards.invalidate();
+          return;
+        }
+
+        setRewardCardCollected(true);
+        collectedForScore = true;
+      }
+
+      if (collectedForScore) {
+        const scoreResult = await addScoreMutation.mutateAsync({ points: reward.points });
+        if (!scoreResult.saved) {
+          setRewardSaveState("guest");
+          return;
+        }
+        await Promise.all([
+          utils.content.score.invalidate(),
+          utils.content.treasureCards.invalidate(),
+        ]);
+        setRewardSaveState("saved");
+      }
+    } catch (error) {
+      console.error("[Comic Adventure] reward save failed", error);
+      setRewardSaveState("error");
+    }
+  };
+
+  const rewardButtonLabel = () => {
+    if (stage.kind !== "reward" || !stage.reward) return "";
+    if (rewardSaveState === "saving") return "보물함에 저장 중...";
+    if (rewardSaveState === "saved") return `보물함 저장 완료 · +${stage.reward.points}점`;
+    if (rewardSaveState === "already") return "이미 내 보물함에 있어요";
+    if (rewardSaveState === "guest") return "로그인하면 보물함에 저장돼요";
+    if (rewardSaveState === "error") return "저장에 실패했어요 · 다시 시도";
+    return `보물함에 저장하기 · +${stage.reward.points}점`;
   };
 
   const renderArt = () => {
@@ -186,9 +253,22 @@ export default function ComicAdventure() {
               )}
 
               {stage.kind === "reward" && stage.reward && (
-                <motion.div className="ca-reward" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                  <div>{stage.reward.icon}</div><span>STORY TREASURE</span><strong>{stage.reward.title}</strong><p>{stage.reward.subtitle}</p>
-                </motion.div>
+                <>
+                  <motion.div className="ca-reward" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                    <div>{stage.reward.icon}</div><span>STORY TREASURE</span><strong>{stage.reward.title}</strong><p>{stage.reward.subtitle}</p>
+                    <small>{stage.reward.verse}</small>
+                  </motion.div>
+                  <button
+                    className="ca-primary"
+                    onClick={claimReward}
+                    disabled={rewardSaveState === "saving" || rewardSaveState === "saved" || rewardSaveState === "already" || rewardSaveState === "guest"}
+                  >
+                    {rewardButtonLabel()}
+                  </button>
+                  {rewardSaveState === "guest" && (
+                    <div className="ca-choice-response">지금도 모험은 완료됐어요. 홈에서 로그인하면 다음 보물부터 점수와 함께 저장할 수 있어요.</div>
+                  )}
+                </>
               )}
             </div>
           </motion.section>
