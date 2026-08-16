@@ -7,6 +7,7 @@ import superjson from "superjson";
 import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
+import "./bible-friend-polish.css";
 
 const queryClient = new QueryClient();
 
