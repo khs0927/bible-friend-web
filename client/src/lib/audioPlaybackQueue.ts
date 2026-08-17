@@ -133,11 +133,11 @@ export class AudioPlaybackQueue {
       }).catch(() => undefined);
       const allowBrowserFallback = this.options.allowBrowserFallback === true;
       const configuredFallbackMs = this.options.fastFallbackMs;
-      // The home screen historically passed 400ms, which meant Gemini could almost
-      // never win the race on a real phone. Keep tiny values usable in node tests,
-      // but give natural server audio a fair window in an actual browser.
+      // Gemini 3.1 TTS commonly needs several seconds for expressive Korean audio.
+      // The previous 2.6s browser threshold could preempt a healthy server response
+      // on iPhone/WebViews. Prefer real Gemini audio for at least seven seconds.
       const fastFallbackMs = typeof configuredFallbackMs === "number" && typeof document !== "undefined"
-        ? Math.max(configuredFallbackMs, 2_600)
+        ? Math.max(configuredFallbackMs, 7_000)
         : configuredFallbackMs;
       const race = allowBrowserFallback && typeof fastFallbackMs === "number"
         ? await Promise.race([
@@ -151,7 +151,7 @@ export class AudioPlaybackQueue {
         if (run === this.generation) {
           const browserPlayed = await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
           if (!browserPlayed) {
-            const recoveryMs = this.options.lateServerRecoveryMs ?? 6_000;
+            const recoveryMs = this.options.lateServerRecoveryMs ?? 8_000;
             const lateResponse = await Promise.race([
               serverPromise,
               new Promise<{ __lateRecoveryTimeout: true }>(resolve => setTimeout(() => resolve({ __lateRecoveryTimeout: true }), recoveryMs)),
