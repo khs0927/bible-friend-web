@@ -7,6 +7,8 @@ on:
     paths:
       - "server/**"
       - "api/[...path].ts"
+      - "api/voice-tts.js"
+      - "vercel.json"
       - ".github/workflows/build-vercel-api-bundle.yml"
   workflow_dispatch:
 
