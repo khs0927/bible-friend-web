@@ -3,12 +3,11 @@ import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
+import BibleFriend3D from "./BibleFriend3D";
 import { ARMOR_CATALOG, EQUIPMENT_ORDER, SERVICE_MISSIONS, STARTER_DAILY_VERSES, ZONE_INFO } from "./catalog";
 import { INITIAL_GROWTH_PROFILE, STAGE_LABELS, canUpgrade, moodForProfile, upgradeCost } from "./growthEngine";
 import type { EquipmentId, GrowthProfile, GrowthZone } from "./types";
 import "./growth-game.css";
-
-const MASCOT_URL = "/assets/bible-friend-mascot.svg";
 
 const moodCopy = {
   joyful: { emoji: "😊", text: "오늘도 말씀 안에서 신나게 자라요!" },
@@ -232,18 +231,13 @@ export default function GrowthGame() {
       <div className="growth-notice" role="status">{notice}</div>
 
       <section className="growth-hero">
-        <div className="growth-room-scene">
-          <div className="growth-window">☁️　☀️</div>
-          <div className="growth-shelf">📖 🌱 🕯️</div>
-          <div className={`growth-mascot mood-${mood}`}>
+        <div className="growth-room-scene growth-room-scene-3d">
+          <BibleFriend3D profile={profile} mood={mood} />
+          <div className="growth-3d-overlay">
             <div className="growth-mood-bubble">{moodState.emoji}</div>
-            {profile.equipped.includes("crown") && <span className="growth-wear crown">👑</span>}
-            {profile.equipped.includes("helmet_salvation") && <span className="growth-wear helmet">✨⛑️</span>}
-            {profile.equipped.includes("shield_faith") && <span className="growth-wear shield">🛡️</span>}
-            {profile.equipped.includes("sword_spirit") && <span className="growth-wear sword">⚔️</span>}
-            <img src={MASCOT_URL} alt="성경 친구 캐릭터" />
+            <span className="growth-3d-live">3D LIVE</span>
+            <small>손가락으로 돌려 보고 · 두 손가락으로 확대해요</small>
           </div>
-          <div className="growth-room-floor" />
         </div>
         <div className="growth-hero-info">
           <span className="growth-stage-pill">{STAGE_LABELS[profile.stage]}</span>
@@ -283,7 +277,7 @@ export default function GrowthGame() {
 
           <section className="growth-card">
             <div className="growth-card-heading"><div><span>ARMOR OF GOD</span><h2>하나님의 전신 갑주 공방</h2></div><b className="soul-point-label">영혼 포인트 {profile.soulPoints}P</b></div>
-            <p className="growth-section-copy">같은 장비도 말씀과 사랑을 실천하며 5단계까지 성장합니다. 장비의 힘은 단순 공격력이 아니라 성경적 의미에 맞는 능력으로 연결돼요.</p>
+            <p className="growth-section-copy">같은 장비도 말씀과 사랑을 실천하며 5단계까지 성장합니다. 업그레이드하고 ‘착용’을 누르면 위 3D 친구에게 즉시 반영돼요. 장비의 힘은 단순 공격력이 아니라 성경적 의미에 맞는 능력으로 연결됩니다.</p>
             <div className="growth-equipment-grid">
               {EQUIPMENT_ORDER.map(id => <EquipmentCard key={id} id={id} profile={profile} busy={busy} onUpgrade={equipmentId => upgrade.mutate({ equipmentId })} onEquip={(equipmentId, isEquipped) => equip.mutate({ equipmentId, equipped: isEquipped })} />)}
             </div>
@@ -330,7 +324,7 @@ export default function GrowthGame() {
         </section>
       )}
 
-      <footer className="growth-footer">다음 3D 단계: 현재 2D 마스코트 → 동일 골격의 3D 캐릭터 → 장비별 GLB 슬롯 → 집/길/광야 3D 장면</footer>
+      <footer className="growth-footer">3D Growth v2 · 장비 업그레이드와 착용 상태가 실시간 3D 캐릭터에 반영됩니다.</footer>
     </main>
   );
 }
