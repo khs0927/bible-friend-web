@@ -71,3 +71,37 @@ export const userPrayerNotes = mysqlTable("user_prayer_notes", {
 
 export type UserPrayerNote = typeof userPrayerNotes.$inferSelect;
 export type InsertUserPrayerNote = typeof userPrayerNotes.$inferInsert;
+
+export const userGrowthProfiles = mysqlTable("user_growth_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  stage: varchar("stage", { length: 32 }).default("seedling").notNull(),
+  spiritFood: int("spiritFood").default(65).notNull(),
+  faithXp: int("faithXp").default(0).notNull(),
+  wisdomXp: int("wisdomXp").default(0).notNull(),
+  loveXp: int("loveXp").default(0).notNull(),
+  peace: int("peace").default(80).notNull(),
+  soulPoints: int("soulPoints").default(0).notNull(),
+  streakDays: int("streakDays").default(0).notNull(),
+  lastNourishedAt: timestamp("lastNourishedAt"),
+  equipped: text("equipped").notNull(),
+  equipmentTiers: text("equipmentTiers").notNull(),
+  unlockedZones: text("unlockedZones").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserGrowthProfile = typeof userGrowthProfiles.$inferSelect;
+export type InsertUserGrowthProfile = typeof userGrowthProfiles.$inferInsert;
+
+export const userGrowthEvents = mysqlTable("user_growth_events", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  eventKey: varchar("eventKey", { length: 220 }).notNull().unique(),
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  sourceId: varchar("sourceId", { length: 160 }).notNull(),
+  payload: text("payload"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserGrowthEvent = typeof userGrowthEvents.$inferSelect;
+export type InsertUserGrowthEvent = typeof userGrowthEvents.$inferInsert;
