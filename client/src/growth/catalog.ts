@@ -1,3 +1,4 @@
+import { GROWTH_DAILY_VERSES } from "@shared/growthVerses";
 import type { EquipmentDefinition, EquipmentId, GrowthZone } from "./types";
 
 export const ARMOR_CATALOG: Record<EquipmentId, EquipmentDefinition> = {
@@ -83,12 +84,7 @@ export const ZONE_INFO: Array<{ id: GrowthZone; name: string; icon: string; desc
   { id: "village", name: "회복의 마을", icon: "🏘️", description: "상처받은 이웃을 위로하고 소망을 전해요.", unlock: "섬기는 제자 단계" },
 ];
 
-export const STARTER_DAILY_VERSES = [
-  { id: "john-3-16", ref: "요한복음 3:16", text: "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니", theme: "사랑" },
-  { id: "psalm-23-1", ref: "시편 23:1", text: "여호와는 나의 목자시니 내게 부족함이 없으리로다", theme: "돌보심" },
-  { id: "phil-4-6", ref: "빌립보서 4:6", text: "아무 것도 염려하지 말고 다만 모든 일에 기도와 간구로", theme: "평안" },
-  { id: "eph-6-16", ref: "에베소서 6:16", text: "모든 것 위에 믿음의 방패를 가지고", theme: "믿음" },
-];
+export const STARTER_DAILY_VERSES = GROWTH_DAILY_VERSES;
 
 export const SERVICE_MISSIONS = [
   { id: "encourage-lonely", title: "혼자 있는 친구에게 따뜻한 말 건네기", zone: "road" as GrowthZone, loveXp: 15, soulPoints: 10, icon: "💛" },
