@@ -9,3 +9,5 @@ The functional changes are already on `main`:
 - Prefer the configured Gemini API for Korean speech-to-text, with the legacy Forge service retained as an optional fallback.
 
 This marker commit intentionally creates a normal branch/PR Git event so the connected Vercel project can pick up the latest `main` state and produce a fresh deployment.
+
+Production trigger: use a regular merge commit so the Vercel Git integration receives an explicit `main` push event after the validated preview deployment.
