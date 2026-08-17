@@ -1,20 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { GEMINI_TTS_API_REVISION, withGeminiTtsRevision } from "./_core/geminiTtsFetchCompat";
+import { buildGenerateContentTtsRequest } from "./_core/geminiTtsFetchCompat";
 
-describe("Gemini TTS Interactions compatibility", () => {
-  it("adds the current audio API revision without losing existing headers", () => {
-    const patched = withGeminiTtsRevision({
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": "test" },
+describe("Gemini TTS generateContent compatibility", () => {
+  it("converts the legacy internal audio request to the official generateContent payload", () => {
+    const converted = buildGenerateContentTtsRequest({
+      model: "gemini-2.5-flash-preview-tts",
+      input: "안녕! 나는 성경 친구야.",
+      response_format: { type: "audio" },
+      generation_config: { speech_config: [{ voice: "Leda" }] },
     });
-    const headers = new Headers(patched.headers);
-    expect(headers.get("Api-Revision")).toBe(GEMINI_TTS_API_REVISION);
-    expect(headers.get("content-type")).toBe("application/json");
-    expect(headers.get("x-goog-api-key")).toBe("test");
+
+    expect(converted?.url).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
+    );
+    expect(converted?.body).toEqual({
+      contents: [{ parts: [{ text: "안녕! 나는 성경 친구야." }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: "Leda" },
+          },
+        },
+      },
+    });
   });
 
-  it("preserves an explicitly supplied revision", () => {
-    const patched = withGeminiTtsRevision({ headers: { "Api-Revision": "custom-revision" } });
-    expect(new Headers(patched.headers).get("Api-Revision")).toBe("custom-revision");
+  it("rejects a request that has no model or prompt", () => {
+    expect(buildGenerateContentTtsRequest({ model: "", input: "" })).toBeNull();
   });
 });
