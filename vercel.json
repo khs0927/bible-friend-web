@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm exec vitest run server/comicAssetProxy.test.ts server/tts.test.ts server/geminiTtsFetchCompat.test.ts client/src/lib/audioPlaybackQueue.test.ts && pnpm exec vite build && pnpm exec esbuild 'api/[...path].ts' --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=api/vercel-handler.js",
+  "buildCommand": "pnpm run vercel-build",
   "outputDirectory": "dist/public",
   "routes": [
     {
