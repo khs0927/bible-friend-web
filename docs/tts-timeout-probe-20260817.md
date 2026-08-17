@@ -1,0 +1,1 @@
+Temporary production-safe TTS diagnostic marker for the Gemini 2.5 timeout investigation. The diagnostic endpoint returns timing/status metadata only and never exposes API keys or audio payloads.
