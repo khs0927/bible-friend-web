@@ -22,6 +22,16 @@ export type AudioPlaybackQueueOptions = {
   allowBrowserFallback?: boolean;
 };
 
+const IOS_UNLOCK_SILENCE_WAV = "data:audio/wav;base64,UklGRgQCAABXQVZFZm10IBAAAAABAAEAwF0AAIC7AAACABAAZGF0YeABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+function isIOSLikeBrowser() {
+  if (typeof navigator === "undefined") return false;
+  const userAgent = navigator.userAgent ?? "";
+  const platform = navigator.platform ?? "";
+  const touchPoints = navigator.maxTouchPoints ?? 0;
+  return /iPad|iPhone|iPod/i.test(userAgent) || (platform === "MacIntel" && touchPoints > 1);
+}
+
 async function waitForSpeechVoices(synthesis: SpeechSynthesis, timeoutMs = 700) {
   if (typeof synthesis.getVoices !== "function") return true;
   if (synthesis.getVoices().length > 0) return true;
@@ -51,6 +61,8 @@ export class AudioPlaybackQueue {
   private currentUtterance?: SpeechSynthesisUtterance;
   private audioContext?: AudioContext;
   private generation = 0;
+  private mediaPrimed = false;
+  private mediaPrimePending = false;
 
   constructor(
     private readonly ttsMutation: TTSMutation,
@@ -59,14 +71,66 @@ export class AudioPlaybackQueue {
 
   prime() {
     if (typeof window === "undefined") return;
+
+    // iOS/WebKit ties delayed media playback to a user activation. Unlock one
+    // persistent HTMLAudioElement during the tap and reuse that exact element
+    // after Gemini finishes several seconds later.
+    this.primeIOSMediaElement();
+
     const browserWindow = window as typeof window & { webkitAudioContext?: typeof AudioContext };
     const AudioContextCtor = window.AudioContext ?? browserWindow.webkitAudioContext;
     if (!AudioContextCtor) return;
     try {
       this.audioContext ??= new AudioContextCtor();
-      void this.audioContext.resume().catch(() => undefined);
+      const context = this.audioContext;
+      void context.resume().catch(() => undefined);
+
+      // Starting a silent buffer inside the user gesture is the most reliable
+      // way to unlock Web Audio on iOS Safari and WKWebView.
+      if (typeof context.createBuffer === "function" && typeof context.createBufferSource === "function") {
+        const silentBuffer = context.createBuffer(1, 1, 22050);
+        const source = context.createBufferSource();
+        source.buffer = silentBuffer;
+        source.connect(context.destination);
+        source.start(0);
+      }
     } catch {
-      // HTMLAudioElement and Web Speech remain available as fallbacks.
+      // Persistent HTMLAudioElement and Web Speech remain available as fallbacks.
+    }
+  }
+
+  private primeIOSMediaElement() {
+    if (!isIOSLikeBrowser() || typeof Audio === "undefined" || this.mediaPrimed || this.mediaPrimePending) return;
+    try {
+      const audio = this.currentAudio ?? new Audio();
+      this.currentAudio = audio;
+      audio.preload = "auto";
+      audio.volume = 1;
+      audio.setAttribute?.("playsinline", "");
+      try {
+        (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
+      } catch {
+        // Older WebViews may not expose playsInline as a writable property.
+      }
+      audio.src = IOS_UNLOCK_SILENCE_WAV;
+      this.mediaPrimePending = true;
+      const playPromise = audio.play();
+      void Promise.resolve(playPromise).then(() => {
+        this.mediaPrimed = true;
+        this.mediaPrimePending = false;
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {
+          // The tiny silent clip may already have ended.
+        }
+      }).catch(() => {
+        this.mediaPrimePending = false;
+        this.mediaPrimed = false;
+      });
+    } catch {
+      this.mediaPrimePending = false;
+      this.mediaPrimed = false;
     }
   }
 
@@ -93,8 +157,12 @@ export class AudioPlaybackQueue {
   cancel() {
     this.generation += 1;
     this.queue = [];
-    this.currentAudio?.pause();
-    this.currentAudio = undefined;
+    try {
+      this.currentAudio?.pause();
+      if (this.currentAudio) this.currentAudio.currentTime = 0;
+    } catch {
+      // Media element may not have loaded enough metadata to seek.
+    }
     try {
       this.currentSource?.stop();
     } catch {
@@ -102,6 +170,8 @@ export class AudioPlaybackQueue {
     }
     this.currentSource = undefined;
     this.currentUtterance = undefined;
+    this.mediaPrimed = false;
+    this.mediaPrimePending = false;
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     this.playing = false;
   }
@@ -134,8 +204,7 @@ export class AudioPlaybackQueue {
       const allowBrowserFallback = this.options.allowBrowserFallback === true;
       const configuredFallbackMs = this.options.fastFallbackMs;
       // Gemini 3.1 TTS commonly needs several seconds for expressive Korean audio.
-      // The previous 2.6s browser threshold could preempt a healthy server response
-      // on iPhone/WebViews. Prefer real Gemini audio for at least seven seconds.
+      // Prefer real Gemini audio for at least seven seconds before Web Speech.
       const fastFallbackMs = typeof configuredFallbackMs === "number" && typeof document !== "undefined"
         ? Math.max(configuredFallbackMs, 7_000)
         : configuredFallbackMs;
@@ -196,14 +265,44 @@ export class AudioPlaybackQueue {
 
   private async playServerAudio(request: VoiceRequest, base64: string, mimeType: string, provider: string, run: number, serverResponseAt?: number) {
     const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
+
+    // On iOS prefer the exact HTMLAudioElement that was unlocked by the tap.
+    // Creating `new Audio()` after a 5s network request is commonly blocked.
+    const preferUnlockedMedia = isIOSLikeBrowser() && this.mediaPrimed;
+    if (preferUnlockedMedia) {
+      const mediaPlayed = await this.playWithMediaElement(request, bytes, mimeType, provider, run, serverResponseAt);
+      if (mediaPlayed) return;
+    }
+
     const webAudioPlayed = await this.playWithWebAudio(request, bytes, provider, run, serverResponseAt);
     if (webAudioPlayed) return;
+
+    if (!preferUnlockedMedia) {
+      const mediaPlayed = await this.playWithMediaElement(request, bytes, mimeType, provider, run, serverResponseAt);
+      if (mediaPlayed) return;
+    }
+
+    throw new Error("server_audio_play_failed");
+  }
+
+  private async playWithMediaElement(request: VoiceRequest, bytes: Uint8Array, mimeType: string, provider: string, run: number, serverResponseAt?: number) {
+    if (typeof Audio === "undefined" || typeof URL === "undefined") return false;
     const url = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
-    const audio = new Audio(url);
-    audio.preload = "auto";
+    const audio = this.currentAudio ?? new Audio();
     this.currentAudio = audio;
+    audio.preload = "auto";
+    audio.volume = 1;
+    audio.setAttribute?.("playsinline", "");
+    try {
+      (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
+    } catch {
+      // Older WebViews may not expose playsInline as a writable property.
+    }
     let completed = false;
     try {
+      audio.pause();
+      audio.src = url;
+      audio.load?.();
       await audio.play();
       if (run === this.generation) {
         this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
@@ -213,10 +312,21 @@ export class AudioPlaybackQueue {
         audio.addEventListener("error", () => reject(new Error("audio_element_error")), { once: true });
         if (run !== this.generation) resolve();
       });
+      return true;
+    } catch (error) {
+      console.warn("[Bible Friend Voice] media element playback failed", {
+        message: error instanceof Error ? error.message : String(error),
+        primed: this.mediaPrimed,
+        ios: isIOSLikeBrowser(),
+      });
+      return false;
     } finally {
-      audio.pause();
+      try {
+        audio.pause();
+      } catch {
+        // Ignore media teardown errors.
+      }
       URL.revokeObjectURL(url);
-      if (this.currentAudio === audio) this.currentAudio = undefined;
       if (run === this.generation && completed) {
         this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
       }
@@ -231,6 +341,7 @@ export class AudioPlaybackQueue {
     try {
       this.audioContext ??= new AudioContextCtor();
       await this.audioContext.resume();
+      if ("state" in this.audioContext && this.audioContext.state === "suspended") return false;
       if (run !== this.generation) return true;
       const audioBuffer = await this.audioContext.decodeAudioData(bytes.slice().buffer);
       const source = this.audioContext.createBufferSource();
@@ -246,7 +357,11 @@ export class AudioPlaybackQueue {
       if (run === this.generation) this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
       if (this.currentSource === source) this.currentSource = undefined;
       return true;
-    } catch {
+    } catch (error) {
+      console.warn("[Bible Friend Voice] Web Audio playback failed", {
+        message: error instanceof Error ? error.message : String(error),
+        state: this.audioContext?.state ?? "unknown",
+      });
       this.currentSource = undefined;
       return false;
     }
