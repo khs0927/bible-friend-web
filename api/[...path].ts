@@ -7,6 +7,7 @@ import { registerStorageProxy } from "../server/_core/storageProxy";
 import { registerComicAssetProxy } from "../server/_core/comicAssetProxy";
 import { createContext } from "../server/_core/context";
 import { ENV } from "../server/_core/env";
+import { synthesizeSpeech } from "../server/_core/tts";
 import { appRouter } from "../server/routers";
 
 const app = express();
@@ -23,8 +24,42 @@ app.get("/api/voice-health", (_req: Request, res: Response) => {
     ok: true,
     geminiConfigured: Boolean(ENV.geminiApiKey),
     model: ENV.geminiTtsModel,
+    timeoutMs: ENV.geminiTtsTimeoutMs,
+    hardTimeoutMs: ENV.geminiTtsHardTimeoutMs,
     serverAudioPreferred: true,
     browserFallbackAvailable: true,
+  });
+});
+
+app.get("/api/voice-probe", async (_req: Request, res: Response) => {
+  const startedAt = Date.now();
+  const result = await synthesizeSpeech({
+    text: "안녕! 나는 성경 친구야. 오늘 마음에 떠오르는 질문이 있니? 🌈",
+    speaker: "CHILD_FRIEND",
+    emotion: "밝고 친근한 목소리",
+  });
+  const summary = result.success
+    ? {
+        success: true,
+        provider: result.provider,
+        model: result.model,
+        voice: result.voice,
+        latencyMs: result.latencyMs,
+        cached: result.cached,
+        audioBytesApprox: Math.floor((result.audioBase64.length * 3) / 4),
+      }
+    : {
+        success: false,
+        provider: result.provider,
+        errorCode: result.errorCode,
+        error: result.error,
+      };
+  res.status(200).json({
+    ok: result.success,
+    totalMs: Date.now() - startedAt,
+    timeoutMs: ENV.geminiTtsTimeoutMs,
+    hardTimeoutMs: ENV.geminiTtsHardTimeoutMs,
+    result: summary,
   });
 });
 
