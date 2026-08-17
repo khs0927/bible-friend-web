@@ -20,8 +20,12 @@
       "dest": "/assets/game-icon-trophy.svg"
     },
     {
+      "src": "/api/(?<path>.*)",
+      "dest": "/api/[...path]?path=$path"
+    },
+    {
       "src": "/manus-storage/(.*)",
-      "dest": "/api/manus-storage/$1"
+      "dest": "/api/[...path]?path=manus-storage/$1"
     },
     {
       "handle": "filesystem"
