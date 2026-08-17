@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       ok: true,
       model: MODEL,
       streaming: true,
-      format: "audio/l16",
+      format: "native-pcm",
       sampleRate: 24000,
       configured: Boolean(process.env.GEMINI_API_KEY),
     });
@@ -100,11 +100,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: MODEL,
         input: buildPrompt(input),
-        response_format: {
-          type: "audio",
-          mime_type: "audio/l16",
-          sample_rate: 24000,
-        },
+        response_format: { type: "audio" },
         generation_config: {
           speech_config: [{ voice }],
         },
