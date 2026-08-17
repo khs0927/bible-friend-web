@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -7,6 +8,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { getVoiceProfiles, synthesizeSpeech } from "./_core/tts";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { growthRouter } from "./growthRouter";
+import { claimAutomaticGrowthActivity } from "./growthStore";
 import {
   BIBLE_STORIES,
   QUIZ_BANK,
@@ -45,6 +47,10 @@ function randomQuiz() {
   return QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)] ?? QUIZ_BANK[0];
 }
 
+function stableActivityKey(value: string) {
+  return createHash("sha256").update(value.trim().toLowerCase()).digest("hex").slice(0, 18);
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -74,7 +80,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        if (!ctx.user) return { success: false, collected: false, score: 0, saved: false };
+        if (!ctx.user) return { success: false, collected: false, score: 0, saved: false, growth: null };
         const { points, ...card } = input;
         const result = await claimUserTreasureCardReward(
           {
@@ -83,7 +89,10 @@ export const appRouter = router({
           },
           points,
         );
-        return { success: true, ...result };
+        const growth = input.category === "story"
+          ? await claimAutomaticGrowthActivity(ctx.user.id, "scripture_read", `story-${input.cardId}`, `${input.title} 말씀 읽기`, 3)
+          : null;
+        return { success: true, ...result, growth };
       }),
     drawDailyCard: publicProcedure.mutation(async ({ ctx }) => {
       if (!ctx.user) return { success: false, card: null, alreadyDrawn: false };
@@ -106,13 +115,16 @@ export const appRouter = router({
     addPrayerNote: publicProcedure
       .input(z.object({ noteText: z.string().min(1).max(500), verseRef: z.string().max(128).optional() }))
       .mutation(async ({ ctx, input }) => {
-        if (!ctx.user) return { success: false };
+        if (!ctx.user) return { success: false, growth: null };
         const success = await addUserPrayerNote({
           userId: ctx.user.id,
           noteText: input.noteText,
           verseRef: input.verseRef ?? null,
         });
-        return { success };
+        const growth = success
+          ? await claimAutomaticGrowthActivity(ctx.user.id, "prayer", "daily-prayer", "기도 노트와 함께 기도하기", 1)
+          : null;
+        return { success, growth };
       }),
   }),
   growth: growthRouter,
@@ -137,10 +149,18 @@ export const appRouter = router({
           console.warn("[Bible Agent] Gemini request failed; using safe fallback", error);
         }
         if (!answer.trim()) answer = getSafeFallbackAnswer(input.question);
+        let growth = null;
         if (ctx.user) {
           await saveChatHistory({ userId: ctx.user.id, userMessage: input.question, agentResponse: answer });
+          growth = await claimAutomaticGrowthActivity(
+            ctx.user.id,
+            "bible_conversation",
+            `chat-${stableActivityKey(input.question)}`,
+            "성경 친구와 말씀 대화",
+            3,
+          );
         }
-        return { answer, model, saved: Boolean(ctx.user) };
+        return { answer, model, saved: Boolean(ctx.user), growth };
       }),
     suggestPrayerVerse: publicProcedure
       .input(z.object({ prayerText: z.string().min(1).max(300) }))
