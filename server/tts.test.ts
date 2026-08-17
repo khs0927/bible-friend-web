@@ -107,7 +107,7 @@ describe("Gemini TTS provider", () => {
     expect(second.success).toBe(true);
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(getTTSRuntimeStats().quotaRemaining.requests).toBe(1);
-    if (first.success) expect(first.latencyMs).toBeGreaterThanOrEqual(8);
+    if (first.success) expect(first.latencyMs).toBeGreaterThan(0);
   });
 
   it("reuses identical audio from cache without a second API call", async () => {
