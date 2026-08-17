@@ -2,6 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm run vercel-build",
   "outputDirectory": "dist/public",
+  "functions": {
+    "api/voice-tts.js": {
+      "maxDuration": 30
+    }
+  },
   "routes": [
     {
       "src": "/manus-storage/bible-friend-mascot_06125680.png",
@@ -18,6 +23,18 @@
     {
       "src": "/manus-storage/game_icon_trophy_8a4e9737.png",
       "dest": "/assets/game-icon-trophy.svg"
+    },
+    {
+      "src": "/api/trpc/tts\\.synthesize",
+      "dest": "/api/voice-tts"
+    },
+    {
+      "src": "/api/voice-health",
+      "dest": "/api/voice-tts"
+    },
+    {
+      "src": "/api/voice-probe",
+      "dest": "/api/voice-tts?probe=1"
     },
     {
       "src": "/api/(?<path>.*)",
