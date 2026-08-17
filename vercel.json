@@ -29,7 +29,11 @@
     },
     {
       "src": "/api/trpc/tts\\.synthesize",
-      "dest": "/api/voice-tts"
+      "dest": "/api/voice-fast?mode=trpc"
+    },
+    {
+      "src": "/api/voice-tts-stream",
+      "dest": "/api/voice-fast?mode=stream"
     },
     {
       "src": "/api/voice-health",
@@ -38,10 +42,6 @@
     {
       "src": "/api/voice-probe",
       "dest": "/api/voice-tts"
-    },
-    {
-      "src": "/api/voice-tts-stream",
-      "dest": "/api/voice-tts-stream"
     },
     {
       "src": "/api/(?<path>.*)",
