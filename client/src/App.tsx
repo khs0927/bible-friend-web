@@ -2,12 +2,24 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Link, Route, Switch, useLocation } from "wouter";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ComicAdventure from "./pages/ComicAdventure";
-import GrowthGame from "./growth/GrowthGame";
+
+const GrowthGame = lazy(() => import("./growth/GrowthGame"));
+
+function GrowthLoading() {
+  return (
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#fffaf0", color: "#624493", padding: "24px" }}>
+      <div role="status" aria-live="polite" style={{ textAlign: "center", fontWeight: 900 }}>
+        <div aria-hidden="true" style={{ fontSize: "42px", marginBottom: "10px" }}>🌱</div>
+        성경 친구의 성장 공간을 준비하고 있어요…
+      </div>
+    </main>
+  );
+}
 
 function HomeWithComicEntry() {
   const [, navigate] = useLocation();
@@ -72,7 +84,11 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={HomeWithComicEntry} />
-      <Route path={"/growth-game"} component={GrowthGame} />
+      <Route path={"/growth-game"}>
+        <Suspense fallback={<GrowthLoading />}>
+          <GrowthGame />
+        </Suspense>
+      </Route>
       <Route path={"/comic-adventure"} component={ComicAdventure} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
