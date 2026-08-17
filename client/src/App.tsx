@@ -6,11 +6,40 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ComicAdventure from "./pages/ComicAdventure";
+import GrowthGame from "./growth/GrowthGame";
 
 function HomeWithComicEntry() {
   return (
     <>
       <Home />
+      <Link
+        href="/growth-game"
+        aria-label="성경 친구 성장 게임 시작"
+        style={{
+          position: "fixed",
+          right: "14px",
+          bottom: "calc(232px + env(safe-area-inset-bottom, 0px))",
+          zIndex: 11,
+          display: "flex",
+          alignItems: "center",
+          gap: "7px",
+          minHeight: "44px",
+          maxWidth: "calc(100vw - 28px)",
+          padding: "10px 14px",
+          borderRadius: "999px",
+          border: "2px solid #9b7bd4",
+          background: "linear-gradient(135deg, #fff8c9 0%, #ffe2c9 45%, #e4d8ff 100%)",
+          color: "#4f347d",
+          boxShadow: "0 10px 26px rgba(79, 52, 125, 0.2)",
+          fontSize: "12px",
+          fontWeight: 900,
+          textDecoration: "none",
+        }}
+      >
+        <span aria-hidden="true" style={{ fontSize: "18px" }}>🌱</span>
+        성장 모험
+        <span aria-hidden="true">›</span>
+      </Link>
       <Link
         href="/comic-adventure"
         aria-label="성경 코믹 어드벤처 시작"
@@ -47,6 +76,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={HomeWithComicEntry} />
+      <Route path={"/growth-game"} component={GrowthGame} />
       <Route path={"/comic-adventure"} component={ComicAdventure} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
