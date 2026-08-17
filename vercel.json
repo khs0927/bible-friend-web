@@ -34,7 +34,7 @@
     },
     {
       "src": "/api/voice-probe",
-      "dest": "/api/voice-tts?probe=1"
+      "dest": "/api/voice-tts"
     },
     {
       "src": "/api/(?<path>.*)",
