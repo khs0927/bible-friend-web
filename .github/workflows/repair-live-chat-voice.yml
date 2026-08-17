@@ -1,0 +1,60 @@
+name: Repair live chat and instant voice
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/repair-live-chat-voice.yml]
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch files
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('server/routers.ts'); s=p.read_text()
+          a='import { invokeLLM } from "./_core/llm";\n'
+          if 'generateGeminiText' not in s: s=s.replace(a,a+'import { generateGeminiText } from "./_core/geminiText";\n',1)
+          old='''          const response = await invokeLLM({
+            model,
+            thinking: { budget_tokens: 512 },
+            messages: [
+              { role: "system", content: buildBibleSystemPrompt(context) },
+              { role: "user", content: input.question },
+            ],
+          });
+          answer = readLLMText(response.choices?.[0]?.message?.content);'''
+          new='''          const response = await generateGeminiText({
+            model,
+            systemInstruction: buildBibleSystemPrompt(context),
+            prompt: input.question,
+            timeoutMs: 10_000,
+          });
+          answer = response.text;'''
+          if old in s: s=s.replace(old,new,1)
+          elif new not in s: raise SystemExit('ai.ask anchor not found')
+          p.write_text(s)
+          p=Path('client/src/lib/audioPlaybackQueue.ts'); s=p.read_text()
+          s=s.replace('const STREAM_FIRST_AUDIO_TIMEOUT_MS = 4_000;','const STREAM_FIRST_AUDIO_TIMEOUT_MS = 900;',1)
+          old='''      const fastFallbackMs = typeof configuredFallbackMs === "number" && typeof document !== "undefined"
+        ? Math.max(configuredFallbackMs, 7_000)
+        : configuredFallbackMs;'''
+          new='''      const fastFallbackMs = typeof configuredFallbackMs === "number" && typeof document !== "undefined"
+        ? Math.max(250, configuredFallbackMs)
+        : configuredFallbackMs;'''
+          if old in s: s=s.replace(old,new,1)
+          elif new not in s: raise SystemExit('voice anchor not found')
+          p.write_text(s)
+          Path('.github/workflows/repair-live-chat-voice.yml').unlink()
+      - name: Commit
+        run: |
+          git config user.name bible-friend-repair-bot
+          git config user.email actions@users.noreply.github.com
+          git add server/routers.ts client/src/lib/audioPlaybackQueue.ts .github/workflows/repair-live-chat-voice.yml
+          git diff --cached --check
+          git commit -m "fix: restore live Gemini answers and instant voice fallback"
+          git push origin main
