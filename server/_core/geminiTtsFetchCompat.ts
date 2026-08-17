@@ -86,11 +86,33 @@ export function installGeminiTtsFetchCompat() {
     const headers = new Headers(init?.headers ?? undefined);
     headers.set("content-type", "application/json");
     headers.delete("Api-Revision");
+    const voiceName = parsed.generation_config?.speech_config?.[0]?.voice?.trim() || "Leda";
+    const startedAt = Date.now();
+    console.info("[TTS Compat] generateContent start", {
+      model: parsed.model ?? null,
+      voice: voiceName,
+      promptChars: parsed.input?.length ?? 0,
+      inheritedSignal: Boolean(init?.signal),
+    });
 
-    const response = await originalFetch(converted.url, {
-      ...init,
-      headers,
-      body: JSON.stringify(converted.body),
+    let response: Response;
+    try {
+      response = await originalFetch(converted.url, {
+        ...init,
+        headers,
+        body: JSON.stringify(converted.body),
+      });
+    } catch (error) {
+      console.warn("[TTS Compat] generateContent fetch failed", {
+        latencyMs: Date.now() - startedAt,
+        name: error instanceof Error ? error.name : "unknown",
+      });
+      throw error;
+    }
+
+    console.info("[TTS Compat] generateContent response", {
+      status: response.status,
+      latencyMs: Date.now() - startedAt,
     });
     if (!response.ok) return response;
 
@@ -107,6 +129,10 @@ export function installGeminiTtsFetchCompat() {
     }
 
     const audioData = extractGeneratedAudio(generated);
+    console.info("[TTS Compat] generateContent audio", {
+      latencyMs: Date.now() - startedAt,
+      audioBase64Chars: audioData?.length ?? 0,
+    });
     if (!audioData) {
       return new Response(JSON.stringify(generated), {
         status: response.status,
