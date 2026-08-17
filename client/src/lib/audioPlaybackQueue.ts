@@ -22,7 +22,9 @@ export type AudioPlaybackQueueOptions = {
   allowBrowserFallback?: boolean;
 };
 
-const IOS_UNLOCK_SILENCE_WAV = "data:audio/wav;base64,UklGRgQCAABXQVZFZm10IBAAAAABAAEAwF0AAIC7AAACABAAZGF0YeABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+const IOS_UNLOCK_SILENCE_WAV = "data:audio/wav;base64,UklGRgQCAABXQVZFZm10IBAAAAABAAEAwF0AAIC7AAACABAAZGF0YeABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+const STREAM_FIRST_AUDIO_TIMEOUT_MS = 4_000;
+const STREAM_PROVIDER = "gemini-3.1-stream";
 
 function isIOSLikeBrowser() {
   if (typeof navigator === "undefined") return false;
@@ -35,8 +37,6 @@ function isIOSLikeBrowser() {
 async function waitForSpeechVoices(synthesis: SpeechSynthesis, timeoutMs = 700) {
   if (typeof synthesis.getVoices !== "function") return true;
   if (synthesis.getVoices().length > 0) return true;
-  // iOS Safari may expose an empty list before its default voice is ready.
-  // Do not reject that state: allow speak() to try the platform default voice.
   if (typeof synthesis.addEventListener !== "function") return true;
   return new Promise<boolean>(resolve => {
     let settled = false;
@@ -53,6 +53,62 @@ async function waitForSpeechVoices(synthesis: SpeechSynthesis, timeoutMs = 700) 
   });
 }
 
+function base64ToBytes(value: string) {
+  const binary = atob(value);
+  return Uint8Array.from(binary, char => char.charCodeAt(0));
+}
+
+function joinBytes(left: Uint8Array, right: Uint8Array) {
+  if (left.byteLength === 0) return right;
+  if (right.byteLength === 0) return left;
+  const joined = new Uint8Array(left.byteLength + right.byteLength);
+  joined.set(left, 0);
+  joined.set(right, left.byteLength);
+  return joined;
+}
+
+function stripWaveHeader(bytes: Uint8Array) {
+  if (bytes.byteLength < 44) return bytes;
+  if (String.fromCharCode(...bytes.subarray(0, 4)) !== "RIFF") return bytes;
+
+  // Gemini normally streams raw PCM. If an upstream revision sends WAV instead,
+  // find the data chunk and strip the container before scheduling PCM frames.
+  let offset = 12;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  while (offset + 8 <= bytes.byteLength) {
+    const chunkId = String.fromCharCode(...bytes.subarray(offset, offset + 4));
+    const chunkSize = view.getUint32(offset + 4, true);
+    if (chunkId === "data") return bytes.subarray(Math.min(bytes.byteLength, offset + 8));
+    offset += 8 + chunkSize + (chunkSize % 2);
+  }
+  return bytes.subarray(44);
+}
+
+type StreamAudioDelta = {
+  data: string;
+  sampleRate: number;
+  channels: number;
+  mimeType?: string;
+};
+
+function extractStreamAudioDeltas(payload: any): StreamAudioDelta[] {
+  const results: StreamAudioDelta[] = [];
+  const append = (value: any) => {
+    if (!value || value.type !== "audio" || typeof value.data !== "string" || !value.data) return;
+    results.push({
+      data: value.data,
+      sampleRate: typeof value.sample_rate === "number" ? value.sample_rate : 24_000,
+      channels: typeof value.channels === "number" ? Math.max(1, value.channels) : 1,
+      mimeType: typeof value.mime_type === "string" ? value.mime_type : undefined,
+    });
+  };
+
+  append(payload?.delta);
+  const content = payload?.step?.content;
+  if (Array.isArray(content)) content.forEach(append);
+  return results;
+}
+
 export class AudioPlaybackQueue {
   private queue: VoiceRequest[] = [];
   private playing = false;
@@ -63,6 +119,8 @@ export class AudioPlaybackQueue {
   private generation = 0;
   private mediaPrimed = false;
   private mediaPrimePending = false;
+  private streamAbortController?: AbortController;
+  private streamSources = new Set<AudioBufferSourceNode>();
 
   constructor(
     private readonly ttsMutation: TTSMutation,
@@ -72,9 +130,8 @@ export class AudioPlaybackQueue {
   prime() {
     if (typeof window === "undefined") return;
 
-    // iOS/WebKit ties delayed media playback to a user activation. Unlock one
-    // persistent HTMLAudioElement during the tap and reuse that exact element
-    // after Gemini finishes several seconds later.
+    // Unlock both the persistent HTMLAudioElement and Web Audio during the
+    // user's tap. The actual Gemini stream can arrive seconds later on iOS.
     this.primeIOSMediaElement();
 
     const browserWindow = window as typeof window & { webkitAudioContext?: typeof AudioContext };
@@ -85,8 +142,6 @@ export class AudioPlaybackQueue {
       const context = this.audioContext;
       void context.resume().catch(() => undefined);
 
-      // Starting a silent buffer inside the user gesture is the most reliable
-      // way to unlock Web Audio on iOS Safari and WKWebView.
       if (typeof context.createBuffer === "function" && typeof context.createBufferSource === "function") {
         const silentBuffer = context.createBuffer(1, 1, 22050);
         const source = context.createBufferSource();
@@ -157,6 +212,12 @@ export class AudioPlaybackQueue {
   cancel() {
     this.generation += 1;
     this.queue = [];
+    this.streamAbortController?.abort();
+    this.streamAbortController = undefined;
+    for (const source of this.streamSources) {
+      try { source.stop(); } catch { /* already ended */ }
+    }
+    this.streamSources.clear();
     try {
       this.currentAudio?.pause();
       if (this.currentAudio) this.currentAudio.currentTime = 0;
@@ -185,7 +246,14 @@ export class AudioPlaybackQueue {
       this.playing = false;
       return;
     }
+
     try {
+      // Gemini 3.1 can emit PCM while synthesis is still running. Prefer that
+      // path so the child hears the answer as soon as the first audio delta is
+      // available instead of waiting for a complete WAV/base64 response.
+      const streamed = await this.playStreamingServerAudio(next, run);
+      if (streamed || run !== this.generation) return;
+
       const serverPromise = this.ttsMutation.mutateAsync(next);
       void serverPromise.then((response: any) => {
         if (typeof response?.serverResponseAt === "number") {
@@ -201,10 +269,9 @@ export class AudioPlaybackQueue {
           });
         }
       }).catch(() => undefined);
+
       const allowBrowserFallback = this.options.allowBrowserFallback === true;
       const configuredFallbackMs = this.options.fastFallbackMs;
-      // Gemini 3.1 TTS commonly needs several seconds for expressive Korean audio.
-      // Prefer real Gemini audio for at least seven seconds before Web Speech.
       const fastFallbackMs = typeof configuredFallbackMs === "number" && typeof document !== "undefined"
         ? Math.max(configuredFallbackMs, 7_000)
         : configuredFallbackMs;
@@ -214,8 +281,8 @@ export class AudioPlaybackQueue {
             new Promise<{ __fastFallback: true }>(resolve => setTimeout(() => resolve({ __fastFallback: true }), fastFallbackMs)),
           ])
         : await serverPromise;
+
       if ("__fastFallback" in race) {
-        // Keep the server request alive so a successful response can populate its cache.
         void serverPromise.catch(() => undefined);
         if (run === this.generation) {
           const browserPlayed = await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
@@ -232,6 +299,7 @@ export class AudioPlaybackQueue {
         }
         return;
       }
+
       const response = race;
       if (run !== this.generation) return;
       const provider = response.success ? response.provider ?? "server" : "browser";
@@ -263,11 +331,184 @@ export class AudioPlaybackQueue {
     }
   }
 
+  private async playStreamingServerAudio(request: VoiceRequest, run: number) {
+    if (typeof window === "undefined" || typeof window.fetch !== "function") return false;
+
+    const browserWindow = window as typeof window & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextCtor = window.AudioContext ?? browserWindow.webkitAudioContext;
+    if (!AudioContextCtor) return false;
+
+    const controller = new AbortController();
+    this.streamAbortController?.abort();
+    this.streamAbortController = controller;
+    const requestedAt = Date.now();
+    let firstAudioSeen = false;
+    let firstAudioAt = 0;
+    let pendingBytes = new Uint8Array(0);
+    const finishPromises: Promise<void>[] = [];
+    const firstAudioTimer = setTimeout(() => {
+      if (!firstAudioSeen) controller.abort();
+    }, STREAM_FIRST_AUDIO_TIMEOUT_MS);
+
+    try {
+      this.audioContext ??= new AudioContextCtor();
+      const context = this.audioContext;
+      await context.resume();
+      if ("state" in context && context.state === "suspended") return false;
+      if (typeof context.createBuffer !== "function" || typeof context.createBufferSource !== "function") return false;
+
+      const response = await window.fetch("/api/voice-tts-stream", {
+        method: "POST",
+        headers: { "content-type": "application/json", "accept": "text/event-stream" },
+        body: JSON.stringify(request),
+        signal: controller.signal,
+        cache: "no-store",
+      });
+      if (!response.ok || !response.body) return false;
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let scheduledUntil = context.currentTime + 0.015;
+
+      const scheduleDelta = (delta: StreamAudioDelta) => {
+        if (run !== this.generation) return;
+        let bytes = base64ToBytes(delta.data);
+        if (!firstAudioSeen) bytes = stripWaveHeader(bytes);
+        if (bytes.byteLength === 0) return;
+
+        bytes = joinBytes(pendingBytes, bytes);
+        const channels = Math.max(1, delta.channels || 1);
+        const bytesPerFrame = channels * 2;
+        const usableLength = bytes.byteLength - (bytes.byteLength % bytesPerFrame);
+        pendingBytes = bytes.subarray(usableLength).slice();
+        if (usableLength <= 0) return;
+
+        const pcm = bytes.subarray(0, usableLength);
+        const frames = usableLength / bytesPerFrame;
+        const audioBuffer = context.createBuffer(channels, frames, delta.sampleRate || 24_000);
+        const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
+        for (let channel = 0; channel < channels; channel += 1) {
+          const output = audioBuffer.getChannelData(channel);
+          for (let frame = 0; frame < frames; frame += 1) {
+            const byteOffset = (frame * channels + channel) * 2;
+            output[frame] = Math.max(-1, Math.min(1, view.getInt16(byteOffset, true) / 32768));
+          }
+        }
+
+        const source = context.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(context.destination);
+        this.streamSources.add(source);
+        this.currentSource = source;
+        const finished = new Promise<void>(resolve => {
+          source.onended = () => {
+            this.streamSources.delete(source);
+            if (this.currentSource === source) this.currentSource = undefined;
+            resolve();
+          };
+        });
+        finishPromises.push(finished);
+
+        const startAt = Math.max(scheduledUntil, context.currentTime + 0.01);
+        source.start(startAt);
+        scheduledUntil = startAt + audioBuffer.duration;
+
+        if (!firstAudioSeen) {
+          firstAudioSeen = true;
+          firstAudioAt = Date.now();
+          clearTimeout(firstAudioTimer);
+          this.options.onServerResponse?.({
+            request,
+            provider: STREAM_PROVIDER,
+            serverResponseAt: firstAudioAt,
+            observedAt: firstAudioAt,
+            latencyMs: firstAudioAt - requestedAt,
+            success: true,
+          });
+          this.options.onPlaybackStarted?.({
+            request,
+            provider: STREAM_PROVIDER,
+            startedAt: firstAudioAt,
+            serverResponseAt: firstAudioAt,
+          });
+          console.info("[Bible Friend Voice Timing] streaming-first-audio", {
+            firstAudioMs: firstAudioAt - requestedAt,
+            sampleRate: delta.sampleRate,
+            channels,
+            mimeType: delta.mimeType ?? "native-pcm",
+          });
+        }
+      };
+
+      const processBlock = (block: string) => {
+        const data = block
+          .split("\n")
+          .filter(line => line.startsWith("data:"))
+          .map(line => line.slice(5).trimStart())
+          .join("\n")
+          .trim();
+        if (!data || data === "[DONE]") return;
+        try {
+          const payload = JSON.parse(data);
+          for (const delta of extractStreamAudioDeltas(payload)) scheduleDelta(delta);
+        } catch {
+          // Ignore non-JSON keepalive/event lines and continue the stream.
+        }
+      };
+
+      while (run === this.generation) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        sseBuffer = sseBuffer.replace(/\r\n/g, "\n");
+        let boundary = sseBuffer.indexOf("\n\n");
+        while (boundary >= 0) {
+          const block = sseBuffer.slice(0, boundary);
+          sseBuffer = sseBuffer.slice(boundary + 2);
+          processBlock(block);
+          boundary = sseBuffer.indexOf("\n\n");
+        }
+      }
+
+      sseBuffer += decoder.decode();
+      if (sseBuffer.trim()) processBlock(sseBuffer);
+      if (!firstAudioSeen) return false;
+
+      await Promise.all(finishPromises);
+      if (run === this.generation) {
+        this.options.onPlaybackFinished?.({
+          request,
+          provider: STREAM_PROVIDER,
+          finishedAt: Date.now(),
+          serverResponseAt: firstAudioAt || undefined,
+        });
+      }
+      return true;
+    } catch (error) {
+      if (firstAudioSeen) {
+        console.warn("[Bible Friend Voice] stream ended after playback started", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+        await Promise.allSettled(finishPromises);
+        if (run === this.generation) {
+          this.options.onPlaybackFinished?.({ request, provider: STREAM_PROVIDER, finishedAt: Date.now(), serverResponseAt: firstAudioAt || undefined });
+        }
+        return true;
+      }
+      console.info("[Bible Friend Voice] streaming unavailable; using complete-audio fallback", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    } finally {
+      clearTimeout(firstAudioTimer);
+      if (this.streamAbortController === controller) this.streamAbortController = undefined;
+    }
+  }
+
   private async playServerAudio(request: VoiceRequest, base64: string, mimeType: string, provider: string, run: number, serverResponseAt?: number) {
     const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
 
-    // On iOS prefer the exact HTMLAudioElement that was unlocked by the tap.
-    // Creating `new Audio()` after a 5s network request is commonly blocked.
     const preferUnlockedMedia = isIOSLikeBrowser() && this.mediaPrimed;
     if (preferUnlockedMedia) {
       const mediaPlayed = await this.playWithMediaElement(request, bytes, mimeType, provider, run, serverResponseAt);
@@ -321,11 +562,7 @@ export class AudioPlaybackQueue {
       });
       return false;
     } finally {
-      try {
-        audio.pause();
-      } catch {
-        // Ignore media teardown errors.
-      }
+      try { audio.pause(); } catch { /* ignore */ }
       URL.revokeObjectURL(url);
       if (run === this.generation && completed) {
         this.options.onPlaybackFinished?.({ request, provider, finishedAt: Date.now(), serverResponseAt });
@@ -414,11 +651,7 @@ export class AudioPlaybackQueue {
           this.options.onPlaybackError?.({ request, provider, code, message: "브라우저 음성 엔진이 재생을 시작하지 못했어요." });
           resolve(false);
         };
-        try {
-          window.speechSynthesis.resume?.();
-        } catch {
-          // Some WebViews do not expose a working resume method.
-        }
+        try { window.speechSynthesis.resume?.(); } catch { /* optional in WebViews */ }
         window.speechSynthesis.speak(utterance);
       };
       if (waitForVoices) {
