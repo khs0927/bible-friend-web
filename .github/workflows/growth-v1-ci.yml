@@ -1,0 +1,40 @@
+name: Growth V1 CI
+
+on:
+  push:
+    branches:
+      - agent/growth-tamagotchi-v1
+  pull_request:
+    paths:
+      - "client/src/growth/**"
+      - "shared/growthDomain.ts"
+      - "server/growth*.ts"
+      - "server/routers.ts"
+      - "drizzle/**"
+      - "client/src/App.tsx"
+      - ".github/workflows/growth-v1-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Growth domain tests
+        run: pnpm vitest run client/src/growth/growthEngine.test.ts
+      - name: TypeScript
+        run: pnpm check
+      - name: Production build
+        run: pnpm build

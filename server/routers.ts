@@ -6,6 +6,7 @@ import { invokeLLM } from "./_core/llm";
 import { publicProcedure, router } from "./_core/trpc";
 import { getVoiceProfiles, synthesizeSpeech } from "./_core/tts";
 import { transcribeAudio } from "./_core/voiceTranscription";
+import { growthRouter } from "./growthRouter";
 import {
   BIBLE_STORIES,
   QUIZ_BANK,
@@ -114,6 +115,7 @@ export const appRouter = router({
         return { success };
       }),
   }),
+  growth: growthRouter,
   ai: router({
     ask: publicProcedure
       .input(z.object({ question: z.string().min(1).max(600), storyId: z.string().optional() }))
