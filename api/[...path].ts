@@ -40,4 +40,23 @@ app.use(
   }),
 );
 
-export default app;
+function restoreRewrittenPath(req: Request) {
+  const rawPath = (req.query as Record<string, unknown> | undefined)?.path;
+  const routePath = Array.isArray(rawPath)
+    ? rawPath.map(String).join("/")
+    : typeof rawPath === "string"
+      ? rawPath
+      : undefined;
+
+  if (!routePath) return;
+
+  const incoming = new URL(req.url ?? "/", "http://localhost");
+  incoming.searchParams.delete("path");
+  const query = incoming.searchParams.toString();
+  req.url = `/api/${routePath}${query ? `?${query}` : ""}`;
+}
+
+export default function handler(req: Request, res: Response) {
+  restoreRewrittenPath(req);
+  return app(req, res);
+}
