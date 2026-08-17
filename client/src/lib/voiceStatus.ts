@@ -14,6 +14,20 @@ export function getVoiceStateFromPlaybackError(code: string, message: string): {
   if (code === "timeout") {
     return { status: "error", error: "음성 준비가 늦어지고 있어요. 잠시 후 다시 눌러 주세요." };
   }
+
+  // Safari/WebKit can surface low-level DOMException/URL parsing messages such as
+  // "The string did not match the expected pattern.". Never expose those raw
+  // browser implementation details in the child-facing UI.
+  const normalizedMessage = (message ?? "").toLowerCase();
+  if (
+    code === "audio_play_failed" ||
+    normalizedMessage.includes("expected pattern") ||
+    normalizedMessage.includes("invalid url") ||
+    normalizedMessage.includes("domexception")
+  ) {
+    return { status: "error", error: "음성을 재생하지 못했어요. 잠시 후 다시 눌러 주세요." };
+  }
+
   return { status: "error", error: message || "음성을 재생하지 못했어요. 잠시 후 다시 눌러 주세요." };
 }
 
