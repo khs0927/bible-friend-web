@@ -1,4 +1,11 @@
 const BIBLE_FRIEND_GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts";
+const FAST_VOICE_FALLBACK_TIMEOUT_MS = 1_200;
+
+function boundedVoiceTimeout(value: string | undefined) {
+  const configured = Number(value ?? FAST_VOICE_FALLBACK_TIMEOUT_MS);
+  if (!Number.isFinite(configured) || configured <= 0) return FAST_VOICE_FALLBACK_TIMEOUT_MS;
+  return Math.min(configured, FAST_VOICE_FALLBACK_TIMEOUT_MS);
+}
 
 export const ENV = {
   appId: process.env.VITE_APP_ID ?? "",
@@ -10,9 +17,10 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-  // Bible Friend intentionally stays on Gemini 2.5 Flash TTS for the current voice pipeline.
-  // Pinning prevents a stale Vercel GEMINI_TTS_MODEL value from silently switching providers.
+  // Keep Gemini as the preferred expressive voice, but never make a child wait
+  // several seconds in silence. If Gemini is slow/rate-limited the client can
+  // immediately continue with its built-in browser speech fallback.
   geminiTtsModel: BIBLE_FRIEND_GEMINI_TTS_MODEL,
-  geminiTtsTimeoutMs: Number(process.env.GEMINI_TTS_TIMEOUT_MS ?? 30_000),
-  geminiTtsHardTimeoutMs: Number(process.env.GEMINI_TTS_HARD_TIMEOUT_MS ?? 30_000),
+  geminiTtsTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_TIMEOUT_MS),
+  geminiTtsHardTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_HARD_TIMEOUT_MS),
 };
