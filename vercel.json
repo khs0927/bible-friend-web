@@ -5,6 +5,9 @@
   "functions": {
     "api/voice-tts.js": {
       "maxDuration": 30
+    },
+    "api/voice-tts-stream.js": {
+      "maxDuration": 30
     }
   },
   "routes": [
@@ -35,6 +38,10 @@
     {
       "src": "/api/voice-probe",
       "dest": "/api/voice-tts"
+    },
+    {
+      "src": "/api/voice-tts-stream",
+      "dest": "/api/voice-tts-stream"
     },
     {
       "src": "/api/(?<path>.*)",
