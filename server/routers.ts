@@ -30,7 +30,9 @@ import {
   addUserPrayerNote,
 } from "./db";
 
-const model = "gemini-2.5-flash";
+// Track Google's latest official Gemini Flash. Today this resolves to the latest
+// supported Flash release and will follow Google's alias when a newer Flash ships.
+const model = "gemini-flash-latest";
 
 function readLLMText(content: unknown) {
   if (typeof content === "string") return content;
