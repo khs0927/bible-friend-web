@@ -1,0 +1,61 @@
+name: Build Vercel API Bundle
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "server/**"
+      - "api/[...path].ts"
+      - ".github/workflows/build-vercel-api-bundle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Vercel API handler
+        run: >-
+          pnpm exec esbuild 'api/[...path].ts'
+          --bundle
+          --platform=node
+          --target=node22
+          --format=esm
+          --packages=external
+          --outfile=api/vercel-handler.js
+
+      - name: Commit refreshed bundle
+        shell: bash
+        run: |
+          if git diff --quiet -- api/vercel-handler.js; then
+            echo "API bundle is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add api/vercel-handler.js
+          git commit -m "build(vercel): refresh API Lambda bundle"
+          git push origin HEAD:main
