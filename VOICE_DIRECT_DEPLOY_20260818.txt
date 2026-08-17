@@ -1,4 +1,0 @@
-Bible Friend direct Gemini TTS deployment trigger.
-Primary: gemini-3.1-flash-tts-preview
-Fallback: gemini-2.5-flash-preview-tts
-Generated for Production deployment verification.
