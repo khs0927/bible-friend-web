@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
 import { ARMOR_CATALOG, EQUIPMENT_ORDER, SERVICE_MISSIONS, STARTER_DAILY_VERSES, ZONE_INFO } from "./catalog";
 import { INITIAL_GROWTH_PROFILE, STAGE_LABELS, canUpgrade, moodForProfile, upgradeCost } from "./growthEngine";
 import type { EquipmentId, GrowthProfile, GrowthZone } from "./types";
@@ -17,6 +18,17 @@ const moodCopy = {
   brave: { emoji: "🔥", text: "말씀과 믿음으로 씩씩하게 걸어갈 준비가 됐어요!" },
 } as const;
 
+function seoulDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find(item => item.type === type)?.value ?? "00";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 function Meter({ label, value, icon, tone }: { label: string; value: number; icon: string; tone: string }) {
   return (
     <div className="growth-meter">
@@ -29,7 +41,7 @@ function Meter({ label, value, icon, tone }: { label: string; value: number; ico
 function ProfileMeters({ profile }: { profile: GrowthProfile }) {
   const faithProgress = Math.min(100, Math.round((profile.faithXp % 240) / 2.4));
   const wisdomProgress = Math.min(100, Math.round((profile.wisdomXp % 120) / 1.2));
-  const loveProgress = Math.min(100, Math.round((profile.loveXp % 100)));
+  const loveProgress = Math.min(100, Math.round(profile.loveXp % 100));
   return (
     <div className="growth-meter-grid">
       <Meter label="영혼의 양식" value={profile.spiritFood} icon="🌾" tone="linear-gradient(90deg,#f59e0b,#facc15)" />
@@ -80,6 +92,12 @@ export default function GrowthGame() {
   const [zone, setZone] = useState<GrowthZone>("home");
   const [notice, setNotice] = useState("말씀 한 입부터 오늘의 모험을 시작해요.");
   const [wildernessAnswered, setWildernessAnswered] = useState(false);
+  const [reciting, setReciting] = useState(false);
+  const [recitedText, setRecitedText] = useState("");
+  const reciteRecorderRef = useRef<MediaRecorder | null>(null);
+  const reciteStreamRef = useRef<MediaStream | null>(null);
+  const reciteChunksRef = useRef<Blob[]>([]);
+
   const profileQuery = trpc.growth.profile.useQuery(undefined, { enabled: Boolean(user) });
   const profile = profileQuery.data?.profile ?? INITIAL_GROWTH_PROFILE;
   const claim = trpc.growth.claimActivity.useMutation({
@@ -88,6 +106,13 @@ export default function GrowthGame() {
       void profileQuery.refetch();
     },
   });
+  const verifyMemorization = trpc.growth.verifyMemorization.useMutation({
+    onSuccess: result => {
+      setNotice(result.message);
+      void profileQuery.refetch();
+    },
+  });
+  const transcribe = trpc.voice.transcribe.useMutation();
   const upgrade = trpc.growth.upgradeEquipment.useMutation({
     onSuccess: result => {
       setNotice(result.message);
@@ -100,14 +125,15 @@ export default function GrowthGame() {
       void profileQuery.refetch();
     },
   });
-  const busy = claim.isPending || upgrade.isPending || equip.isPending;
+
+  const busy = claim.isPending || verifyMemorization.isPending || transcribe.isPending || upgrade.isPending || equip.isPending;
   const mood = moodForProfile(profile);
   const moodState = moodCopy[mood];
+  const sourceDay = seoulDateKey();
   const dailyVerse = useMemo(() => {
-    const day = Math.floor(Date.now() / 86_400_000);
-    return STARTER_DAILY_VERSES[day % STARTER_DAILY_VERSES.length];
-  }, []);
-  const sourceDay = new Date().toISOString().slice(0, 10);
+    const numericDay = Number(sourceDay.replaceAll("-", ""));
+    return STARTER_DAILY_VERSES[numericDay % STARTER_DAILY_VERSES.length];
+  }, [sourceDay]);
 
   const claimActivity = (type: Parameters<typeof claim.mutate>[0]["type"], sourceId: string, title: string) => {
     if (!user) {
@@ -115,6 +141,72 @@ export default function GrowthGame() {
       return;
     }
     claim.mutate({ type, sourceId, title });
+  };
+
+  const finishRecitation = async (blob: Blob) => {
+    if (blob.size < 800) {
+      setNotice("조금 더 천천히 말씀을 말한 뒤 다시 해 봐요.");
+      return;
+    }
+    try {
+      setNotice("말씀을 잘 들었어요. 암송 내용을 확인하고 있어요…");
+      const transcription = await transcribe.mutateAsync({
+        audioDataUrl: await blobToDataUrl(blob),
+        language: "ko",
+      });
+      const text = transcription.text?.trim() ?? "";
+      setRecitedText(text);
+      if (!text) {
+        setNotice("목소리를 글로 옮기지 못했어요. 조금 더 또박또박 다시 말해 봐요.");
+        return;
+      }
+      verifyMemorization.mutate({ verseId: dailyVerse.id, recitedText: text });
+    } catch {
+      setNotice("암송 음성을 확인하지 못했어요. 틀린 것이 아니니 잠시 뒤 다시 해 봐요.");
+    }
+  };
+
+  const toggleRecitation = async () => {
+    if (reciteRecorderRef.current?.state === "recording") {
+      reciteRecorderRef.current.stop();
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setNotice("이 기기에서는 음성 암송 확인을 사용할 수 없어요. 말씀 읽기와 기도는 그대로 할 수 있어요.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = pickRecordingMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      reciteStreamRef.current = stream;
+      reciteRecorderRef.current = recorder;
+      reciteChunksRef.current = [];
+      recorder.ondataavailable = event => { if (event.data.size > 0) reciteChunksRef.current.push(event.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(reciteChunksRef.current, { type: recorder.mimeType || mimeType || "audio/mp4" });
+        reciteChunksRef.current = [];
+        reciteRecorderRef.current = null;
+        reciteStreamRef.current?.getTracks().forEach(track => track.stop());
+        reciteStreamRef.current = null;
+        setReciting(false);
+        void finishRecitation(blob);
+      };
+      recorder.onerror = () => {
+        reciteStreamRef.current?.getTracks().forEach(track => track.stop());
+        reciteStreamRef.current = null;
+        reciteRecorderRef.current = null;
+        setReciting(false);
+        setNotice("마이크를 준비하지 못했어요. 권한을 확인하고 다시 해 봐요.");
+      };
+      recorder.start(250);
+      setRecitedText("");
+      setReciting(true);
+      setNotice(`🎙️ ${dailyVerse.ref} 말씀을 천천히 암송해 주세요. 다 말했으면 버튼을 다시 눌러요.`);
+    } catch {
+      setReciting(false);
+      setNotice("마이크 권한이 필요해요. 브라우저 설정에서 마이크를 허용해 주세요.");
+    }
   };
 
   const enterZone = (next: GrowthZone) => {
@@ -180,11 +272,12 @@ export default function GrowthGame() {
           <section className="growth-card scripture-meal">
             <div className="growth-card-heading"><div><span>오늘의 영혼 한 끼</span><h2>📖 {dailyVerse.ref}</h2></div><span className="meal-badge">{dailyVerse.theme}</span></div>
             <blockquote>“{dailyVerse.text}…”</blockquote>
-            <p>천천히 읽고, 무슨 뜻인지 성경 친구와 이야기한 뒤 마음에 담아봐요.</p>
+            <p>천천히 읽고, 무슨 뜻인지 성경 친구와 이야기한 뒤 마음에 담아봐요. 암송 보상은 실제 목소리를 확인한 뒤 채워져요.</p>
+            {recitedText && <p className="growth-section-copy"><strong>방금 들은 암송:</strong> {recitedText}</p>}
             <div className="growth-action-row">
-              <button disabled={busy} onClick={() => claimActivity("scripture_read", `read:${sourceDay}:${dailyVerse.id}`, dailyVerse.ref)}>🌾 말씀 읽었어요</button>
-              <button disabled={busy} onClick={() => claimActivity("verse_memorized", `memory:${sourceDay}:${dailyVerse.id}`, dailyVerse.ref)}>💖 말씀 암송했어요</button>
-              <button disabled={busy} onClick={() => claimActivity("prayer", `prayer:${sourceDay}`, "오늘의 기도")}>🙏 함께 기도했어요</button>
+              <button disabled={busy || reciting} onClick={() => claimActivity("scripture_read", `read:${sourceDay}:${dailyVerse.id}`, dailyVerse.ref)}>🌾 말씀 읽었어요</button>
+              <button disabled={busy && !reciting} onClick={() => void toggleRecitation()}>{reciting ? "⏹️ 암송 끝내기" : "🎙️ 말씀 암송하기"}</button>
+              <button disabled={busy || reciting} onClick={() => claimActivity("prayer", `prayer:${sourceDay}`, "오늘의 기도")}>🙏 함께 기도했어요</button>
             </div>
           </section>
 
@@ -221,7 +314,7 @@ export default function GrowthGame() {
           <h2>두려움의 속삭임을 말씀으로 이겨내요</h2>
           <p>어두운 그림자가 “너는 혼자야”라고 속삭여요. 어떤 말씀의 진리를 선택할까요?</p>
           <div className="wilderness-choice">
-            <button disabled={wildernessAnswered || busy} onClick={() => { setWildernessAnswered(true); setNotice("맞아요! 하나님이 함께하신다는 진리를 붙잡았어요. 다음에는 암송한 말씀이 성령의 검 기술로 열립니다."); claimActivity("wilderness_victory", `wilderness:${sourceDay}:presence`, "하나님이 함께하심을 선택"); }}>🛡️ “하나님이 나와 함께 계셔.”</button>
+            <button disabled={wildernessAnswered || busy} onClick={() => { setWildernessAnswered(true); setNotice("맞아요! 하나님이 함께하신다는 진리를 붙잡았어요. 암송한 말씀은 이후 성령의 검 기술로 연결돼요."); claimActivity("wilderness_victory", `wilderness:${sourceDay}:presence`, "하나님이 함께하심을 선택"); }}>🛡️ “하나님이 나와 함께 계셔.”</button>
             <button disabled={wildernessAnswered || busy} onClick={() => { setWildernessAnswered(true); setNotice("괜찮아요. 두려울 때도 다시 말씀을 떠올릴 수 있어요. 정답을 외우는 것보다 하나님께 돌아오는 것이 중요해요."); }}>🌫️ “나는 혼자 해결해야 해.”</button>
           </div>
         </section>
