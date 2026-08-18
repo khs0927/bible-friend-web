@@ -28,6 +28,30 @@
       "dest": "/assets/game-icon-trophy.svg"
     },
     {
+      "src": "/manus-storage/story_noah_a1e0e2bf.png",
+      "dest": "/assets/stories/noah.svg"
+    },
+    {
+      "src": "/manus-storage/story_david_0b7c9097.png",
+      "dest": "/assets/stories/david.svg"
+    },
+    {
+      "src": "/manus-storage/story_jesus_9ab7568d.png",
+      "dest": "/assets/stories/jesus.svg"
+    },
+    {
+      "src": "/manus-storage/story_creation_4ad3b88a.png",
+      "dest": "/assets/stories/creation.svg"
+    },
+    {
+      "src": "/manus-storage/story_creation_3e9569ce.png",
+      "dest": "/assets/stories/solomon.svg"
+    },
+    {
+      "src": "/manus-storage/story_joseph_aa32c037.png",
+      "dest": "/assets/stories/joseph.svg"
+    },
+    {
       "src": "/api/trpc/tts\\.synthesize",
       "dest": "/api/voice-tts"
     },
