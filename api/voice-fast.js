@@ -19,10 +19,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "method_not_allowed" });
   }
 
-  // The streaming probe must fail immediately so the browser does not sit in
-  // silence waiting for a Gemini audio chunk. AudioPlaybackQueue will then call
-  // the normal TTS mutation, which below immediately instructs it to use the
-  // already-implemented browser speech fallback.
+  // This legacy fast-fallback endpoint is intentionally not treated as a
+  // Gemini quota/rate-limit condition. It only asks the client to continue
+  // with the device voice immediately.
   if (mode === "stream") {
     return res.status(503).json({
       ok: false,
@@ -34,8 +33,8 @@ export default async function handler(req, res) {
   const result = {
     success: false,
     provider: "device",
-    errorCode: "rate_limit",
-    error: "기기 음성으로 바로 재생합니다.",
+    errorCode: "device_fallback",
+    error: "기기 음성으로 바로 이어서 들려줘요.",
     fallbackSuggested: true,
     serverResponseAt: Date.now(),
   };
