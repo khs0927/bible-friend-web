@@ -3,9 +3,11 @@ import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
+import EquipmentIcon from "./EquipmentIcon";
 import GrowthHero2D from "./GrowthHero2D";
 import { ARMOR_CATALOG, EQUIPMENT_ORDER, STARTER_DAILY_VERSES, ZONE_INFO } from "./catalog";
 import { INITIAL_GROWTH_PROFILE, STAGE_LABELS, canUpgrade, moodForProfile, upgradeCost } from "./growthEngine";
+import { getAllLocalRegionProgress } from "./regionProgress";
 import { useLocalGrowth } from "./useLocalGrowth";
 import type { EquipmentId } from "./types";
 import "./growth-game.css";
@@ -45,7 +47,7 @@ function EquipmentCard({ id, profile, busy, onUpgrade, onEquip }: {
   const cost = upgradeCost(id, tier);
   return (
     <article className={`growth-equipment-card ${equipped ? "equipped" : ""}`}>
-      <div className="growth-equipment-icon">{item.icon}</div>
+      <div className="growth-equipment-icon"><EquipmentIcon id={id} /></div>
       <div className="growth-equipment-main">
         <div className="growth-equipment-title"><strong>{item.name}</strong><span>Lv.{tier}/5</span></div>
         <p>{tier > 0 ? item.tierNames[tier] : item.description}</p>
@@ -70,7 +72,10 @@ export default function GrowthGame() {
   const reciteChunksRef = useRef<Blob[]>([]);
 
   const profileQuery = trpc.growth.profile.useQuery(undefined, { enabled: Boolean(user) });
+  const regionsQuery = trpc.growth.regionsProgress.useQuery(undefined, { enabled: Boolean(user), staleTime: 2_000 });
   const profile = user ? (profileQuery.data?.profile ?? INITIAL_GROWTH_PROFILE) : localGrowth.profile;
+  const localRegions = getAllLocalRegionProgress(localGrowth.state);
+  const regionProgress = user ? regionsQuery.data?.regions : localRegions;
   const claim = trpc.growth.claimActivity.useMutation({ onSuccess: result => { setNotice(result.message); void profileQuery.refetch(); } });
   const verifyMemorization = trpc.growth.verifyMemorization.useMutation({ onSuccess: result => { setNotice(result.message); void profileQuery.refetch(); } });
   const transcribe = trpc.voice.transcribe.useMutation();
@@ -160,13 +165,14 @@ export default function GrowthGame() {
 
       <section className="growth-journey-head"><div><span>GROWTH JOURNEY</span><h2>성장의 여정</h2></div><p>{moodState.text} 지역에 들어가면 실제 3D RPG 화면으로 전환됩니다.</p></section>
       <nav className="growth-zone-cards" aria-label="3D 성장 모험 지역">
-        {ZONE_INFO.map((item, index) => {
+        {ZONE_INFO.map(item => {
           const unlocked = item.id === "home" || profile.unlockedZones.includes(item.id);
-          const stars = [18, 21, 12, 24][index] ?? 0;
+          const stars = regionProgress?.[item.id]?.stars ?? 0;
+          const todayDone = regionProgress?.[item.id]?.todayDone ?? false;
           const card = (
             <>
               <img src={ZONE_ART[item.id]} alt="" />
-              <div className="growth-zone-card-body"><div><b>{item.name}</b><span>⭐ {stars}/30</span></div><p>{item.description}</p><small>{unlocked ? "3D RPG 입장 ›" : `🔒 ${item.unlock}`}</small></div>
+              <div className="growth-zone-card-body"><div><b>{item.name}</b><span>⭐ {stars}/30</span></div><p>{item.description}</p><small>{unlocked ? (todayDone ? "✓ 오늘 미션 완료 · 다시 입장 ›" : "3D RPG 입장 ›") : `🔒 ${item.unlock}`}</small></div>
             </>
           );
           return unlocked ? <Link key={item.id} href={`/growth-adventure/${item.id}`} className="growth-zone-card">{card}</Link> : <div key={item.id} className="growth-zone-card locked" aria-disabled="true">{card}</div>;
@@ -196,7 +202,7 @@ export default function GrowthGame() {
         </div>
       </section>
 
-      <footer className="growth-footer">Growth v5 · 2D/2.5D 성장 홈 + 3D RPG 모험 + 모바일 local-first 저장 + AI-3D 교체형 자산 구조</footer>
+      <footer className="growth-footer">Growth v7 · 2D/2.5D 성장 홈 + 영속 미션 3D RPG + 모바일 local-first 저장 + AI-3D 자동교체 자산 구조</footer>
     </main>
   );
 }

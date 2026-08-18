@@ -1,4 +1,5 @@
 import { ARMOR_CATALOG } from "./catalog";
+import EquipmentIcon from "./EquipmentIcon";
 import type { EquipmentId, GrowthProfile } from "./types";
 import "./growth-home-v4.css";
 
@@ -62,7 +63,7 @@ export default function GrowthHero2D({ profile, stageLabel, title, moodEmoji }: 
           const tier = profile.equipmentTiers[id];
           return (
             <div className="growth2d-equipment-row" key={id}>
-              <span>{item.icon}</span><div><b>{item.name.replace(" — 하나님의 말씀", "")}</b><small>Lv.{tier}</small></div>
+              <EquipmentIcon id={id} /><div><b>{item.name.replace(" — 하나님의 말씀", "")}</b><small>Lv.{tier}</small></div>
             </div>
           );
         })}
