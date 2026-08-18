@@ -12,6 +12,7 @@ import "./growth/growth-glb-runtime.css";
 
 const GrowthGame = lazy(() => import("./growth/GrowthGame"));
 const GrowthAdventure3D = lazy(() => import("./growth/GrowthAdventure3D"));
+const GrowthModelViewer = lazy(() => import("./growth/GrowthModelViewer"));
 
 function GrowthLoading() {
   return (
@@ -86,6 +87,11 @@ function Router() {
       <Route path={"/growth-game"}>
         <Suspense fallback={<GrowthLoading />}>
           <GrowthGame />
+        </Suspense>
+      </Route>
+      <Route path={"/growth-model-viewer"}>
+        <Suspense fallback={<GrowthLoading />}>
+          <GrowthModelViewer />
         </Suspense>
       </Route>
       <Route path={"/growth-adventure/:zone"}>
