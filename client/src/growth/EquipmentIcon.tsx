@@ -1,4 +1,5 @@
 import type { EquipmentId } from "./types";
+import "./equipment-icons.css";
 
 const ICON_PATHS: Record<EquipmentId, string> = {
   belt_truth: "/assets/growth/equipment/belt_truth.svg",
