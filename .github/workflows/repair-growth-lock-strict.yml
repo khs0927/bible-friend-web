@@ -1,3 +1,4 @@
+# trigger: strict-growth-lock-v2
 name: Repair Growth Lock Strict
 
 on:
@@ -31,12 +32,10 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          targets = [Path('.github/workflows/growth-v1-ci.yml')]
-          for p in targets:
-              if p.exists():
-                  s = p.read_text()
-                  s = s.replace('pnpm install --no-frozen-lockfile', 'pnpm install --frozen-lockfile')
-                  p.write_text(s)
+          p = Path('.github/workflows/growth-v1-ci.yml')
+          if p.exists():
+              s = p.read_text().replace('pnpm install --no-frozen-lockfile', 'pnpm install --frozen-lockfile')
+              p.write_text(s)
           npmrc = Path('.npmrc')
           if npmrc.exists(): npmrc.unlink()
       - name: Verify lock and build
