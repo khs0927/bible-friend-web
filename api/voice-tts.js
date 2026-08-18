@@ -103,6 +103,11 @@ function extractGenerateContentAudio(body) {
   }
 }
 
+function isIOSChrome(req) {
+  const userAgent = String(req.headers?.["user-agent"] ?? "");
+  return /CriOS/i.test(userAgent);
+}
+
 async function synthesize31({ apiKey, prompt, voice }) {
   const { response, elapsedMs } = await fetchWithTimeout(`${GEMINI_HOST}/v1beta/interactions`, {
     method: "POST",
@@ -210,6 +215,18 @@ function tRpcEnvelope(result) {
   return [{ result: { data: { json: result } } }];
 }
 
+function deviceFallbackResult(message = "Chrome에서는 기기 한국어 음성으로 바로 들려줘요.") {
+  return {
+    success: false,
+    provider: "device",
+    errorCode: "device_fallback",
+    error: message,
+    fallbackSuggested: true,
+    serverResponseAt: Date.now(),
+    attempts: [],
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -237,6 +254,7 @@ export default async function handler(req, res) {
       directPrimaryTimeoutMs: DIRECT_PRIMARY_TIMEOUT_MS,
       directFallbackTimeoutMs: DIRECT_FALLBACK_TIMEOUT_MS,
       directFunction: true,
+      iosChromeStrategy: "instant-device-speech",
     });
   }
 
@@ -245,19 +263,23 @@ export default async function handler(req, res) {
   try {
     const body = await readJsonBody(req);
     const isBatch = String(req.query?.batch ?? "") === "1" || Object.prototype.hasOwnProperty.call(body || {}, "0");
+
+    // Chrome on iOS is the one environment where our Gemini PCM/WebAudio path
+    // can be generated successfully by the server yet remain silent after the
+    // async response. Return immediately and let the existing client Web Speech
+    // fallback speak the answer. Safari and in-app browsers keep Gemini TTS.
+    if (isIOSChrome(req)) {
+      const result = deviceFallbackResult();
+      res.setHeader("X-Bible-Friend-Voice-Strategy", "ios-chrome-device-speech");
+      return res.status(200).json(isBatch ? tRpcEnvelope(result) : result);
+    }
+
     const input = extractVoiceInput(body);
     const result = await synthesize(input);
     return res.status(200).json(isBatch ? tRpcEnvelope(result) : result);
   } catch (error) {
     console.error("[VOICE_DIRECT] handler error", { message: error instanceof Error ? error.message : String(error) });
-    const result = {
-      success: false,
-      provider: "device",
-      errorCode: "device_fallback",
-      error: "음성 서버가 잠시 바빠 기기 음성으로 이어서 들려줘요.",
-      fallbackSuggested: true,
-      serverResponseAt: Date.now(),
-    };
+    const result = deviceFallbackResult("음성 서버가 잠시 바빠 기기 음성으로 이어서 들려줘요.");
     const isBatch = String(req.query?.batch ?? "") === "1";
     return res.status(200).json(isBatch ? tRpcEnvelope(result) : result);
   }
