@@ -1,5 +1,6 @@
 import { ARMOR_CATALOG } from "./catalog";
 import type { EquipmentId, GrowthProfile } from "./types";
+import "./growth-home-v4.css";
 
 const HERO_EQUIPMENT: EquipmentId[] = ["shield_faith", "helmet_salvation", "sword_spirit", "shoes_peace", "crown"];
 
