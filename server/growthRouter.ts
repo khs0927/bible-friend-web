@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getGrowthDailyVerse } from "@shared/growthVerses";
 import { publicProcedure, router } from "./_core/trpc";
 import { claimGrowthActivity, getGrowthProfile, getSeoulDateKey, setGrowthEquipmentEquipped, upgradeGrowthEquipment } from "./growthStore";
+import { getAllGrowthRegionProgress } from "./growthRegionProgress";
 
 const directActivityType = z.enum([
   "scripture_read",
@@ -53,6 +54,10 @@ export const growthRouter = router({
   profile: publicProcedure.query(async ({ ctx }) => {
     if (!ctx.user) return { authenticated: false as const, profile: null };
     return { authenticated: true as const, profile: await getGrowthProfile(ctx.user.id) };
+  }),
+  regionsProgress: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) return { authenticated: false as const, regions: null };
+    return { authenticated: true as const, regions: await getAllGrowthRegionProgress(ctx.user.id) };
   }),
   claimActivity: publicProcedure
     .input(z.object({ type: directActivityType, sourceId: z.string().min(1).max(160), title: z.string().max(160).optional() }))
