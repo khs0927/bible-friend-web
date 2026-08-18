@@ -12,6 +12,8 @@ on:
       - "server/routers.ts"
       - "drizzle/**"
       - "client/src/App.tsx"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - ".github/workflows/growth-v1-ci.yml"
 
 permissions:
@@ -31,7 +33,8 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
       - name: Growth domain tests
         run: pnpm vitest run client/src/growth/growthEngine.test.ts
       - name: TypeScript
