@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 560" role="img" aria-label="성경 친구 성장 캐릭터">
+<defs>
+ <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff2dc"/><stop offset="1" stop-color="#efc59c"/></linearGradient>
+ <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7a4528"/><stop offset="1" stop-color="#3b2118"/></linearGradient>
+ <linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fffaf0"/><stop offset="1" stop-color="#eadfc8"/></linearGradient>
+ <filter id="shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="15" stdDeviation="14" flood-color="#754d2d" flood-opacity=".22"/></filter>
+</defs>
+<ellipse cx="210" cy="520" rx="126" ry="24" fill="#9b6b39" opacity=".14"/>
+<g filter="url(#shadow)">
+ <circle cx="210" cy="150" r="94" fill="url(#skin)" stroke="#ddb78f" stroke-width="4"/>
+ <g fill="url(#hair)">
+  <ellipse cx="142" cy="92" rx="50" ry="35" transform="rotate(-22 142 92)"/><ellipse cx="183" cy="69" rx="54" ry="37" transform="rotate(-8 183 69)"/>
+  <ellipse cx="232" cy="67" rx="55" ry="37" transform="rotate(6 232 67)"/><ellipse cx="278" cy="84" rx="48" ry="35" transform="rotate(20 278 84)"/>
+  <ellipse cx="303" cy="117" rx="38" ry="31" transform="rotate(34 303 117)"/><ellipse cx="118" cy="123" rx="38" ry="31" transform="rotate(-34 118 123)"/>
+ </g>
+ <ellipse cx="170" cy="150" rx="19" ry="24" fill="#3b241c"/><ellipse cx="250" cy="150" rx="19" ry="24" fill="#3b241c"/>
+ <circle cx="164" cy="142" r="7" fill="#fff"/><circle cx="244" cy="142" r="7" fill="#fff"/>
+ <ellipse cx="144" cy="184" rx="22" ry="11" fill="#f6a3a1" opacity=".72"/><ellipse cx="276" cy="184" rx="22" ry="11" fill="#f6a3a1" opacity=".72"/>
+ <path d="M174 190c18 30 54 30 72 0-23 9-49 9-72 0Z" fill="#8e3b34"/><path d="M192 205c10 8 26 8 36 0-11-5-25-5-36 0Z" fill="#f57f7b"/>
+ <path d="M155 124c10-8 24-10 36-4M229 120c12-6 26-4 36 4" fill="none" stroke="#6a3a26" stroke-width="6" stroke-linecap="round"/>
+ <path d="M139 241c18-12 44-20 71-20s53 8 71 20l24 155H115l24-155Z" fill="url(#cloth)" stroke="#d9c9af" stroke-width="4"/>
+ <path d="M138 247c20 17 43 25 72 25s52-8 72-25" fill="none" stroke="#75bdd0" stroke-width="9"/>
+ <path d="M118 260c-27 19-38 73-26 123 5 22 25 25 36 8l20-112Z" fill="url(#skin)" stroke="#ddb78f" stroke-width="4"/>
+ <path d="M302 260c27 19 38 73 26 123-5 22-25 25-36 8l-20-112Z" fill="url(#skin)" stroke="#ddb78f" stroke-width="4"/>
+ <path d="M129 356h162" stroke="#64b0c8" stroke-width="16" stroke-linecap="round"/><path d="M249 358l21 74 28-55-25-26Z" fill="#75bdd0"/>
+ <path d="M166 395l-8 92c-2 22 30 24 35 3l17-76 17 76c5 21 37 19 35-3l-8-92Z" fill="url(#skin)" stroke="#ddb78f" stroke-width="4"/>
+ <path d="M146 489c-10 6-22 19-16 29 9 15 58 14 65 1 5-10-5-23-15-30Z" fill="#704528"/><path d="M240 489c-10 7-20 20-15 30 7 13 56 14 65-1 6-10-6-23-16-29Z" fill="#704528"/>
+ <path d="M147 495h43M230 495h43" stroke="#c58d56" stroke-width="6" stroke-linecap="round"/>
+ <path d="M198 266l12 11 12-11" fill="none" stroke="#996b42" stroke-width="4" stroke-linecap="round"/>
+ <path d="M210 278v21" stroke="#996b42" stroke-width="4"/><path d="M200 288h20" stroke="#996b42" stroke-width="4"/>
+</g>
+</svg>

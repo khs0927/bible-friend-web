@@ -10,6 +10,7 @@ import ComicAdventure from "./pages/ComicAdventure";
 import "./growth/growth-fallback.css";
 
 const GrowthGame = lazy(() => import("./growth/GrowthGame"));
+const GrowthAdventure3D = lazy(() => import("./growth/GrowthAdventure3D"));
 
 function GrowthLoading() {
   return (
@@ -26,10 +27,6 @@ function HomeWithComicEntry() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    // Compatibility bridge while Home.tsx is still the legacy monolithic screen.
-    // Intercept only the bottom-nav button whose visible label is exactly "성장"
-    // and route it into the new persistent Growth Game. This avoids rewriting the
-    // large legacy Home file in-place and can be removed when Home tabs are split.
     const handleBottomGrowthTab = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -88,6 +85,11 @@ function Router() {
       <Route path={"/growth-game"}>
         <Suspense fallback={<GrowthLoading />}>
           <GrowthGame />
+        </Suspense>
+      </Route>
+      <Route path={"/growth-adventure/:zone"}>
+        <Suspense fallback={<GrowthLoading />}>
+          <GrowthAdventure3D />
         </Suspense>
       </Route>
       <Route path={"/comic-adventure"} component={ComicAdventure} />
