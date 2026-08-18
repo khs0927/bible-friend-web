@@ -3,6 +3,8 @@ import { Link } from "wouter";
 import * as THREE from "three";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { INITIAL_GROWTH_PROFILE } from "./growthEngine";
+import { useLocalGrowth } from "./useLocalGrowth";
 import type { GrowthActivityType, GrowthZone } from "./types";
 import "./growth-adventure.css";
 
@@ -95,7 +97,7 @@ function buildZone(scene: THREE.Scene, zone: GrowthZone, hotspots: Hotspot[]) {
     for (const [x, z] of [[-6,-4],[-5,3],[5,-3],[6,2],[-3,5],[3,5]] as Array<[number, number]>) addTree(scene, x, z);
     addHouse(scene, -5, -6, true); addHouse(scene, 5, -5, false);
   }
-  if (zone === "home") { addHouse(scene, 0, -6, true); }
+  if (zone === "home") addHouse(scene, 0, -6, true);
   if (zone === "village") { addHouse(scene, 0, -6, true); addHouse(scene, -3.4, -5, false); addHouse(scene, 3.5, -5.4, false); }
 
   hotspots.forEach(hotspot => {
@@ -114,6 +116,9 @@ export default function GrowthAdventure3D() {
   const config = ZONES[zone];
   const hotspots = HOTSPOTS[zone];
   const { user } = useAuth();
+  const localGrowth = useLocalGrowth();
+  const profileQuery = trpc.growth.profile.useQuery(undefined, { enabled: Boolean(user) });
+  const profile = user ? (profileQuery.data?.profile ?? INITIAL_GROWTH_PROFILE) : localGrowth.profile;
   const mountRef = useRef<HTMLDivElement | null>(null);
   const movement = useRef({ x: 0, z: 0 });
   const lastHotspot = useRef<string | null>(null);
@@ -121,7 +126,7 @@ export default function GrowthAdventure3D() {
   const [message, setMessage] = useState(config.subtitle);
   const [missionCount, setMissionCount] = useState(0);
 
-  const claim = trpc.growth.claimActivity.useMutation({ onSuccess: result => setMessage(result.message) });
+  const claim = trpc.growth.claimActivity.useMutation({ onSuccess: result => { setMessage(result.message); void profileQuery.refetch(); } });
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -166,8 +171,12 @@ export default function GrowthAdventure3D() {
   const interact = () => {
     if (!nearby) { setMessage("반짝이는 장소 가까이 가면 상호작용할 수 있어요."); return; }
     setMissionCount(count => Math.min(3, count + 1));
-    setMessage(`${nearby.emoji} ${nearby.title} — 잘했어요!`);
-    if (user) claim.mutate({ type: nearby.type, sourceId: `rpg:${dateKey()}:${zone}:${nearby.id}`, title: nearby.title });
+    if (user) {
+      claim.mutate({ type: nearby.type, sourceId: `rpg:${dateKey()}:${zone}:${nearby.id}`, title: nearby.title });
+      return;
+    }
+    const result = localGrowth.claim({ type: nearby.type, sourceId: `rpg:${dateKey()}:${zone}:${nearby.id}`, title: nearby.title });
+    setMessage(`${nearby.emoji} ${result.message} · 이 기기에 저장했어요.`);
   };
 
   return (
@@ -176,7 +185,7 @@ export default function GrowthAdventure3D() {
       <header className="growth-rpg-hud">
         <Link href="/growth-game" className="growth-rpg-back">‹ 성장</Link>
         <div><strong>{config.name}</strong><small>{config.subtitle}</small></div>
-        <div className="growth-rpg-currency">⭐ {missionCount * 10}</div>
+        <div className="growth-rpg-currency">⭐ {profile.soulPoints}</div>
       </header>
       <aside className="growth-rpg-side"><button>📜<span>퀘스트</span></button><button>🎒<span>가방</span></button><button>📖<span>말씀</span></button></aside>
       <div className="growth-rpg-message" role="status">{message}</div>

@@ -6,6 +6,7 @@ import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
 import GrowthHero2D from "./GrowthHero2D";
 import { ARMOR_CATALOG, EQUIPMENT_ORDER, STARTER_DAILY_VERSES, ZONE_INFO } from "./catalog";
 import { INITIAL_GROWTH_PROFILE, STAGE_LABELS, canUpgrade, moodForProfile, upgradeCost } from "./growthEngine";
+import { useLocalGrowth } from "./useLocalGrowth";
 import type { EquipmentId } from "./types";
 import "./growth-game.css";
 
@@ -60,6 +61,7 @@ function EquipmentCard({ id, profile, busy, onUpgrade, onEquip }: {
 
 export default function GrowthGame() {
   const { user } = useAuth();
+  const localGrowth = useLocalGrowth();
   const [notice, setNotice] = useState("말씀 한 입부터 오늘의 모험을 시작해요.");
   const [reciting, setReciting] = useState(false);
   const [recitedText, setRecitedText] = useState("");
@@ -68,7 +70,7 @@ export default function GrowthGame() {
   const reciteChunksRef = useRef<Blob[]>([]);
 
   const profileQuery = trpc.growth.profile.useQuery(undefined, { enabled: Boolean(user) });
-  const profile = profileQuery.data?.profile ?? INITIAL_GROWTH_PROFILE;
+  const profile = user ? (profileQuery.data?.profile ?? INITIAL_GROWTH_PROFILE) : localGrowth.profile;
   const claim = trpc.growth.claimActivity.useMutation({ onSuccess: result => { setNotice(result.message); void profileQuery.refetch(); } });
   const verifyMemorization = trpc.growth.verifyMemorization.useMutation({ onSuccess: result => { setNotice(result.message); void profileQuery.refetch(); } });
   const transcribe = trpc.voice.transcribe.useMutation();
@@ -82,8 +84,12 @@ export default function GrowthGame() {
   const dailyVerse = useMemo(() => STARTER_DAILY_VERSES[Number(sourceDay.replaceAll("-", "")) % STARTER_DAILY_VERSES.length], [sourceDay]);
 
   const claimActivity = (type: Parameters<typeof claim.mutate>[0]["type"], sourceId: string, title: string) => {
-    if (!user) { setNotice("로그인하면 말씀 식사와 성장 기록이 서버에도 안전하게 저장돼요. 3D 모험 지역은 지금 바로 체험할 수 있어요."); return; }
-    claim.mutate({ type, sourceId, title });
+    if (user) {
+      claim.mutate({ type, sourceId, title });
+      return;
+    }
+    const result = localGrowth.claim({ type, sourceId, title });
+    setNotice(`${result.message} · 이 기기에 저장했어요.`);
   };
 
   const finishRecitation = async (blob: Blob) => {
@@ -94,7 +100,12 @@ export default function GrowthGame() {
       const text = transcription.text?.trim() ?? "";
       setRecitedText(text);
       if (!text) { setNotice("목소리를 글로 옮기지 못했어요. 조금 더 또박또박 다시 말해 봐요."); return; }
-      verifyMemorization.mutate({ verseId: dailyVerse.id, recitedText: text });
+      if (user) {
+        verifyMemorization.mutate({ verseId: dailyVerse.id, recitedText: text });
+      } else {
+        const result = localGrowth.verifyMemorization(dailyVerse.id, dailyVerse.text, text);
+        setNotice(result.claimed ? `${result.message} · 이 기기에 저장했어요.` : result.message);
+      }
     } catch { setNotice("암송 음성을 확인하지 못했어요. 틀린 것이 아니니 잠시 뒤 다시 해 봐요."); }
   };
 
@@ -116,6 +127,24 @@ export default function GrowthGame() {
     } catch { setReciting(false); setNotice("마이크 권한이 필요해요. 브라우저 설정에서 마이크를 허용해 주세요."); }
   };
 
+  const handleUpgrade = (equipmentId: EquipmentId) => {
+    if (user) {
+      upgrade.mutate({ equipmentId });
+      return;
+    }
+    const result = localGrowth.upgrade(equipmentId);
+    setNotice(result.changed ? "✨ 장비가 한 단계 성장했고 이 기기에 저장됐어요!" : canUpgrade(localGrowth.profile, equipmentId).reason);
+  };
+
+  const handleEquip = (equipmentId: EquipmentId, equippedState: boolean) => {
+    if (user) {
+      equip.mutate({ equipmentId, equipped: equippedState });
+      return;
+    }
+    const result = localGrowth.equip(equipmentId, equippedState);
+    setNotice(result.changed ? (equippedState ? "장비를 착용했어요." : "장비를 보관했어요.") : "먼저 장비를 성장시켜 주세요.");
+  };
+
   return (
     <main className="growth-shell growth-shell-v4">
       <header className="growth-topbar">
@@ -124,7 +153,7 @@ export default function GrowthGame() {
         <div className="growth-points">⭐ {profile.soulPoints.toLocaleString()}P</div>
       </header>
 
-      {!user && <div className="growth-login-note">🌱 체험 모드예요. 성장 홈과 3D 모험 지역을 둘러볼 수 있어요. 로그인하면 보상과 장비 기록이 서버에도 저장됩니다.</div>}
+      {!user && <div className="growth-login-note">📱 모바일 저장 모드예요. 말씀 식사·성장·장비·연속 기록이 이 기기에 자동 저장됩니다. 나중에 로그인하면 서버 동기화 기능도 연결할 예정이에요.</div>}
       <div className="growth-notice" role="status">{notice}</div>
 
       <GrowthHero2D profile={profile} stageLabel={STAGE_LABELS[profile.stage]} title={user?.name ? `${user.name}님의 성경 친구` : "나의 성경 친구"} moodEmoji={moodState.emoji} />
@@ -161,13 +190,13 @@ export default function GrowthGame() {
 
       <section className="growth-card">
         <div className="growth-card-heading"><div><span>ARMOR OF GOD</span><h2>하나님의 전신 갑주 공방</h2></div><b className="soul-point-label">영혼 포인트 {profile.soulPoints}P</b></div>
-        <p className="growth-section-copy">장비는 Lv.0에서 Lv.5까지 성장하며, 앞으로 각 단계의 2D 일러스트와 Tripo/AI-3D GLB 모델을 같은 장비 ID에 연결합니다. 성장 홈에서는 일러스트로 빠르게 확인하고, 3D 지역에서는 실제 장착 모델을 사용합니다.</p>
+        <p className="growth-section-copy">장비는 Lv.0에서 Lv.5까지 성장하며, 각 단계의 2D 일러스트와 AI-3D GLB 모델을 같은 장비 ID에 연결합니다. 성장 홈에서는 일러스트로 빠르게 확인하고, 3D 지역에서는 실제 장착 모델을 사용합니다.</p>
         <div className="growth-equipment-grid">
-          {EQUIPMENT_ORDER.map(id => <EquipmentCard key={id} id={id} profile={profile} busy={busy} onUpgrade={equipmentId => upgrade.mutate({ equipmentId })} onEquip={(equipmentId, isEquipped) => equip.mutate({ equipmentId, equipped: isEquipped })} />)}
+          {EQUIPMENT_ORDER.map(id => <EquipmentCard key={id} id={id} profile={profile} busy={busy} onUpgrade={handleUpgrade} onEquip={handleEquip} />)}
         </div>
       </section>
 
-      <footer className="growth-footer">Growth v4 · 2D/2.5D 성장 홈 + 실제 이동 가능한 3D RPG 지역 + AI-3D 교체형 자산 구조</footer>
+      <footer className="growth-footer">Growth v5 · 2D/2.5D 성장 홈 + 3D RPG 모험 + 모바일 local-first 저장 + AI-3D 교체형 자산 구조</footer>
     </main>
   );
 }
