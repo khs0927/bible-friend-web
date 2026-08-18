@@ -66,6 +66,8 @@ export type ModelInfo = { id: string; object: string; created: number; owned_by:
 export type ModelsResponse = { object: string; data: ModelInfo[] };
 
 const GOOGLE_OPENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
+const FAST_CHAT_MODEL = "gemini-3.6-flash";
+const FAST_CHAT_MAX_TOKENS = 320;
 const RETRY_MAX_RETRIES = 2;
 const RETRY_BASE_DELAY_MS = 350;
 
@@ -161,9 +163,22 @@ async function fetchWithBackoff(url: string, init: FetchInit): Promise<Response>
 }
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
+  const responseFormat = normalizeResponseFormat(params);
+  const requestedModel = params.model ?? "gemini-2.5-flash";
+
+  // Bible Friend's normal chat is a short, child-facing conversational task.
+  // Google's current stable Gemini 3.6 Flash supports reasoning_effort=minimal,
+  // which is explicitly optimized for chat-like low-latency responses. Keep
+  // structured/orchestrated requests on their explicitly requested model path.
+  const fastChat = !usingForge()
+    && requestedModel === "gemini-flash-latest"
+    && !params.tools?.length
+    && !responseFormat;
+  const resolvedModel = fastChat ? FAST_CHAT_MODEL : requestedModel;
+
   const payload: Record<string, unknown> = {
     messages: params.messages.map(normalizeMessage),
-    model: params.model ?? "gemini-2.5-flash",
+    model: resolvedModel,
   };
 
   if (params.tools?.length) payload.tools = params.tools;
@@ -172,9 +187,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   const maxTokens = params.max_tokens ?? params.maxTokens;
   if (typeof maxTokens === "number") payload.max_tokens = maxTokens;
+  else if (fastChat) payload.max_tokens = FAST_CHAT_MAX_TOKENS;
 
-  const responseFormat = normalizeResponseFormat(params);
   if (responseFormat) payload.response_format = responseFormat;
+
+  if (fastChat) {
+    payload.reasoning_effort = "minimal";
+  }
 
   // Manus Forge supports these extension fields; Google's OpenAI compatibility
   // endpoint does not require them for Bible Friend chat, so omit them there.
@@ -196,12 +215,18 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.warn("[LLM] request failed", { provider, status: response.status, ms: Date.now() - startedAt });
+    console.warn("[LLM] request failed", { provider, model: resolvedModel, status: response.status, ms: Date.now() - startedAt });
     throw new Error(`LLM invoke failed: ${response.status} ${response.statusText} – ${errorText.slice(0, 500)}`);
   }
 
   const result = (await response.json()) as InvokeResult;
-  console.info("[LLM] request success", { provider, model: result.model ?? payload.model, ms: Date.now() - startedAt });
+  console.info("[LLM] request success", {
+    provider,
+    requestedModel,
+    model: result.model ?? resolvedModel,
+    fastChat,
+    ms: Date.now() - startedAt,
+  });
   return result;
 }
 
