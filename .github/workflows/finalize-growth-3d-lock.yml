@@ -1,0 +1,70 @@
+name: Finalize 3D growth lockfile and fallback
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/finalize-growth-3d-lock.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Regenerate pnpm lockfile
+        shell: bash
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+
+      - name: Patch 2D fallback and remove temporary workaround
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path("client/src/growth/BibleFriend3D.tsx")
+          s = p.read_text()
+          old = '  if (failed) return <div className="growth-3d-fallback" aria-live="polite">3D 장면을 준비하지 못해 2D 친구로 보여드려요.</div>;'
+          new = '''  if (failed) return (\n    <div className="growth-3d-fallback" aria-live="polite">\n      <img src="/assets/bible-friend-mascot.svg" alt="성경 친구" />\n      <span>3D 장면을 준비하지 못해 2D 친구로 보여드려요.</span>\n    </div>\n  );'''
+          if old not in s:
+              if '/assets/bible-friend-mascot.svg' not in s:
+                  raise SystemExit("Growth3D fallback anchor not found")
+          else:
+              p.write_text(s.replace(old, new, 1))
+
+          npmrc = Path(".npmrc")
+          if npmrc.exists() and npmrc.read_text().strip() == "frozen-lockfile=false":
+              npmrc.unlink()
+
+          Path(".github/workflows/finalize-growth-3d-lock.yml").unlink()
+          PY
+
+      - name: Commit finalized growth runtime
+        shell: bash
+        run: |
+          git config user.name "bible-friend-growth-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "No changes required"
+            exit 0
+          fi
+          git commit -m "fix(growth): finalize 3D lockfile and 2D fallback"
+          git push origin HEAD:main
