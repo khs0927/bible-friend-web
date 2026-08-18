@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { INITIAL_GROWTH_PROFILE } from "./growthEngine";
+import { loadGrowthPlayerGlb, type LoadedGrowthPlayer } from "./loadGrowthGlb";
 import { useLocalGrowth } from "./useLocalGrowth";
 import type { GrowthActivityType, GrowthZone } from "./types";
 import "./growth-adventure.css";
@@ -44,6 +45,15 @@ function dateKey() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
 }
 
+function disposeObject(root: THREE.Object3D) {
+  root.traverse(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.geometry.dispose();
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach(material => material.dispose());
+  });
+}
+
 function addTree(scene: THREE.Scene, x: number, z: number) {
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.16, .22, 1.15, 8), new THREE.MeshStandardMaterial({ color: 0x765037 }));
   trunk.position.set(x, .58, z);
@@ -69,6 +79,7 @@ function addHouse(scene: THREE.Scene, x: number, z: number, church = false) {
 
 function createPlayer() {
   const group = new THREE.Group();
+  group.name = "BibleFriendProceduralFallback";
   const skin = new THREE.MeshStandardMaterial({ color: 0xf0c7a1 });
   const cloth = new THREE.MeshStandardMaterial({ color: 0xf3ead7 });
   const blue = new THREE.MeshStandardMaterial({ color: 0x71b5c8 });
@@ -119,18 +130,22 @@ export default function GrowthAdventure3D() {
   const localGrowth = useLocalGrowth();
   const profileQuery = trpc.growth.profile.useQuery(undefined, { enabled: Boolean(user) });
   const profile = user ? (profileQuery.data?.profile ?? INITIAL_GROWTH_PROFILE) : localGrowth.profile;
+  const equipmentSignature = profile.equipped.map(id => `${id}:${profile.equipmentTiers[id]}`).sort().join("|");
   const mountRef = useRef<HTMLDivElement | null>(null);
   const movement = useRef({ x: 0, z: 0 });
   const lastHotspot = useRef<string | null>(null);
   const [nearby, setNearby] = useState<Hotspot | null>(null);
   const [message, setMessage] = useState(config.subtitle);
   const [missionCount, setMissionCount] = useState(0);
+  const [assetMode, setAssetMode] = useState<"loading" | "generated" | "procedural">("loading");
 
   const claim = trpc.growth.claimActivity.useMutation({ onSuccess: result => { setMessage(result.message); void profileQuery.refetch(); } });
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    let disposed = false;
+    let generatedPlayer: LoadedGrowthPlayer | null = null;
     const scene = new THREE.Scene(); scene.background = new THREE.Color(config.sky); scene.fog = new THREE.Fog(config.sky, 12, 28);
     const camera = new THREE.PerspectiveCamera(48, 1, .1, 60); camera.position.set(0, 5.4, 7.5);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
@@ -139,7 +154,35 @@ export default function GrowthAdventure3D() {
     const sun = new THREE.DirectionalLight(0xfff0d2, 2.4); sun.position.set(5, 10, 4); sun.castShadow = true; scene.add(sun);
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: config.ground, roughness: .92 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
     const path = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 28), new THREE.MeshStandardMaterial({ color: zone === "wilderness" ? 0xd7a35e : 0xdac58e, roughness: 1 })); path.rotation.x = -Math.PI / 2; path.position.y = .012; scene.add(path);
-    const player = createPlayer(); player.position.set(0, 0, 5); scene.add(player);
+    let player = createPlayer(); player.position.set(0, 0, 5); scene.add(player);
+    setAssetMode("loading");
+    const profileSnapshot = {
+      ...profile,
+      equipmentTiers: { ...profile.equipmentTiers },
+      equipped: [...profile.equipped],
+      unlockedZones: [...profile.unlockedZones],
+    };
+    void loadGrowthPlayerGlb(profileSnapshot).then(loaded => {
+      if (disposed) {
+        loaded?.dispose();
+        return;
+      }
+      if (!loaded) {
+        setAssetMode("procedural");
+        return;
+      }
+      loaded.root.position.copy(player.position);
+      loaded.root.rotation.copy(player.rotation);
+      scene.add(loaded.root);
+      scene.remove(player);
+      disposeObject(player);
+      player = loaded.root;
+      generatedPlayer = loaded;
+      setAssetMode("generated");
+      setMessage("✨ AI-3D 성경 친구 모델을 불러왔어요!");
+    }).catch(() => {
+      if (!disposed) setAssetMode("procedural");
+    });
     buildZone(scene, zone, hotspots);
 
     const resize = () => { const w = mount.clientWidth; const h = mount.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix(); };
@@ -147,6 +190,7 @@ export default function GrowthAdventure3D() {
     let raf = 0; let previous = performance.now();
     const tick = (now: number) => {
       const dt = Math.min(.04, (now - previous) / 1000); previous = now;
+      generatedPlayer?.update(dt);
       const dir = movement.current;
       const length = Math.hypot(dir.x, dir.z);
       if (length > .01) {
@@ -163,8 +207,23 @@ export default function GrowthAdventure3D() {
       renderer.render(scene, camera); raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); renderer.dispose(); renderer.domElement.remove(); scene.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach(material => material.dispose()); } }); };
-  }, [config.ground, config.sky, hotspots, zone]);
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      generatedPlayer?.dispose();
+      renderer.dispose();
+      renderer.domElement.remove();
+      scene.traverse(object => {
+        if (generatedPlayer?.root === object || generatedPlayer?.root.getObjectById(object.id)) return;
+        if (object instanceof THREE.Mesh) {
+          object.geometry.dispose();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach(material => material.dispose());
+        }
+      });
+    };
+  }, [config.ground, config.sky, equipmentSignature, hotspots, zone]);
 
   const move = (x: number, z: number) => { movement.current = { x, z }; };
   const stop = () => { movement.current = { x: 0, z: 0 }; };
@@ -187,6 +246,9 @@ export default function GrowthAdventure3D() {
         <div><strong>{config.name}</strong><small>{config.subtitle}</small></div>
         <div className="growth-rpg-currency">⭐ {profile.soulPoints}</div>
       </header>
+      <div className={`growth-rpg-asset-badge ${assetMode}`} aria-live="polite">
+        {assetMode === "generated" ? "AI-3D GLB" : assetMode === "loading" ? "3D 모델 확인 중" : "3D PREVIEW"}
+      </div>
       <aside className="growth-rpg-side"><button>📜<span>퀘스트</span></button><button>🎒<span>가방</span></button><button>📖<span>말씀</span></button></aside>
       <div className="growth-rpg-message" role="status">{message}</div>
       {nearby && <button className="growth-rpg-interact" onClick={interact}><span>{nearby.emoji}</span><b>{nearby.label}</b><small>가까이 왔어요 · 눌러서 행동</small></button>}
