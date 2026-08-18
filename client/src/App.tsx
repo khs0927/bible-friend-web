@@ -7,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ComicAdventure from "./pages/ComicAdventure";
+import "./growth/growth-fallback.css";
 
 const GrowthGame = lazy(() => import("./growth/GrowthGame"));
 
