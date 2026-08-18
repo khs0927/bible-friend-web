@@ -1,9 +1,10 @@
-const PRIMARY_MODEL = "gemini-3.1-flash-tts-preview";
-const FALLBACK_MODEL = "gemini-2.5-flash-preview-tts";
+const STREAMING_MODEL = "gemini-3.1-flash-tts-preview";
+const DIRECT_PRIMARY_MODEL = "gemini-2.5-flash-preview-tts";
+const DIRECT_FALLBACK_MODEL = "gemini-3.1-flash-tts-preview";
 const GEMINI_HOST = "https://generativelanguage.googleapis.com";
 const MAX_TEXT_CHARS = 900;
-const PRIMARY_TIMEOUT_MS = 9000;
-const FALLBACK_TIMEOUT_MS = 9000;
+const DIRECT_PRIMARY_TIMEOUT_MS = 8000;
+const DIRECT_FALLBACK_TIMEOUT_MS = 6000;
 
 const VOICES = {
   NARRATOR: "Sulafat",
@@ -111,23 +112,23 @@ async function synthesize31({ apiKey, prompt, voice }) {
       "Api-Revision": "2026-05-20",
     },
     body: JSON.stringify({
-      model: PRIMARY_MODEL,
+      model: DIRECT_FALLBACK_MODEL,
       input: prompt,
       response_format: { type: "audio" },
       generation_config: { speech_config: [{ voice }] },
     }),
-  }, PRIMARY_TIMEOUT_MS);
+  }, DIRECT_FALLBACK_TIMEOUT_MS);
   const text = await response.text();
   if (!response.ok) throw new Error(`gemini31_http_${response.status}`);
   let body;
   try { body = JSON.parse(text); } catch { throw new Error("gemini31_bad_json"); }
   const encoded = extractInteractionAudio(body);
   if (!encoded) throw new Error("gemini31_no_audio");
-  return { encoded, model: PRIMARY_MODEL, latencyMs: elapsedMs };
+  return { encoded, model: DIRECT_FALLBACK_MODEL, latencyMs: elapsedMs };
 }
 
 async function synthesize25({ apiKey, prompt, voice }) {
-  const url = `${GEMINI_HOST}/v1beta/models/${encodeURIComponent(FALLBACK_MODEL)}:generateContent`;
+  const url = `${GEMINI_HOST}/v1beta/models/${encodeURIComponent(DIRECT_PRIMARY_MODEL)}:generateContent`;
   const { response, elapsedMs } = await fetchWithTimeout(url, {
     method: "POST",
     headers: {
@@ -141,14 +142,14 @@ async function synthesize25({ apiKey, prompt, voice }) {
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
       },
     }),
-  }, FALLBACK_TIMEOUT_MS);
+  }, DIRECT_PRIMARY_TIMEOUT_MS);
   const text = await response.text();
   if (!response.ok) throw new Error(`gemini25_http_${response.status}`);
   let body;
   try { body = JSON.parse(text); } catch { throw new Error("gemini25_bad_json"); }
   const encoded = extractGenerateContentAudio(body);
   if (!encoded) throw new Error("gemini25_no_audio");
-  return { encoded, model: FALLBACK_MODEL, latencyMs: elapsedMs };
+  return { encoded, model: DIRECT_PRIMARY_MODEL, latencyMs: elapsedMs };
 }
 
 async function synthesize(input) {
@@ -161,7 +162,11 @@ async function synthesize(input) {
   const prompt = buildPrompt(input);
   const attempts = [];
   const totalStartedAt = Date.now();
-  const candidates = [[PRIMARY_MODEL, synthesize31], [FALLBACK_MODEL, synthesize25]];
+
+  // Gemini 3.1 streaming is attempted by the browser first. If that stream is
+  // unavailable or quota-limited, this direct endpoint starts with the older,
+  // more stable 2.5 Flash TTS instead of spending a second 3.1 request.
+  const candidates = [[DIRECT_PRIMARY_MODEL, synthesize25], [DIRECT_FALLBACK_MODEL, synthesize31]];
 
   for (const [name, fn] of candidates) {
     const attemptStartedAt = Date.now();
@@ -179,7 +184,7 @@ async function synthesize(input) {
         voice,
         latencyMs: Date.now() - totalStartedAt,
         cached: false,
-        fallback: result.model !== PRIMARY_MODEL,
+        fallback: result.model !== DIRECT_PRIMARY_MODEL,
         serverResponseAt: Date.now(),
         attempts,
       };
@@ -192,9 +197,9 @@ async function synthesize(input) {
 
   return {
     success: false,
-    provider: "gemini",
-    errorCode: "timeout",
-    error: "Gemini 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.",
+    provider: "device",
+    errorCode: "device_fallback",
+    error: "Gemini 음성이 잠시 바빠 기기 음성으로 이어서 들려줘요.",
     fallbackSuggested: true,
     serverResponseAt: Date.now(),
     attempts,
@@ -221,15 +226,16 @@ export default async function handler(req, res) {
       const safe = result.success
         ? { success: true, provider: result.provider, model: result.model, voice: result.voice, latencyMs: result.latencyMs, fallback: result.fallback, audioBytesApprox: Math.floor((result.audioBase64.length * 3) / 4), attempts: result.attempts }
         : { success: false, errorCode: result.errorCode, error: result.error, attempts: result.attempts };
-      return res.status(200).json({ ok: result.success, primaryModel: PRIMARY_MODEL, fallbackModel: FALLBACK_MODEL, result: safe });
+      return res.status(200).json({ ok: result.success, streamingModel: STREAMING_MODEL, directPrimaryModel: DIRECT_PRIMARY_MODEL, directFallbackModel: DIRECT_FALLBACK_MODEL, result: safe });
     }
     return res.status(200).json({
       ok: true,
       geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
-      primaryModel: PRIMARY_MODEL,
-      fallbackModel: FALLBACK_MODEL,
-      primaryTimeoutMs: PRIMARY_TIMEOUT_MS,
-      fallbackTimeoutMs: FALLBACK_TIMEOUT_MS,
+      streamingModel: STREAMING_MODEL,
+      directPrimaryModel: DIRECT_PRIMARY_MODEL,
+      directFallbackModel: DIRECT_FALLBACK_MODEL,
+      directPrimaryTimeoutMs: DIRECT_PRIMARY_TIMEOUT_MS,
+      directFallbackTimeoutMs: DIRECT_FALLBACK_TIMEOUT_MS,
       directFunction: true,
     });
   }
@@ -246,9 +252,9 @@ export default async function handler(req, res) {
     console.error("[VOICE_DIRECT] handler error", { message: error instanceof Error ? error.message : String(error) });
     const result = {
       success: false,
-      provider: "gemini",
-      errorCode: "upstream",
-      error: "음성 서버를 잠시 준비하지 못했어요.",
+      provider: "device",
+      errorCode: "device_fallback",
+      error: "음성 서버가 잠시 바빠 기기 음성으로 이어서 들려줘요.",
       fallbackSuggested: true,
       serverResponseAt: Date.now(),
     };
