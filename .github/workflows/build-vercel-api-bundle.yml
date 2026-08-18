@@ -8,6 +8,8 @@ on:
       - "server/**"
       - "api/[...path].ts"
       - "api/voice-tts.js"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - "vercel.json"
       - ".github/workflows/build-vercel-api-bundle.yml"
   workflow_dispatch:
@@ -37,7 +39,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Vercel API handler
         run: >-
