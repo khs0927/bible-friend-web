@@ -29,11 +29,11 @@
     },
     {
       "src": "/api/trpc/tts\\.synthesize",
-      "dest": "/api/voice-fast?mode=trpc"
+      "dest": "/api/voice-tts"
     },
     {
       "src": "/api/voice-tts-stream",
-      "dest": "/api/voice-fast?mode=stream"
+      "dest": "/api/voice-tts-stream"
     },
     {
       "src": "/api/voice-health",
