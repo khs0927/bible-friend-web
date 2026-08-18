@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Bible Friend · CC0 Rig Donor Lab</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:linear-gradient(#fff9ea,#eee7d8);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:#3b2d48}
+    canvas{position:absolute;inset:0;width:100%;height:100%}.hud{position:absolute;z-index:5;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));display:flex;justify-content:space-between;gap:8px;pointer-events:none}.card{pointer-events:auto;background:#fffdf8e8;border:1px solid #eadfc8;border-radius:17px;padding:10px 12px;box-shadow:0 8px 26px #513b6b18}.title{font-weight:900;font-size:14px}.sub{font-size:10px;color:#7b6d82;margin-top:2px}.badge{font-size:10px;font-weight:900;background:#dff7e8;color:#27704c;border-radius:999px;padding:6px 9px;height:max-content}.controls{position:absolute;z-index:5;bottom:max(14px,env(safe-area-inset-bottom));left:10px;right:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.controls button{border:1px solid #dfd4c0;background:#fffdf8e8;border-radius:13px;padding:10px 5px;font-size:11px;font-weight:850;color:#493852}.controls button.active{background:#6f46d9;color:white;border-color:#6f46d9}.status{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:126px;background:#382c43dd;color:#fff;padding:7px 11px;border-radius:999px;font-size:10px;white-space:nowrap}
+  </style>
+</head>
+<body>
+<div class="hud"><div class="card"><div class="title">CC0 Rig Donor Lab</div><div class="sub">KayKit skeleton/animation only · not final Bible Friend art</div></div><div class="badge">76 clips</div></div>
+<div id="status" class="status">loading donor…</div>
+<div class="controls" id="controls"></div>
+<script type="module">
+import * as THREE from 'https://esm.sh/three@0.185.0';
+import { GLTFLoader } from 'https://esm.sh/three@0.185.0/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'https://esm.sh/three@0.185.0/examples/jsm/controls/OrbitControls.js';
+
+const DONOR='https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/addons/kaykit_character_pack_adventures/Characters/gltf/Mage.glb';
+const hidden=new Set(['Mage_Hat','Mage_Cape','Spellbook','Spellbook_open','1H_Wand','2H_Staff']);
+const actions={
+  '대기':'Idle','걷기':'Walking_A','달리기':'Running_A','도움':'Interact',
+  '말씀':'Sit_Chair_Idle','점프':'Jump_Full_Short','방패':'Blocking','검':'1H_Melee_Attack_Slice_Horizontal'
+};
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight(0xffffff,0x8c704f,2.0));const dl=new THREE.DirectionalLight(0xffffff,2.5);dl.position.set(3,5,4);dl.castShadow=true;scene.add(dl);
+const camera=new THREE.PerspectiveCamera(32,1,.05,100);camera.position.set(0,1.45,4.3);const orbit=new OrbitControls(camera,renderer.domElement);orbit.target.set(0,1.05,0);orbit.enableDamping=true;orbit.minDistance=2.5;orbit.maxDistance=6.2;
+const ground=new THREE.Mesh(new THREE.CircleGeometry(1.15,64),new THREE.MeshStandardMaterial({color:0xf1e2bf,roughness:.95}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+let mixer=null,clips=new Map(),active=null;
+const status=document.getElementById('status'),controls=document.getElementById('controls');
+function play(name,button){const clip=clips.get(name);if(!clip)return; if(active)active.fadeOut(.18);const a=mixer.clipAction(clip);a.reset().fadeIn(.18).play();active=a;document.querySelectorAll('button').forEach(x=>x.classList.remove('active'));button?.classList.add('active');status.textContent=name;}
+try{
+ const gltf=await new GLTFLoader().loadAsync(DONOR); const root=gltf.scene;
+ root.traverse(o=>{if(hidden.has(o.name))o.visible=false;if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+ const box=new THREE.Box3().setFromObject(root),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());const s=2.05/size.y;root.scale.setScalar(s);root.position.set(-center.x*s,-box.min.y*s,-center.z*s);scene.add(root);
+ mixer=new THREE.AnimationMixer(root);gltf.animations.forEach(c=>clips.set(c.name,c));
+ Object.entries(actions).forEach(([label,clipName],i)=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(clipName,b);controls.appendChild(b);if(i===0)setTimeout(()=>play(clipName,b),0)});
+ status.textContent=`donor loaded · ${gltf.animations.length} clips`;
+}catch(e){status.textContent='load failed · '+e.message;console.error(e)}
+const clock=new THREE.Clock();function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}addEventListener('resize',resize);resize();renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);orbit.update();renderer.render(scene,camera)});
+</script>
+</body>
+</html>
