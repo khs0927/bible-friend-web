@@ -5,6 +5,9 @@ export function getVoiceStateFromPlaybackStarted(provider: string): { status: Vo
 }
 
 export function getVoiceStateFromPlaybackError(code: string, message: string): { status: VoiceStatus; error: string } {
+  if (code === "device_fallback" || code === "instant_device_voice") {
+    return { status: "fallback", error: "기기 음성으로 이어서 재생해요." };
+  }
   if (code === "rate_limit" || code === "quota") {
     return { status: "error", error: "Gemini 음성 사용량이 잠시 제한되어 있어요. 글로는 계속 이야기할 수 있어요." };
   }
@@ -38,7 +41,7 @@ export function getVoiceToggleLabel(enabled: boolean) {
 export function getVoiceStatusText(enabled: boolean, status: VoiceStatus, error: string | null) {
   if (!enabled) return "음성 답변이 꺼져 있어요";
   if (status === "speaking") return "성경 친구가 말하고 있어요…";
-  if (status === "fallback") return "브라우저 음성으로 이어서 재생해요";
+  if (status === "fallback") return "기기 음성으로 이어서 재생해요";
   if (status === "error") return error ?? "음성을 재생하지 못했어요";
   return "Gemini 한국어 음성 준비됨";
 }
