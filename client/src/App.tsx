@@ -12,6 +12,7 @@ import "./growth/growth-glb-runtime.css";
 
 const GrowthGame = lazy(() => import("./growth/GrowthGame"));
 const GrowthAdventure3D = lazy(() => import("./growth/GrowthAdventure3D"));
+const RpgProgressOverlay = lazy(() => import("./growth/RpgProgressOverlay"));
 
 function GrowthLoading() {
   return (
@@ -91,6 +92,7 @@ function Router() {
       <Route path={"/growth-adventure/:zone"}>
         <Suspense fallback={<GrowthLoading />}>
           <GrowthAdventure3D />
+          <RpgProgressOverlay />
         </Suspense>
       </Route>
       <Route path={"/comic-adventure"} component={ComicAdventure} />
