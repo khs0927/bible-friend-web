@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { EquipmentId, GrowthActivityInput } from "@shared/growthDomain";
 import {
   claimLocalGrowthActivity,
@@ -10,61 +10,48 @@ import {
 } from "./localGrowthStore";
 
 export function useLocalGrowth() {
-  const [state, setState] = useState<LocalGrowthState>(() => readLocalGrowthState());
+  const initial = readLocalGrowthState();
+  const [state, setState] = useState<LocalGrowthState>(initial);
+  const stateRef = useRef(initial);
+
+  const commit = useCallback((next: LocalGrowthState) => {
+    stateRef.current = next;
+    setState(next);
+  }, []);
 
   useEffect(() => {
-    const refresh = () => setState(readLocalGrowthState());
+    const refresh = () => commit(readLocalGrowthState());
     window.addEventListener("storage", refresh);
     window.addEventListener("bible-friend:growth-local-changed", refresh);
     return () => {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("bible-friend:growth-local-changed", refresh);
     };
-  }, []);
+  }, [commit]);
 
   const claim = useCallback((input: GrowthActivityInput) => {
-    let outcome: ReturnType<typeof claimLocalGrowthActivity> | null = null;
-    setState(current => {
-      outcome = claimLocalGrowthActivity(current, input);
-      return outcome.state;
-    });
-    if (!outcome) {
-      outcome = claimLocalGrowthActivity(readLocalGrowthState(), input);
-      setState(outcome.state);
-    }
+    const outcome = claimLocalGrowthActivity(stateRef.current, input);
+    commit(outcome.state);
     return outcome.result;
-  }, []);
+  }, [commit]);
 
   const upgrade = useCallback((equipmentId: EquipmentId) => {
-    let outcome: ReturnType<typeof upgradeLocalEquipment> | null = null;
-    setState(current => {
-      outcome = upgradeLocalEquipment(current, equipmentId);
-      return outcome.state;
-    });
+    const outcome = upgradeLocalEquipment(stateRef.current, equipmentId);
+    commit(outcome.state);
     return outcome;
-  }, []);
+  }, [commit]);
 
   const equip = useCallback((equipmentId: EquipmentId, equipped: boolean) => {
-    let outcome: ReturnType<typeof equipLocalEquipment> | null = null;
-    setState(current => {
-      outcome = equipLocalEquipment(current, equipmentId, equipped);
-      return outcome.state;
-    });
+    const outcome = equipLocalEquipment(stateRef.current, equipmentId, equipped);
+    commit(outcome.state);
     return outcome;
-  }, []);
+  }, [commit]);
 
   const verifyMemorization = useCallback((verseId: string, expected: string, spoken: string) => {
-    let outcome: ReturnType<typeof verifyLocalMemorization> | null = null;
-    setState(current => {
-      outcome = verifyLocalMemorization(current, verseId, expected, spoken);
-      return outcome.state;
-    });
-    if (!outcome) {
-      outcome = verifyLocalMemorization(readLocalGrowthState(), verseId, expected, spoken);
-      setState(outcome.state);
-    }
+    const outcome = verifyLocalMemorization(stateRef.current, verseId, expected, spoken);
+    commit(outcome.state);
     return outcome;
-  }, []);
+  }, [commit]);
 
   return { state, profile: state.profile, claim, upgrade, equip, verifyMemorization };
 }
