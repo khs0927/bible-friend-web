@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
+import EquipmentIcon from "./EquipmentIcon";
 import GrowthHero2D from "./GrowthHero2D";
 import { ARMOR_CATALOG, EQUIPMENT_ORDER, STARTER_DAILY_VERSES, ZONE_INFO } from "./catalog";
 import { INITIAL_GROWTH_PROFILE, STAGE_LABELS, canUpgrade, moodForProfile, upgradeCost } from "./growthEngine";
@@ -46,7 +47,7 @@ function EquipmentCard({ id, profile, busy, onUpgrade, onEquip }: {
   const cost = upgradeCost(id, tier);
   return (
     <article className={`growth-equipment-card ${equipped ? "equipped" : ""}`}>
-      <div className="growth-equipment-icon">{item.icon}</div>
+      <div className="growth-equipment-icon"><EquipmentIcon id={id} /></div>
       <div className="growth-equipment-main">
         <div className="growth-equipment-title"><strong>{item.name}</strong><span>Lv.{tier}/5</span></div>
         <p>{tier > 0 ? item.tierNames[tier] : item.description}</p>
