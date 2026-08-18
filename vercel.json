@@ -8,9 +8,6 @@
     },
     "api/voice-tts-stream.js": {
       "maxDuration": 30
-    },
-    "api/recover-story.js": {
-      "maxDuration": 20
     }
   },
   "routes": [
@@ -45,10 +42,6 @@
     {
       "src": "/api/voice-probe",
       "dest": "/api/voice-tts"
-    },
-    {
-      "src": "/api/recover-story",
-      "dest": "/api/recover-story"
     },
     {
       "src": "/api/(?<path>.*)",
