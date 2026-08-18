@@ -8,6 +8,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ComicAdventure from "./pages/ComicAdventure";
 import "./growth/growth-fallback.css";
+import "./growth/growth-glb-runtime.css";
 
 const GrowthGame = lazy(() => import("./growth/GrowthGame"));
 const GrowthAdventure3D = lazy(() => import("./growth/GrowthAdventure3D"));
