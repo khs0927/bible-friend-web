@@ -54,6 +54,11 @@ function jsonError(res, status, code, message) {
   res.end(JSON.stringify({ ok: false, code, message }));
 }
 
+function isIOSChrome(req) {
+  const userAgent = String(req.headers?.["user-agent"] ?? "");
+  return /CriOS/i.test(userAgent);
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
 
@@ -65,10 +70,21 @@ export default async function handler(req, res) {
       format: "native-pcm",
       sampleRate: 24000,
       configured: Boolean(process.env.GEMINI_API_KEY),
+      iosChromeStrategy: "device-speech-fallback",
     });
   }
 
   if (req.method !== "POST") return jsonError(res, 405, "method_not_allowed", "POST only");
+
+  // Chrome on iOS uses WebKit but has a different media-activation lifecycle
+  // from Safari/in-app browsers. Streaming PCM through WebAudio can succeed on
+  // the server while remaining silent in CriOS. Fail this path immediately so
+  // the client moves to the direct TTS mutation, which returns an immediate
+  // device-speech fallback for CriOS instead of leaving the child in silence.
+  if (isIOSChrome(req)) {
+    res.setHeader("X-Bible-Friend-Voice-Fallback", "device-speech");
+    return jsonError(res, 409, "ios_chrome_device_fallback", "Use device speech on iOS Chrome");
+  }
 
   const apiKey = process.env.GEMINI_API_KEY || "";
   if (!apiKey) return jsonError(res, 503, "configuration", "Gemini TTS is not configured");
