@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Bible Friend · TRELLIS.2 ZeroGPU Lab</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+  <style>
+    :root{color-scheme:light;--ink:#3b2d4c;--purple:#7244d8;--gold:#e6b84e;--paper:#fff9ec;--line:#eadfcf}
+    *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:linear-gradient(#fffaf0,#f7f1ff);color:var(--ink)}
+    main{max-width:720px;margin:auto;padding:18px 16px 48px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}.eyebrow{font-size:11px;letter-spacing:.18em;color:#8b67bc}.title{font-weight:900;font-size:22px;margin-top:3px}.badge{padding:8px 12px;border-radius:999px;background:#fff4be;border:1px solid #e8c657;font-size:12px;font-weight:800}
+    .card{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:24px;padding:14px;box-shadow:0 12px 35px rgba(70,45,100,.08);margin-bottom:14px}.ref{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border-radius:18px;border:1px solid #eee}.stage{font-size:13px;font-weight:800;margin:10px 0 4px}.bar{height:9px;background:#eee7f6;border-radius:999px;overflow:hidden}.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8057e8,#e6b84e);transition:width .35s}.log{white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.5;background:#211a28;color:#f4eefe;border-radius:16px;padding:12px;min-height:92px;max-height:220px;overflow:auto}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}button,a.btn{appearance:none;border:0;border-radius:15px;padding:12px 15px;font-weight:900;font-size:14px;text-decoration:none;cursor:pointer}.primary{background:#6f45db;color:#fff}.secondary{background:#fff0c7;color:#614410;border:1px solid #edd486}.ghost{background:#eee8f8;color:#5d4778}button:disabled{opacity:.45;cursor:not-allowed}
+    model-viewer{display:none;width:100%;height:520px;border-radius:20px;background:#f4ecd8;border:1px solid #e6d5b8}.hint{font-size:12px;line-height:1.55;color:#7c7188;margin-top:10px}.token{width:100%;border:1px solid #ddd1ee;border-radius:14px;padding:11px 12px;font-size:13px;background:#fff;margin-top:8px}.ok{color:#16845b}.bad{color:#c24a4a}
+  </style>
+</head>
+<body>
+<main>
+  <div class="top"><div><div class="eyebrow">FREE IMAGE → 3D LAB</div><div class="title">Bible Friend · TRELLIS.2</div></div><div class="badge">ZeroGPU</div></div>
+  <section class="card">
+    <img id="reference" class="ref" alt="Bible Friend front reference" src="https://cdn.creativeclaw.co/u/448e94a9/images/5d9699e9-cbcc-4f1f-9bb5-fa20bf2d4b51.png" />
+    <div class="hint">Microsoft TRELLIS.2 공식 ZeroGPU Space를 직접 호출합니다. 기본은 익명 무료 풀을 사용합니다. Hugging Face 토큰을 입력하면 토큰은 이 브라우저 탭 안에서만 사용되며 Bible Friend 서버에는 저장하지 않습니다.</div>
+    <input id="token" class="token" type="password" autocomplete="off" placeholder="선택: hf_... 토큰 (없어도 익명 무료 시도)" />
+    <div class="actions"><button id="start" class="primary">무료 3D 생성 시작</button><button id="auto" class="ghost">자동 시작: 켜짐</button></div>
+  </section>
+
+  <section class="card">
+    <div id="stage" class="stage">준비 중</div>
+    <div class="bar"><i id="progress"></i></div>
+    <div style="height:10px"></div>
+    <div id="log" class="log">브라우저 Gradio Client를 준비합니다…</div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <model-viewer id="viewer" camera-controls auto-rotate shadow-intensity="1" exposure="1" environment-image="neutral" interaction-prompt="auto"></model-viewer>
+    <div class="actions"><a id="download" class="btn secondary" target="_blank" rel="noopener">GLB 열기 / 저장</a></div>
+    <div id="resultText" class="hint"></div>
+  </section>
+</main>
+
+<script type="module">
+  import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+
+  const SPACE = "https://microsoft-trellis-2.hf.space";
+  const SOURCE = document.getElementById('reference').src;
+  const logEl = document.getElementById('log');
+  const stageEl = document.getElementById('stage');
+  const barEl = document.getElementById('progress');
+  const startBtn = document.getElementById('start');
+  const autoBtn = document.getElementById('auto');
+  const viewer = document.getElementById('viewer');
+  const resultCard = document.getElementById('resultCard');
+  const resultText = document.getElementById('resultText');
+  const download = document.getElementById('download');
+  let running = false;
+  let autoStart = true;
+
+  const stamp = () => new Date().toLocaleTimeString('ko-KR');
+  function line(text){ logEl.textContent += `\n[${stamp()}] ${text}`; logEl.scrollTop = logEl.scrollHeight; }
+  function phase(text, pct){ stageEl.textContent = text; barEl.style.width = `${pct}%`; line(text); }
+  function pickUrl(value){
+    if (!value) return null;
+    if (typeof value === 'string') return value.startsWith('http') ? value : null;
+    if (value.url) return value.url;
+    if (value.path && /^https?:/.test(value.path)) return value.path;
+    if (Array.isArray(value)) { for (const v of value){ const u=pickUrl(v); if(u) return u; } }
+    return null;
+  }
+
+  async function generate(){
+    if(running) return;
+    running = true; startBtn.disabled = true; resultCard.style.display='none';
+    logEl.textContent = `[${stamp()}] 생성 시작`; 
+    try{
+      const token = document.getElementById('token').value.trim();
+      phase('1/5 · Microsoft TRELLIS.2 ZeroGPU 연결', 8);
+      const app = await Client.connect(SPACE, token ? { token } : undefined);
+
+      phase('2/5 · 캐릭터 배경 제거 · 정규화', 20);
+      const pre = await app.predict('/preprocess_image', [handle_file(SOURCE)]);
+      const image = pre.data?.[0];
+      if(!image) throw new Error('preprocess_image 결과가 비었습니다.');
+
+      phase('3/5 · 512³ 3D 형상 + 재질 생성 (ZeroGPU)', 36);
+      const seedResult = await app.predict('/get_seed', [false, 240818]);
+      const seed = seedResult.data?.[0] ?? 240818;
+      const gen = await app.predict('/image_to_3d', [
+        image, seed, '512',
+        7.5, 0.7, 12, 5.0,
+        7.5, 0.5, 12, 3.0,
+        1.0, 0.0, 12, 3.0
+      ]);
+      const latentState = gen.data?.[0];
+      if(!latentState) throw new Error('image_to_3d latent state가 비었습니다.');
+
+      phase('4/5 · 게임용 GLB 추출 · 100K faces · 1024 texture', 76);
+      const ext = await app.predict('/extract_glb', [latentState, 100000, 1024]);
+      const glb = pickUrl(ext.data?.[0]) || pickUrl(ext.data?.[1]) || pickUrl(ext.data);
+      if(!glb) throw new Error('GLB URL을 찾지 못했습니다. raw=' + JSON.stringify(ext.data).slice(0,1000));
+
+      phase('5/5 · 실제 GLB 뷰어 로드', 94);
+      viewer.src = glb; viewer.style.display='block';
+      download.href = glb;
+      resultCard.style.display='block';
+      resultText.innerHTML = `<b class="ok">실제 TRELLIS.2 GLB 생성 성공</b><br>입력: Bible Friend 정면 이미지 · 출력: 512³ / 100K face target / 1024 texture<br><span style="word-break:break-all">${glb}</span>`;
+      await new Promise((resolve,reject)=>{ const t=setTimeout(()=>reject(new Error('GLB 뷰어 로드 시간 초과')),30000); viewer.addEventListener('load',()=>{clearTimeout(t);resolve();},{once:true}); viewer.addEventListener('error',()=>{clearTimeout(t);reject(new Error('생성 GLB를 model-viewer가 읽지 못했습니다.'));},{once:true}); });
+      phase('완료 · GLB 실제 렌더 성공', 100);
+    }catch(err){
+      console.error(err);
+      stageEl.innerHTML = '<span class="bad">생성 실패 · 로그 확인</span>';
+      line('ERROR: ' + (err?.stack || err?.message || String(err)));
+      resultText.textContent = '생성에 실패했습니다. 위 로그가 다음 수정의 기준입니다.';
+    }finally{ running=false; startBtn.disabled=false; }
+  }
+
+  startBtn.addEventListener('click', generate);
+  autoBtn.addEventListener('click',()=>{autoStart=!autoStart;autoBtn.textContent='자동 시작: '+(autoStart?'켜짐':'꺼짐');});
+  setTimeout(()=>{ if(autoStart) generate(); }, 1200);
+</script>
+</body>
+</html>
