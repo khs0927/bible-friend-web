@@ -1,0 +1,111 @@
+name: Kotlin WordLight Preview
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'kotlin-wordlight/**'
+      - '.github/workflows/kotlin-wordlight-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kotlin-wordlight-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: kotlin-wordlight
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle 9.5.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.1'
+
+      - name: Build Kotlin full stack
+        run: gradle --no-daemon clean :server:installDist
+
+      - name: Start Ktor server
+        run: |
+          mkdir -p qa
+          PORT=8080 ./server/build/install/server/bin/server > qa/server.log 2>&1 &
+          echo $! > qa/server.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:8080/api/health > qa/local-health.json; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat qa/server.log
+          exit 1
+
+      - name: Open managed external preview tunnel
+        run: |
+          curl -fsSL --retry 3 -o cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          ./cloudflared tunnel --url http://127.0.0.1:8080 --no-autoupdate > qa/cloudflared.log 2>&1 &
+          echo $! > qa/cloudflared.pid
+          for i in {1..60}; do
+            URL=$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' qa/cloudflared.log | head -n 1 || true)
+            if [ -n "$URL" ]; then
+              echo "$URL" | tee qa/preview-url.txt
+              echo "PREVIEW_URL=$URL" >> "$GITHUB_ENV"
+              echo "### WordLight preview" >> "$GITHUB_STEP_SUMMARY"
+              echo "$URL" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat qa/cloudflared.log
+          exit 1
+
+      - name: Verify external browser endpoint and APIs
+        run: |
+          for i in {1..45}; do
+            if curl -fsS "$PREVIEW_URL/api/health" > qa/external-health.json && curl -fsS "$PREVIEW_URL/api/verses?q=%EC%82%AC%EB%9E%91" > qa/search-love.json && curl -fsS "$PREVIEW_URL/" > qa/index.html; then
+              break
+            fi
+            sleep 1
+          done
+          grep -q 'WordLight' qa/index.html
+          grep -q 'wordlight-bible' qa/external-health.json
+          grep -q '요한복음' qa/search-love.json
+
+      - name: Capture desktop and mobile screenshots
+        run: |
+          CHROME=$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)
+          if [ -z "$CHROME" ]; then
+            echo 'Chrome executable not found' >&2
+            exit 1
+          fi
+          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1200 --screenshot=qa/desktop.png "$PREVIEW_URL"
+          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=390,844 --screenshot=qa/mobile.png "$PREVIEW_URL"
+          test -s qa/desktop.png
+          test -s qa/mobile.png
+
+      - name: Upload QA evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-wordlight-preview-qa
+          path: kotlin-wordlight/qa
+          retention-days: 1
+
+      - name: Keep preview available for review
+        run: |
+          echo "Preview ready: $PREVIEW_URL"
+          sleep 1200
