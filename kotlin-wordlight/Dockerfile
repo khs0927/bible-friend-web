@@ -1,0 +1,11 @@
+FROM gradle:9.5.1-jdk21 AS build
+WORKDIR /app
+COPY . .
+RUN gradle --no-daemon clean :server:installDist
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/server/build/install/server/ ./
+ENV PORT=8080
+EXPOSE 8080
+CMD ["./bin/server"]
