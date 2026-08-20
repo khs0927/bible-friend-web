@@ -1,12 +1,118 @@
 /* Final mobile layout guard for the Figma conversation screen.
- * Loaded after the shared polish and Figma geometry layers so legacy fixed-nav
- * transforms cannot shift the four-item navigation outside the app frame.
+ * Loaded last so the production UI keeps the clean Figma surfaces while legacy
+ * raster-border and fixed-nav rules cannot clip controls on narrow mobile views.
  */
 
+/* Conversation surfaces are CSS/vector surfaces. Do not use raster border images. */
+.bf-chat-greeting-card,
+.bf-conversation-composer {
+  background-image: none !important;
+}
+
+.bf-chat-greeting-card {
+  background-color: #fff !important;
+}
+
+/* Keep the conversation viewport above the composer/nav instead of letting long
+ * answers disappear behind the fixed controls. */
+.bf-conversation-main:not(.bf-view-home) {
+  height: 624px !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-padding-bottom: 18px;
+  padding-bottom: 18px !important;
+}
+
+.bf-conversation-main:not(.bf-view-home)::-webkit-scrollbar {
+  display: none;
+}
+
+.bf-chat-thread,
+.bf-voice-mode,
+.bf-answer-detail,
+.bf-conversation-history {
+  min-height: 0 !important;
+}
+
+/* Plain input surface. The voice artwork is intentionally allowed to paint
+ * outside this box so its decorative edges are not cropped. */
+.bf-conversation-composer {
+  left: 22px !important;
+  right: 22px !important;
+  top: 706px !important;
+  width: auto !important;
+  height: 48px !important;
+  padding: 3px 4px 3px 18px !important;
+  transform: none !important;
+  translate: none !important;
+  box-sizing: border-box;
+  overflow: visible !important;
+  contain: none !important;
+  border: 0 !important;
+  background-color: #fffefb !important;
+  box-shadow: 0 4px 12px rgba(46, 31, 82, 0.07) !important;
+}
+
+.bf-conversation-composer textarea {
+  min-width: 0 !important;
+  height: 38px !important;
+  padding-block: 8px !important;
+}
+
+.bf-voice-entry {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 118px;
+  min-width: 118px !important;
+  height: 42px !important;
+  margin-right: -2px !important;
+  overflow: visible !important;
+  contain: none !important;
+  border-radius: 21px !important;
+  background-color: #ff844f !important;
+  background-image: none !important;
+}
+
+.bf-voice-entry::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -3px -7px;
+  border-radius: 24px;
+  background: url('/assets/figma/conversation/voice-button.png') center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+
+.bf-voice-entry > svg,
+.bf-voice-entry > span {
+  position: relative;
+  z-index: 1;
+}
+
+.bf-voice-entry > svg {
+  opacity: 1 !important;
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.bf-voice-entry.is-listening::before {
+  display: none;
+}
+
+/* Four equal navigation cells with labels that have real line-height. Nothing
+ * inside the navigation is clipped or ellipsized. */
 .bf-bottom-nav {
   left: 18px !important;
   right: 18px !important;
+  top: 762px !important;
   width: auto !important;
+  min-height: 68px !important;
+  height: 68px !important;
+  padding: 4px 8px 2px !important;
   transform: none !important;
   translate: none !important;
   display: grid !important;
@@ -14,7 +120,7 @@
   align-items: stretch !important;
   gap: 0 !important;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .bf-bottom-nav > button,
@@ -26,30 +132,37 @@
   width: 100% !important;
   min-width: 0 !important;
   max-width: none !important;
-  min-height: 53px;
+  min-height: 60px !important;
   margin: 0 !important;
-  padding: 2px 0 4px !important;
+  padding: 2px 0 !important;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible !important;
   text-decoration: none;
   white-space: nowrap;
+  line-height: normal;
+}
+
+.bf-bottom-nav .bf-icon-tile {
+  width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px;
 }
 
 .bf-bottom-nav > button > span:last-child,
 .bf-bottom-nav > a > span:last-child {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+  min-height: 18px;
+  max-width: none;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap;
+  line-height: 18px;
+  text-align: center;
 }
 
-/* Keep the composer inside narrow iPhone/WebView widths as well. */
-.bf-conversation-composer {
-  left: 22px !important;
-  right: 22px !important;
-  width: auto !important;
-  transform: none !important;
-  translate: none !important;
-  box-sizing: border-box;
+.bf-bottom-nav .active::after {
+  bottom: -1px !important;
 }
 
 @media (max-width: 390px) {
@@ -61,5 +174,14 @@
   .bf-conversation-composer {
     left: 14px !important;
     right: 14px !important;
+  }
+
+  .bf-voice-entry {
+    flex-basis: 112px;
+    min-width: 112px !important;
+  }
+
+  .bf-voice-entry::before {
+    inset-inline: -5px;
   }
 }
