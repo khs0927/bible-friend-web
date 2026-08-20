@@ -38,8 +38,7 @@
   min-height: 0 !important;
 }
 
-/* Plain input surface. The voice artwork is intentionally allowed to paint
- * outside this box so its decorative edges are not cropped. */
+/* Plain input surface. */
 .bf-conversation-composer {
   left: 22px !important;
   right: 22px !important;
@@ -63,28 +62,32 @@
   padding-block: 8px !important;
 }
 
+/* Clean voice button: one clear orange pill, with the microphone inside a
+ * distinct white circular control. This replaces the old raster overlay that
+ * produced a doubled/warped oval on mobile Safari. */
 .bf-voice-entry {
   position: relative;
   isolation: isolate;
-  flex: 0 0 118px;
-  min-width: 118px !important;
+  flex: 0 0 122px;
+  min-width: 122px !important;
   height: 42px !important;
-  margin-right: -2px !important;
+  margin-right: 0 !important;
+  padding: 4px 11px 4px 6px !important;
   overflow: visible !important;
   contain: none !important;
-  border-radius: 21px !important;
-  background-color: #ff844f !important;
-  background-image: none !important;
+  gap: 7px !important;
+  border: 0 !important;
+  border-radius: 22px !important;
+  color: #fff !important;
+  background: linear-gradient(180deg, #ff9958 0%, #ff7448 100%) !important;
+  box-shadow:
+    0 5px 12px rgba(255, 116, 72, 0.24),
+    inset 0 1px 0 rgba(255,255,255,.42) !important;
 }
 
 .bf-voice-entry::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: -3px -7px;
-  border-radius: 24px;
-  background: url('/assets/figma/conversation/voice-button.png') center / 100% 100% no-repeat;
-  pointer-events: none;
+  display: none !important;
+  content: none !important;
 }
 
 .bf-voice-entry > svg,
@@ -94,13 +97,33 @@
 }
 
 .bf-voice-entry > svg {
+  box-sizing: border-box;
+  flex: 0 0 30px;
+  width: 30px !important;
+  height: 30px !important;
+  padding: 5px !important;
   opacity: 1 !important;
-  width: 17px !important;
-  height: 17px !important;
+  color: #fff !important;
+  border: 2px solid rgba(255,255,255,.98);
+  border-radius: 50%;
+  background: rgba(255,255,255,.13);
+  stroke-width: 2.55 !important;
+  filter: drop-shadow(0 1px 1px rgba(138, 57, 31, .14));
+}
+
+.bf-voice-entry > span {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.bf-voice-entry.is-listening {
+  background: linear-gradient(180deg, #8c65e8 0%, #7147d4 100%) !important;
 }
 
 .bf-voice-entry.is-listening::before {
-  display: none;
+  display: none !important;
 }
 
 /* Four equal navigation cells with labels that have real line-height. Nothing
@@ -177,11 +200,8 @@
   }
 
   .bf-voice-entry {
-    flex-basis: 112px;
-    min-width: 112px !important;
-  }
-
-  .bf-voice-entry::before {
-    inset-inline: -5px;
+    flex-basis: 118px;
+    min-width: 118px !important;
+    padding-right: 9px !important;
   }
 }
