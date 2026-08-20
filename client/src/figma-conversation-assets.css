@@ -1,15 +1,58 @@
-/* Exact asset overrides for Figma conversation tab
- * Source: Figma Gs1HH9OGCLpndjS6BQQ8rN · node 3:3 and related states.
- * The PNGs in /public/assets/figma/conversation are the original Figma image-fill bytes,
- * not recreated approximations. This file intentionally loads after conversation-home.css.
+/* Exact Figma asset + geometry overrides for the Bible Friend conversation tab.
+ * Source: Figma Gs1HH9OGCLpndjS6BQQ8rN, especially node 3:3 (01 · 대화 홈).
+ * PNGs under /public/assets/figma/conversation are the original Figma image-fill bytes.
+ * This stylesheet intentionally loads after conversation-home.css.
  */
 
-.bf-conversation-app {
-  font-family: "Noto Sans KR", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+.bf-conversation-shell {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #ececec;
 }
 
-/* Brand + mascots: use the original Figma raster bytes. */
+.bf-conversation-app {
+  position: relative;
+  width: min(100%, 430px);
+  min-height: 844px;
+  height: 844px;
+  margin: 0 auto;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 34px;
+  background: #fff9f3;
+  color: #17134b;
+  font-family: "Noto Sans KR", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+  box-shadow: 0 8px 24px rgba(46, 31, 82, 0.05);
+}
+
+.bf-conversation-app button,
+.bf-conversation-app textarea,
+.bf-conversation-app a {
+  font-family: inherit;
+}
+
+/* Header — Figma x24/y20, logo 42, brand baseline centered to the logo. */
+.bf-conversation-header {
+  position: relative;
+  z-index: 40;
+  height: 76px;
+  padding: 20px 24px 14px;
+}
+
+.bf-brand-button { gap: 10px; }
+.bf-brand-button strong {
+  color: #17134b;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
 .bf-brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
   background-image:
     url('/assets/figma/conversation/mascot-wave.png'),
     linear-gradient(135deg, #ffb461, #9a6ae7);
@@ -19,6 +62,25 @@
 }
 .bf-brand-logo img { opacity: 0; }
 
+/* Main frame keeps the Figma 430×844 reference geometry. */
+.bf-conversation-main {
+  position: relative;
+  min-height: 768px;
+  padding: 0 24px 150px;
+}
+.bf-view-home { padding: 0; }
+.bf-conversation-main::before {
+  width: 150px;
+  height: 120px;
+  left: -56px;
+  top: 14px;
+  border-radius: 999px;
+  background: rgba(255, 241, 226, 0.82);
+  transform: rotate(-18deg);
+}
+.bf-conversation-main::after { display: none; }
+
+/* Brand + all mascot states: exact original Figma raster images. */
 .bf-mascot {
   background-image: url('/assets/figma/conversation/mascot-wave.png');
   background-repeat: no-repeat;
@@ -27,14 +89,10 @@
   filter: none;
 }
 .bf-mascot img { opacity: 0; }
-.bf-listening-mascot {
-  background-image: url('/assets/figma/conversation/mascot-listen.png');
-}
-.bf-answer-mascot {
-  background-image: url('/assets/figma/conversation/mascot-teach.png');
-}
+.bf-listening-mascot { background-image: url('/assets/figma/conversation/mascot-listen.png'); }
+.bf-answer-mascot { background-image: url('/assets/figma/conversation/mascot-teach.png'); }
 
-/* The four recommendation tiles are the exact images from Figma, not Lucide approximations. */
+/* Exact Figma icon fills instead of Lucide approximations. */
 .bf-icon-tile {
   background-color: transparent !important;
   background-repeat: no-repeat !important;
@@ -51,21 +109,171 @@
 .bf-icon-growth { background-image: url('/assets/figma/conversation/nav-growth.png') !important; }
 .bf-icon-record { background-image: url('/assets/figma/conversation/nav-record.png') !important; }
 
-/* Figma bubble/image fills. */
+/* Home screen: direct translation of Figma node positions into CSS pixels.
+ * main starts at app y=76, so these top values are nodeY - 76.
+ */
+.bf-chat-landing {
+  position: relative;
+  width: 430px;
+  min-height: 768px;
+  padding: 0;
+}
+
+.bf-home-hero-copy {
+  position: absolute;
+  z-index: 4;
+  left: 28px;
+  top: 6px;
+  padding: 0;
+}
+.bf-home-hero-copy h1 {
+  margin: 0;
+  color: #16124b;
+  font-size: 58px;
+  font-weight: 900;
+  line-height: 68px;
+  letter-spacing: -0.07em;
+  white-space: nowrap;
+}
+.bf-home-hero-copy p {
+  margin: 1px 0 0 2px;
+  color: #77738d;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 24px;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.bf-home-mascot-backdrop {
+  position: absolute;
+  z-index: 2;
+  left: 223px;
+  right: auto;
+  top: 18px;
+  width: 182px;
+  height: 182px;
+  border-radius: 50px;
+  background: #f4ecff;
+}
+.bf-home-mascot {
+  position: absolute;
+  z-index: 3;
+  left: 224px;
+  right: auto;
+  top: 18px;
+  width: 180px;
+  height: 180px;
+}
+
 .bf-chat-greeting-card {
+  position: absolute;
+  z-index: 4;
+  left: 30px;
+  top: 162px;
+  width: 196px;
+  min-height: 118px;
+  height: 118px;
+  margin: 0;
+  padding: 18px 22px;
+  border-radius: 24px;
   background-color: #fff;
   background-image: url('/assets/figma/conversation/greeting-bubble.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
+  box-shadow: 0 6px 16px rgba(46, 31, 82, 0.08);
+}
+.bf-chat-greeting-card p {
+  margin: 0;
+  color: #17134b;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 31px;
+  letter-spacing: -0.035em;
+}
+.bf-greeting-sparkle {
+  right: 17px;
+  bottom: 13px;
+  width: 23px;
+  height: 23px;
+  color: #9d6ee7;
+  fill: #9d6ee7;
 }
 
+.bf-quick-question-list {
+  position: absolute;
+  z-index: 5;
+  left: 30px;
+  top: 298px;
+  width: 370px;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.bf-quick-question {
+  width: 370px;
+  min-height: 54px;
+  height: 54px;
+  grid-template-columns: 38px minmax(0, 1fr) 24px;
+  gap: 14px;
+  padding: 8px 12px 8px 10px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(46, 31, 82, 0.08);
+}
+.bf-quick-question .bf-icon-tile {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+}
+.bf-quick-label {
+  color: #17134b;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.bf-quick-chevron {
+  width: 21px;
+  height: 21px;
+  color: #59546d;
+  stroke-width: 3;
+}
+
+/* Composer and bottom nav are inside the Figma frame, not tied to browser chrome. */
 .bf-conversation-composer {
+  position: absolute;
+  z-index: 90;
+  left: 22px;
+  top: 710px;
+  bottom: auto;
+  translate: none;
+  width: 386px;
+  height: 46px;
+  padding: 5px 6px 5px 18px;
+  border-radius: 23px;
   background-color: #fff;
   background-image: url('/assets/figma/conversation/message-input.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
+  box-shadow: 0 4px 12px rgba(46, 31, 82, 0.07);
+}
+.bf-conversation-composer textarea {
+  height: 34px;
+  padding: 6px 0;
+  color: #17134b;
+  font-size: 14px;
+  line-height: 22px;
+}
+.bf-conversation-composer textarea::placeholder { color: #a8a5b5; }
+.bf-voice-entry,
+.bf-send-entry {
+  height: 36px;
+  min-width: 108px;
+  border-radius: 18px;
 }
 .bf-voice-entry {
   background-color: #ff844f;
@@ -75,87 +283,58 @@
   background-size: cover;
 }
 .bf-voice-entry svg { opacity: 0; width: 8px; }
-.bf-voice-entry.is-listening {
-  background-image: none;
-}
+.bf-voice-entry.is-listening { background-image: none; }
 
-/* Match Figma node 3:3 geometry and typography more tightly. */
-.bf-conversation-header { height: 76px; padding: 20px 24px 14px; }
-.bf-brand-button { gap: 10px; }
-.bf-brand-button strong {
-  color: #17134b;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
+.bf-bottom-nav {
+  position: absolute;
+  z-index: 95;
+  left: 18px;
+  top: 768px;
+  bottom: auto;
+  translate: none;
+  width: 394px;
+  min-height: 62px;
+  height: 62px;
+  padding: 5px 8px 3px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 5px 14px rgba(46, 31, 82, 0.08);
 }
-.bf-chat-landing { min-height: 650px; padding-top: 5px; }
-.bf-home-hero-copy { padding-left: 4px; }
-.bf-home-hero-copy h1 {
-  color: #16124b;
-  font-size: 58px;
-  font-weight: 900;
-  line-height: 1.12;
-  letter-spacing: -0.07em;
-}
-.bf-home-hero-copy p {
-  margin-top: 3px;
-  color: #77738d;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -0.035em;
-}
-.bf-home-mascot-backdrop {
-  width: 182px;
-  height: 182px;
-  top: 18px;
-  right: 1px;
-  border-radius: 50px;
-  background: #f4ecff;
-}
-.bf-home-mascot {
-  width: 180px;
-  height: 180px;
-  top: 18px;
-  right: 2px;
-}
-.bf-chat-greeting-card {
-  width: 196px;
-  min-height: 118px;
-  margin: 50px 0 18px 6px;
-  padding: 16px 20px;
-  border-radius: 24px;
-}
-.bf-chat-greeting-card p {
-  color: #17134b;
-  font-size: 21px;
+.bf-bottom-nav > button,
+.bf-bottom-nav > a {
+  min-height: 53px;
+  gap: 0;
+  padding: 2px 0 4px;
+  color: #55516d;
+  font-size: 12px;
   font-weight: 500;
-  line-height: 1.48;
 }
-.bf-quick-question-list { gap: 8px; margin-left: 6px; }
-.bf-quick-question {
-  min-height: 54px;
-  grid-template-columns: 38px minmax(0, 1fr) 24px;
-  gap: 14px;
-  padding: 8px 12px 8px 10px;
-  border-radius: 20px;
-}
-.bf-quick-label {
-  color: #17134b;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: -0.03em;
-}
-.bf-quick-chevron { color: #59546d; stroke-width: 3; }
-
 .bf-bottom-nav .bf-icon-tile {
   width: 34px;
   height: 34px;
 }
-.bf-bottom-nav > button,
-.bf-bottom-nav > a { font-weight: 500; }
-.bf-bottom-nav .active { font-weight: 700; }
+.bf-bottom-nav .active {
+  color: #6e3fe4;
+  font-weight: 700;
+}
+.bf-bottom-nav .active::after {
+  bottom: 0;
+  width: 24px;
+  height: 3px;
+}
 
-/* Small raster files should decode immediately; prevent layout shift while they do. */
+/* Other Figma states use their dedicated mascot rasters while retaining existing interaction logic. */
+.bf-listening-mascot {
+  width: 178px;
+  height: 178px;
+}
+.bf-answer-mascot {
+  width: 160px;
+  height: 160px;
+}
+
+/* Original Figma rasters are tiny (roughly 1–5 KB each), so keep native bytes and
+ * lock the paint area to avoid decode-time layout movement. */
 .bf-brand-logo,
 .bf-mascot,
 .bf-icon-tile,
@@ -166,8 +345,26 @@
   contain: paint;
 }
 
+/* Do not reflow the Figma geometry on narrow media queries; a 430px reference frame
+ * remains the source of truth and the shell can scroll when a browser viewport is shorter. */
 @media (max-width: 390px) {
-  .bf-home-mascot-backdrop { right: -10px; width: 168px; height: 168px; }
-  .bf-home-mascot { right: -10px; width: 168px; height: 168px; }
-  .bf-home-hero-copy h1 { font-size: 52px; }
+  .bf-view-home { padding-inline: 0; }
+  .bf-home-hero-copy { left: 28px; top: 6px; }
+  .bf-home-hero-copy h1 { font-size: 58px; line-height: 68px; }
+  .bf-home-hero-copy p { font-size: 16px; }
+  .bf-home-mascot-backdrop { left: 223px; right: auto; top: 18px; width: 182px; height: 182px; }
+  .bf-home-mascot { left: 224px; right: auto; top: 18px; width: 180px; height: 180px; }
+  .bf-chat-greeting-card { left: 30px; top: 162px; margin: 0; }
+  .bf-quick-question-list { left: 30px; top: 298px; margin: 0; }
+  .bf-quick-label { font-size: 15px; }
+}
+
+@media (min-width: 600px) {
+  .bf-conversation-app {
+    min-height: 844px;
+    height: 844px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    border-radius: 34px;
+  }
 }
