@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
+import ConversationThemeSwitcher from "./components/ConversationThemeSwitcher";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ConversationHome from "./pages/ConversationHome";
@@ -29,7 +30,10 @@ function GrowthLoading() {
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={ConversationHome} />
+      <Route path={"/"}>
+        <ConversationHome />
+        <ConversationThemeSwitcher />
+      </Route>
       <Route path={"/legacy-home"} component={Home} />
       <Route path={"/growth-game"}>
         <Suspense fallback={<GrowthLoading />}>

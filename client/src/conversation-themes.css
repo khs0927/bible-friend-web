@@ -1,0 +1,235 @@
+/* Bible Friend selectable conversation backgrounds. Loaded after the Figma/mobile overrides. */
+.bf-conversation-app[data-conversation-theme] {
+  --bf-theme-image: none;
+  background-color: #fff9f3 !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 251, 246, 0.18), rgba(255, 249, 243, 0.28)),
+    var(--bf-theme-image) !important;
+  background-position: center top !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+}
+
+.bf-conversation-app[data-conversation-theme]::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 249, 243, 0.08) 0%,
+    rgba(255, 249, 243, 0.18) 42%,
+    rgba(255, 249, 243, 0.3) 100%
+  );
+}
+
+/* The selected wallpaper already contains the hero mascot artwork. Avoid a doubled mascot on the home screen. */
+.bf-conversation-app[data-conversation-theme] .bf-view-home .bf-home-mascot,
+.bf-conversation-app[data-conversation-theme] .bf-view-home .bf-home-mascot-backdrop,
+.bf-conversation-app[data-conversation-theme] .bf-view-home::before {
+  display: none !important;
+}
+
+.bf-theme-settings {
+  position: absolute;
+  z-index: 130;
+  top: 17px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 15px;
+  color: #6840d2;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 250, 246, 0.86)) padding-box,
+    linear-gradient(135deg, #ffb269, #9b70eb) border-box;
+  box-shadow: 0 7px 18px rgba(75, 52, 124, 0.15), inset 0 1px 0 rgba(255,255,255,.85);
+  backdrop-filter: blur(14px) saturate(1.18);
+  -webkit-backdrop-filter: blur(14px) saturate(1.18);
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.bf-theme-settings:hover,
+.bf-theme-settings:focus-visible,
+.bf-theme-settings.is-open {
+  transform: translateY(-1px) rotate(4deg);
+  box-shadow: 0 9px 24px rgba(75, 52, 124, 0.2), inset 0 1px 0 rgba(255,255,255,.92);
+}
+
+.bf-theme-settings:focus-visible,
+.bf-theme-card:focus-visible {
+  outline: 3px solid rgba(115, 66, 228, .28);
+  outline-offset: 2px;
+}
+
+.bf-theme-settings svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.3;
+}
+
+.bf-theme-settings-dot {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid rgba(255,255,255,.95);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9658, #9b65e9);
+  box-shadow: 0 1px 4px rgba(87,51,140,.2);
+}
+
+.bf-theme-scrim {
+  position: absolute;
+  z-index: 122;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(35, 21, 71, 0.08);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+}
+
+.bf-theme-panel {
+  position: absolute;
+  z-index: 126;
+  top: 70px;
+  right: 14px;
+  width: min(316px, calc(100% - 28px));
+  max-height: 626px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 15px;
+  border: 1px solid rgba(255,255,255,.78);
+  border-radius: 26px;
+  color: #17134b;
+  background: rgba(255, 252, 248, 0.94);
+  box-shadow: 0 22px 54px rgba(46, 31, 82, 0.23), inset 0 1px 0 rgba(255,255,255,.95);
+  backdrop-filter: blur(24px) saturate(1.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.12);
+  scrollbar-width: none;
+}
+
+.bf-theme-panel::-webkit-scrollbar { display: none; }
+
+.bf-theme-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 13px;
+}
+
+.bf-theme-panel-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.bf-theme-panel-heading strong {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+
+.bf-theme-panel-heading span:not(.bf-theme-current-badge) {
+  color: #7d788e;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.bf-theme-current-badge {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #6e42d5;
+  background: #efe4ff;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.bf-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.bf-theme-card {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  padding: 7px 7px 9px;
+  border: 1px solid rgba(112, 76, 170, .08);
+  border-radius: 18px;
+  color: #2e2855;
+  background: rgba(255,255,255,.76);
+  box-shadow: 0 4px 12px rgba(67,47,104,.06);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -.025em;
+  cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.bf-theme-card:hover { transform: translateY(-1px); }
+
+.bf-theme-card.is-selected {
+  border-color: rgba(115, 66, 228, .52);
+  box-shadow: 0 7px 16px rgba(96, 58, 165, .13);
+}
+
+.bf-theme-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 13px;
+  background: #f3eaff;
+}
+
+.bf-theme-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+  transform: scale(1.01);
+}
+
+.bf-theme-check {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255,255,255,.92);
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #ff8c57, #7040df);
+  box-shadow: 0 4px 10px rgba(54,38,96,.2);
+}
+
+.bf-theme-check svg { width: 13px; height: 13px; stroke-width: 3; }
+
+@media (max-width: 390px) {
+  .bf-theme-settings { right: 14px; }
+  .bf-theme-panel {
+    right: 10px;
+    width: min(310px, calc(100% - 20px));
+    max-height: 620px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-theme-settings,
+  .bf-theme-card { transition: none; }
+}
