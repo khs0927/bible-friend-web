@@ -68,6 +68,7 @@ export type ModelsResponse = { object: string; data: ModelInfo[] };
 const GOOGLE_OPENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
 const FAST_CHAT_MODEL = "gemini-3.6-flash";
 const FAST_CHAT_MAX_TOKENS = 320;
+const FAST_CHAT_TIMEOUT_MS = 7_000;
 const RETRY_MAX_RETRIES = 2;
 const RETRY_BASE_DELAY_MS = 350;
 
@@ -145,6 +146,41 @@ function modelsUrl() {
   return `${GOOGLE_OPENAI_BASE}/models`;
 }
 
+function readPlainText(content: MessageContent | MessageContent[]): string {
+  return ensureArray(content)
+    .map(part => typeof part === "string" ? part : part.type === "text" ? part.text : "")
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+}
+
+function instantGreeting(params: InvokeParams): InvokeResult | null {
+  const lastUser = params.messages.slice().reverse().find(message => message.role === "user");
+  if (!lastUser) return null;
+
+  const normalized = readPlainText(lastUser.content)
+    .toLowerCase()
+    .replace(/[\s!?.~,，。！？…]+/g, "");
+
+  if (!/^(안녕|안녕하세요|안뇽|하이|헬로|hi|hello|반가워|반가워요)(성경친구)?$/.test(normalized)) return null;
+
+  return {
+    id: `bible-friend-greeting-${Date.now()}`,
+    created: Math.floor(Date.now() / 1000),
+    model: "bible-friend-instant",
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: "assistant",
+          content: "안녕! 만나서 정말 반가워 😊 오늘 어떤 이야기를 나눠볼까? 성경에 대해 궁금한 것도 편하게 물어봐!",
+        },
+        finish_reason: "stop",
+      },
+    ],
+  };
+}
+
 async function fetchWithBackoff(url: string, init: FetchInit): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= RETRY_MAX_RETRIES; attempt++) {
@@ -155,6 +191,8 @@ async function fetchWithBackoff(url: string, init: FetchInit): Promise<Response>
       await sleep(RETRY_BASE_DELAY_MS * 2 ** attempt);
     } catch (error) {
       lastError = error;
+      const errorName = error instanceof Error ? error.name : "";
+      if (errorName === "AbortError" || errorName === "TimeoutError") throw error;
       if (attempt === RETRY_MAX_RETRIES) throw error;
       await sleep(RETRY_BASE_DELAY_MS * 2 ** attempt);
     }
@@ -175,6 +213,14 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     && !params.tools?.length
     && !responseFormat;
   const resolvedModel = fastChat ? FAST_CHAT_MODEL : requestedModel;
+
+  if (fastChat) {
+    const instant = instantGreeting(params);
+    if (instant) {
+      console.info("[LLM] instant Bible Friend greeting", { model: instant.model, ms: 0 });
+      return instant;
+    }
+  }
 
   const payload: Record<string, unknown> = {
     messages: params.messages.map(normalizeMessage),
@@ -211,6 +257,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       authorization: `Bearer ${apiKey()}`,
     },
     body: JSON.stringify(payload),
+    signal: fastChat ? AbortSignal.timeout(FAST_CHAT_TIMEOUT_MS) : undefined,
   });
 
   if (!response.ok) {

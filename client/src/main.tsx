@@ -10,6 +10,7 @@ import "./index.css";
 import "./bible-friend-polish.css";
 import "./conversation-home.css";
 import "./figma-conversation-assets.css";
+import "./conversation-mobile-hotfix.css";
 
 const queryClient = new QueryClient();
 
