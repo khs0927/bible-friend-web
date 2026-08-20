@@ -1,0 +1,173 @@
+/* Exact asset overrides for Figma conversation tab
+ * Source: Figma Gs1HH9OGCLpndjS6BQQ8rN · node 3:3 and related states.
+ * The PNGs in /public/assets/figma/conversation are the original Figma image-fill bytes,
+ * not recreated approximations. This file intentionally loads after conversation-home.css.
+ */
+
+.bf-conversation-app {
+  font-family: "Noto Sans KR", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+}
+
+/* Brand + mascots: use the original Figma raster bytes. */
+.bf-brand-logo {
+  background-image:
+    url('/assets/figma/conversation/mascot-wave.png'),
+    linear-gradient(135deg, #ffb461, #9a6ae7);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 34px 34px, cover;
+}
+.bf-brand-logo img { opacity: 0; }
+
+.bf-mascot {
+  background-image: url('/assets/figma/conversation/mascot-wave.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: none;
+}
+.bf-mascot img { opacity: 0; }
+.bf-listening-mascot {
+  background-image: url('/assets/figma/conversation/mascot-listen.png');
+}
+.bf-answer-mascot {
+  background-image: url('/assets/figma/conversation/mascot-teach.png');
+}
+
+/* The four recommendation tiles are the exact images from Figma, not Lucide approximations. */
+.bf-icon-tile {
+  background-color: transparent !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: contain !important;
+}
+.bf-icon-tile svg { opacity: 0; }
+.bf-icon-heart { background-image: url('/assets/figma/conversation/action-heart.png') !important; }
+.bf-icon-pray { background-image: url('/assets/figma/conversation/action-pray.png') !important; }
+.bf-icon-question { background-image: url('/assets/figma/conversation/action-question.png') !important; }
+.bf-icon-candle { background-image: url('/assets/figma/conversation/action-candle.png') !important; }
+.bf-icon-chat { background-image: url('/assets/figma/conversation/nav-chat.png') !important; }
+.bf-icon-story { background-image: url('/assets/figma/conversation/nav-story.png') !important; }
+.bf-icon-growth { background-image: url('/assets/figma/conversation/nav-growth.png') !important; }
+.bf-icon-record { background-image: url('/assets/figma/conversation/nav-record.png') !important; }
+
+/* Figma bubble/image fills. */
+.bf-chat-greeting-card {
+  background-color: #fff;
+  background-image: url('/assets/figma/conversation/greeting-bubble.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+.bf-conversation-composer {
+  background-color: #fff;
+  background-image: url('/assets/figma/conversation/message-input.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+.bf-voice-entry {
+  background-color: #ff844f;
+  background-image: url('/assets/figma/conversation/voice-button.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+.bf-voice-entry svg { opacity: 0; width: 8px; }
+.bf-voice-entry.is-listening {
+  background-image: none;
+}
+
+/* Match Figma node 3:3 geometry and typography more tightly. */
+.bf-conversation-header { height: 76px; padding: 20px 24px 14px; }
+.bf-brand-button { gap: 10px; }
+.bf-brand-button strong {
+  color: #17134b;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.bf-chat-landing { min-height: 650px; padding-top: 5px; }
+.bf-home-hero-copy { padding-left: 4px; }
+.bf-home-hero-copy h1 {
+  color: #16124b;
+  font-size: 58px;
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: -0.07em;
+}
+.bf-home-hero-copy p {
+  margin-top: 3px;
+  color: #77738d;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+.bf-home-mascot-backdrop {
+  width: 182px;
+  height: 182px;
+  top: 18px;
+  right: 1px;
+  border-radius: 50px;
+  background: #f4ecff;
+}
+.bf-home-mascot {
+  width: 180px;
+  height: 180px;
+  top: 18px;
+  right: 2px;
+}
+.bf-chat-greeting-card {
+  width: 196px;
+  min-height: 118px;
+  margin: 50px 0 18px 6px;
+  padding: 16px 20px;
+  border-radius: 24px;
+}
+.bf-chat-greeting-card p {
+  color: #17134b;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.48;
+}
+.bf-quick-question-list { gap: 8px; margin-left: 6px; }
+.bf-quick-question {
+  min-height: 54px;
+  grid-template-columns: 38px minmax(0, 1fr) 24px;
+  gap: 14px;
+  padding: 8px 12px 8px 10px;
+  border-radius: 20px;
+}
+.bf-quick-label {
+  color: #17134b;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.bf-quick-chevron { color: #59546d; stroke-width: 3; }
+
+.bf-bottom-nav .bf-icon-tile {
+  width: 34px;
+  height: 34px;
+}
+.bf-bottom-nav > button,
+.bf-bottom-nav > a { font-weight: 500; }
+.bf-bottom-nav .active { font-weight: 700; }
+
+/* Small raster files should decode immediately; prevent layout shift while they do. */
+.bf-brand-logo,
+.bf-mascot,
+.bf-icon-tile,
+.bf-chat-greeting-card,
+.bf-conversation-composer,
+.bf-voice-entry {
+  image-rendering: auto;
+  contain: paint;
+}
+
+@media (max-width: 390px) {
+  .bf-home-mascot-backdrop { right: -10px; width: 168px; height: 168px; }
+  .bf-home-mascot { right: -10px; width: 168px; height: 168px; }
+  .bf-home-hero-copy h1 { font-size: 52px; }
+}
