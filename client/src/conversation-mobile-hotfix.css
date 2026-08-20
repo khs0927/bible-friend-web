@@ -1,0 +1,65 @@
+/* Final mobile layout guard for the Figma conversation screen.
+ * Loaded after the shared polish and Figma geometry layers so legacy fixed-nav
+ * transforms cannot shift the four-item navigation outside the app frame.
+ */
+
+.bf-bottom-nav {
+  left: 18px !important;
+  right: 18px !important;
+  width: auto !important;
+  transform: none !important;
+  translate: none !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.bf-bottom-nav > button,
+.bf-bottom-nav > a {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 53px;
+  margin: 0 !important;
+  padding: 2px 0 4px !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bf-bottom-nav > button > span:last-child,
+.bf-bottom-nav > a > span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Keep the composer inside narrow iPhone/WebView widths as well. */
+.bf-conversation-composer {
+  left: 22px !important;
+  right: 22px !important;
+  width: auto !important;
+  transform: none !important;
+  translate: none !important;
+  box-sizing: border-box;
+}
+
+@media (max-width: 390px) {
+  .bf-bottom-nav {
+    left: 10px !important;
+    right: 10px !important;
+  }
+
+  .bf-conversation-composer {
+    left: 14px !important;
+    right: 14px !important;
+  }
+}
