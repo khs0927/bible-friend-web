@@ -2,6 +2,7 @@ const MODEL = "gemini-3.1-flash-tts-preview";
 const GEMINI_HOST = "https://generativelanguage.googleapis.com";
 const MAX_TEXT_CHARS = 900;
 const STREAM_TIMEOUT_MS = 20_000;
+const STREAMING_ENABLED = process.env.GEMINI_TTS_ENABLE_31_STREAM === "1";
 
 const VOICES = {
   NARRATOR: "Sulafat",
@@ -66,24 +67,31 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       model: MODEL,
-      streaming: true,
+      streaming: STREAMING_ENABLED,
+      mode: STREAMING_ENABLED ? "gemini-3.1-stream" : "gemini-2.5-direct-primary",
       format: "native-pcm",
       sampleRate: 24000,
       configured: Boolean(process.env.GEMINI_API_KEY),
-      iosChromeStrategy: "device-speech-fallback",
+      iosChromeStrategy: "direct-tts-fallback",
     });
   }
 
   if (req.method !== "POST") return jsonError(res, 405, "method_not_allowed", "POST only");
 
-  // Chrome on iOS uses WebKit but has a different media-activation lifecycle
-  // from Safari/in-app browsers. Streaming PCM through WebAudio can succeed on
-  // the server while remaining silent in CriOS. Fail this path immediately so
-  // the client moves to the direct TTS mutation, which returns an immediate
-  // device-speech fallback for CriOS instead of leaving the child in silence.
+  // Gemini 3.1 TTS is still Preview and currently has a much easier-to-hit
+  // rate limit. Production defaults to the proven Gemini 2.5 direct path.
+  // Set GEMINI_TTS_ENABLE_31_STREAM=1 only when we intentionally want to spend
+  // the 3.1 Preview quota for low-latency streaming.
+  if (!STREAMING_ENABLED) {
+    res.setHeader("X-Bible-Friend-Voice-Strategy", "gemini-2.5-direct-primary");
+    return jsonError(res, 409, "gemini_31_preview_disabled", "Use stable direct TTS");
+  }
+
+  // Chrome on iOS uses WebKit but has a different media-activation lifecycle.
+  // Skip streaming so the client immediately continues to the direct TTS path.
   if (isIOSChrome(req)) {
-    res.setHeader("X-Bible-Friend-Voice-Fallback", "device-speech");
-    return jsonError(res, 409, "ios_chrome_device_fallback", "Use device speech on iOS Chrome");
+    res.setHeader("X-Bible-Friend-Voice-Fallback", "direct-tts");
+    return jsonError(res, 409, "ios_chrome_direct_fallback", "Use direct TTS on iOS Chrome");
   }
 
   const apiKey = process.env.GEMINI_API_KEY || "";
