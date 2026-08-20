@@ -4,29 +4,14 @@ import { useEffect, useRef } from "react";
 
 const INITIAL_GREETING = "안녕! 무엇이 궁금한지 말해줄래? 😊";
 const ASSISTANT_BUBBLE_SELECTOR = ".bf-chat-bubble-row.assistant .bf-chat-bubble";
-const DEVICE_SPEECH_START_GUARD_MS = 450;
 
-function isIOSFamilyBrowser() {
-  if (typeof navigator === "undefined") return false;
-  const userAgent = navigator.userAgent ?? "";
-  const platform = navigator.platform ?? "";
-  const touchPoints = navigator.maxTouchPoints ?? 0;
-  return /iPad|iPhone|iPod/i.test(userAgent) || (platform === "MacIntel" && touchPoints > 1);
-}
-
-function primeIOSSystemSpeech() {
-  if (typeof window === "undefined" || !("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
-  try {
-    // iOS may suppress the first asynchronous speechSynthesis call unless the
-    // speech engine has already been touched directly by a user gesture.
-    const unlock = new SpeechSynthesisUtterance(" ");
-    unlock.lang = "ko-KR";
-    unlock.volume = 0.01;
-    unlock.rate = 1;
-    window.speechSynthesis.speak(unlock);
-  } catch {
-    // Gemini/server audio remains available as the emergency fallback.
-  }
+function voiceRequest(text: string): VoiceRequest {
+  return {
+    text,
+    speaker: "CHILD_FRIEND",
+    emotion: "따뜻하고 친근한 격려",
+    style: "자연스럽고 또렷하게, 문장 사이에 짧게 호흡하며 읽어 줘.",
+  };
 }
 
 export default function ConversationAutoTts() {
@@ -53,18 +38,10 @@ export default function ConversationAutoTts() {
     const queue = queueRef.current;
     if (!queue || typeof document === "undefined") return;
 
-    const preferSystemSpeech = isIOSFamilyBrowser() && typeof window !== "undefined" && "speechSynthesis" in window;
-    let systemSpeechPrimed = false;
-
-    // Prime both media playback and iOS system speech during the child's first
-    // gesture. Later answers arrive asynchronously, after the network request.
-    const primeFromGesture = () => {
-      queue.prime();
-      if (preferSystemSpeech && !systemSpeechPrimed) {
-        systemSpeechPrimed = true;
-        primeIOSSystemSpeech();
-      }
-    };
+    // Prime WebAudio/HTMLAudio while the child's tap is still a trusted user
+    // gesture. Do not cancel this primed media element before the async Gemini
+    // response arrives; iOS otherwise blocks the later audio.play() call.
+    const primeFromGesture = () => queue.prime();
     document.addEventListener("pointerdown", primeFromGesture, true);
     document.addEventListener("keydown", primeFromGesture, true);
 
@@ -74,32 +51,23 @@ export default function ConversationAutoTts() {
 
       const text = element.textContent?.trim() ?? "";
       if (!text || text === INITIAL_GREETING) return;
-
-      const request: VoiceRequest = {
-        text,
-        speaker: "CHILD_FRIEND",
-        emotion: "따뜻하고 친근한 격려",
-        style: "자연스럽고 또렷하게, 문장 사이에 짧게 호흡하며 읽어 줘.",
-      };
-
-      if (preferSystemSpeech) {
-        // On iPhone/iPad, use the OS Korean voice first. This path uses no
-        // Gemini TTS request, so it cannot be silenced by Gemini rate limits.
-        queue.speakBrowserNow(request);
-
-        // Some iOS WebViews can silently suppress speech without emitting an
-        // error. Only in that case do we fall back to the Gemini/server queue.
-        window.setTimeout(() => {
-          if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
-          console.warn("[Bible Friend Auto TTS] iOS system speech did not start; using server fallback");
-          queue.enqueue(request);
-        }, DEVICE_SPEECH_START_GUARD_MS);
-        return;
-      }
-
-      // Desktop/Android keep the higher-quality Gemini streaming path first.
-      queue.enqueue(request);
+      queue.enqueue(voiceRequest(text));
     };
+
+    // The visible "음성으로 듣기" button did not previously have a handler.
+    // Handle it globally so the replay starts from the same trusted tap on iOS.
+    const replayFromClick = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest("button");
+      if (!button || !button.textContent?.includes("음성으로 듣기")) return;
+      const bubbles = document.querySelectorAll(ASSISTANT_BUBBLE_SELECTOR);
+      const latest = bubbles.item(bubbles.length - 1);
+      const text = latest?.textContent?.trim() ?? "";
+      if (!text || text === INITIAL_GREETING) return;
+      queue.cancel();
+      queue.enqueue(voiceRequest(text));
+    };
+    document.addEventListener("click", replayFromClick, true);
 
     const scanNode = (node: Node) => {
       if (!(node instanceof Element)) return;
@@ -127,6 +95,7 @@ export default function ConversationAutoTts() {
       observer.disconnect();
       document.removeEventListener("pointerdown", primeFromGesture, true);
       document.removeEventListener("keydown", primeFromGesture, true);
+      document.removeEventListener("click", replayFromClick, true);
       queue.cancel();
     };
   }, []);
