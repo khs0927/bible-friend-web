@@ -1,10 +1,10 @@
-const BIBLE_FRIEND_GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts";
-const FAST_VOICE_FALLBACK_TIMEOUT_MS = 1_200;
+const BIBLE_FRIEND_GEMINI_TTS_MODEL = "gemini-3.1-flash-tts-preview";
+const GEMINI_TTS_REQUEST_TIMEOUT_MS = 8_000;
 
 function boundedVoiceTimeout(value: string | undefined) {
-  const configured = Number(value ?? FAST_VOICE_FALLBACK_TIMEOUT_MS);
-  if (!Number.isFinite(configured) || configured <= 0) return FAST_VOICE_FALLBACK_TIMEOUT_MS;
-  return Math.min(configured, FAST_VOICE_FALLBACK_TIMEOUT_MS);
+  const configured = Number(value ?? GEMINI_TTS_REQUEST_TIMEOUT_MS);
+  if (!Number.isFinite(configured) || configured <= 0) return GEMINI_TTS_REQUEST_TIMEOUT_MS;
+  return Math.min(configured, GEMINI_TTS_REQUEST_TIMEOUT_MS);
 }
 
 export const ENV = {
@@ -17,9 +17,10 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-  // Keep Gemini as the preferred expressive voice, but never make a child wait
-  // several seconds in silence. If Gemini is slow/rate-limited the client can
-  // immediately continue with its built-in browser speech fallback.
+  // Gemini 3.1 is the current preferred expressive TTS model and supports
+  // low-latency streaming. The direct fallback gets enough time to complete on
+  // browsers where streaming audio is unavailable; the client still starts its
+  // browser fallback race earlier if Gemini is unusually slow.
   geminiTtsModel: BIBLE_FRIEND_GEMINI_TTS_MODEL,
   geminiTtsTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_TIMEOUT_MS),
   geminiTtsHardTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_HARD_TIMEOUT_MS),

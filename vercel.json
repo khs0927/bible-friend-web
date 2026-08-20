@@ -28,20 +28,8 @@
       "dest": "/assets/game-icon-trophy.svg"
     },
     {
-      "src": "/api/trpc/tts\\.synthesize",
-      "dest": "/api/voice-tts"
-    },
-    {
       "src": "/api/voice-tts-stream",
       "dest": "/api/voice-tts-stream"
-    },
-    {
-      "src": "/api/voice-health",
-      "dest": "/api/voice-tts"
-    },
-    {
-      "src": "/api/voice-probe",
-      "dest": "/api/voice-tts"
     },
     {
       "src": "/api/(?<path>.*)",
