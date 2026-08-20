@@ -5,10 +5,12 @@ import { Route, Switch } from "wouter";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ConversationThemeSwitcher from "./components/ConversationThemeSwitcher";
+import StoryNavBridge from "./components/StoryNavBridge";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ConversationHome from "./pages/ConversationHome";
 import ComicAdventure from "./pages/ComicAdventure";
+import StoryExperience, { NoahStorybook } from "./pages/StoryExperience";
 import "./growth/growth-fallback.css";
 import "./growth/growth-glb-runtime.css";
 
@@ -34,6 +36,8 @@ function Router() {
         <ConversationHome />
         <ConversationThemeSwitcher />
       </Route>
+      <Route path={"/story/noah"} component={NoahStorybook} />
+      <Route path={"/story"} component={StoryExperience} />
       <Route path={"/legacy-home"} component={Home} />
       <Route path={"/growth-game"}>
         <Suspense fallback={<GrowthLoading />}>
@@ -63,6 +67,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
+          <StoryNavBridge />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

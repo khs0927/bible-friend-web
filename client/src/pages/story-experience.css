@@ -1,0 +1,170 @@
+.bf-story-route {
+  --bf-story-cream: #fff6eb;
+  --bf-story-purple: #6f3cff;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-x: hidden;
+  background: #e8e8e8;
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, -apple-system, sans-serif;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+}
+
+.bf-story-phone {
+  position: relative;
+  width: min(100vw, 480px);
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  background: var(--bf-story-cream);
+  box-shadow: 0 18px 48px rgba(52, 36, 92, 0.13);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bf-story-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bf-story-cream);
+}
+
+.bf-story-screen-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  display: block;
+  object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.bf-story-hotspot,
+.bf-story-nav-hotspots button {
+  position: absolute;
+  z-index: 4;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bf-story-hotspot:focus-visible,
+.bf-story-nav-hotspots button:focus-visible {
+  outline: 3px solid rgba(111, 60, 255, 0.72);
+  outline-offset: -3px;
+  border-radius: 18px;
+}
+
+.bf-edge-prev,
+.bf-edge-next {
+  top: 14%;
+  bottom: 14%;
+  width: 4.5%;
+  opacity: 0.001;
+}
+
+.bf-edge-prev { left: 0; }
+.bf-edge-next { right: 0; }
+
+.bf-hotspot-story1-noah {
+  left: 3.5%;
+  top: 64.2%;
+  width: 46%;
+  height: 18.4%;
+}
+
+.bf-hotspot-story2-next {
+  right: 4%;
+  top: 78.1%;
+  width: 14%;
+  height: 8.5%;
+}
+
+.bf-hotspot-story3-noah {
+  left: 3%;
+  top: 43.2%;
+  width: 31.5%;
+  height: 19.5%;
+}
+
+.bf-hotspot-story4-start {
+  left: 3.5%;
+  top: 78.2%;
+  width: 46%;
+  height: 7.8%;
+}
+
+.bf-hotspot-story5-continue {
+  left: 3.5%;
+  top: 83.2%;
+  width: 93%;
+  height: 6.7%;
+}
+
+.bf-story-nav-hotspots {
+  position: absolute;
+  z-index: 5;
+  left: 2.5%;
+  right: 2.5%;
+  bottom: 0.9%;
+  height: 10.7%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.bf-story-nav-hotspots button {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+}
+
+.bf-noah-route {
+  background: #eee9e3;
+}
+
+.bf-noah-back {
+  left: 3%;
+  bottom: 2.6%;
+  width: 18%;
+  height: 9%;
+}
+
+.bf-noah-continue {
+  left: 23.5%;
+  bottom: 2.2%;
+  width: 53%;
+  height: 9.7%;
+}
+
+.bf-noah-next {
+  right: 3%;
+  bottom: 2.6%;
+  width: 18%;
+  height: 9%;
+}
+
+@media (min-width: 481px) {
+  .bf-story-route {
+    padding: 24px 0;
+  }
+
+  .bf-story-phone {
+    border-radius: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-story-screen-image {
+    transition: none;
+  }
+}
