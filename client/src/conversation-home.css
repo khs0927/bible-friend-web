@@ -1,0 +1,544 @@
+/* ConversationHome visual layer — mobile-first Bible Friend chat experience */
+:root {
+  --bf-chat-ink: #342d4c;
+  --bf-chat-muted: #9a91a3;
+  --bf-chat-violet: #7560d4;
+  --bf-chat-violet-2: #9d8be7;
+  --bf-chat-orange: #ffa20f;
+  --bf-chat-gold: #f1c54f;
+  --bf-chat-paper: #fffaf4;
+  --bf-chat-white: rgba(255,255,255,.95);
+}
+
+.bf-conversation-app {
+  min-height: 100dvh;
+  color: var(--bf-chat-ink);
+  background: #fff8f2;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+
+.bf-conversation-header {
+  position: sticky;
+  top: 0;
+  z-index: 70;
+  width: min(100%, 760px);
+  min-height: 92px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(110,83,153,.05);
+  background: rgba(255,249,242,.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.bf-conversation-header::after {
+  content: "🎁  보상·옷장  👗";
+  position: absolute;
+  right: 18px;
+  top: 21px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  border: 1.5px solid #e3b326;
+  border-radius: 18px;
+  color: #76572c;
+  background: linear-gradient(180deg,#fff4a4,#ffef8c);
+  box-shadow: 0 7px 17px rgba(200,148,28,.12);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.bf-brand-button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bf-chat-ink);
+  font: inherit;
+}
+
+.bf-brand-button strong {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.045em;
+}
+
+.bf-brand-icon-slot {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  overflow: hidden;
+  border-radius: 17px;
+  color: transparent;
+  background-image: url('/assets/bible-friend-mascot.svg'), linear-gradient(145deg,#ffbd72,#7252d7);
+  background-repeat: no-repeat;
+  background-position: center 19%;
+  background-size: 88px auto, cover;
+  box-shadow: 0 7px 18px rgba(92,63,151,.18);
+}
+
+.bf-conversation-main {
+  position: relative;
+  width: min(100%, 760px);
+  min-height: calc(100dvh - 92px);
+  margin: 0 auto;
+  padding: 18px 20px calc(210px + env(safe-area-inset-bottom,0px));
+  background:
+    linear-gradient(rgba(255,247,236,.12),rgba(255,247,236,.12)),
+    url('/assets/bible-friend-chat-bg.svg') center top / cover no-repeat;
+  overflow: hidden;
+}
+
+.bf-chat-landing {
+  position: relative;
+  min-height: calc(100dvh - 320px);
+}
+
+.bf-chat-landing-copy { display: none; }
+
+.bf-chat-hero {
+  position: relative;
+  min-height: 360px;
+  padding-top: 88px;
+}
+
+.bf-chat-hero::before {
+  content: "✦";
+  position: absolute;
+  left: 24px;
+  top: 147px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  color: white;
+  background: linear-gradient(145deg,#7858db,#ff9965);
+  box-shadow: 0 10px 22px rgba(109,75,194,.16);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.bf-chat-hero::after {
+  content: "🔊";
+  position: absolute;
+  right: 4px;
+  top: 18px;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(145deg,#8068dd,#6250bd);
+  box-shadow: 0 12px 28px rgba(90,69,168,.18);
+  font-size: 22px;
+}
+
+.bf-chat-greeting-card {
+  position: relative;
+  z-index: 2;
+  width: min(70%, 430px);
+  margin-left: 70px;
+  padding: 23px 25px;
+  border: 1px solid rgba(100,81,151,.05);
+  border-radius: 25px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 13px 32px rgba(95,71,132,.09);
+}
+
+.bf-chat-greeting-card p {
+  margin: 0;
+  font-size: clamp(18px, 4.8vw, 26px);
+  line-height: 1.72;
+  letter-spacing: -.045em;
+  font-weight: 500;
+}
+
+.bf-mascot-slot {
+  position: absolute;
+  z-index: 1;
+  right: -24px;
+  top: 58px;
+  width: 175px;
+  height: 245px;
+  background: url('/assets/bible-friend-mascot.svg') center bottom / contain no-repeat;
+  filter: drop-shadow(0 18px 22px rgba(89,59,159,.14));
+}
+
+.bf-quick-question-list {
+  display: none;
+}
+
+.bf-chat-landing::after {
+  content: "📖  코믹 어드벤처   ›";
+  position: absolute;
+  right: 0;
+  bottom: 46px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 21px;
+  border: 2px solid var(--bf-chat-gold);
+  border-radius: 999px;
+  color: #69417f;
+  background: linear-gradient(135deg,rgba(255,248,226,.96),rgba(247,237,255,.96));
+  box-shadow: 0 8px 24px rgba(98,70,143,.10);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.bf-conversation-composer {
+  position: fixed;
+  z-index: 95;
+  left: 50%;
+  bottom: calc(103px + env(safe-area-inset-bottom,0px));
+  transform: translateX(-50%);
+  width: min(calc(100% - 32px), 720px);
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 1fr 56px 56px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px 7px 15px;
+  border: 1px solid rgba(101,83,151,.08);
+  border-radius: 26px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 15px 38px rgba(75,58,119,.15);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.bf-conversation-composer textarea {
+  width: 100%;
+  min-height: 46px;
+  max-height: 110px;
+  resize: none;
+  padding: 10px 4px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--bf-chat-ink);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.bf-conversation-composer textarea::placeholder { color: #b4acb8; }
+
+.bf-conversation-composer button {
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: transparent;
+  overflow: hidden;
+  font-size: 0;
+  box-shadow: none;
+}
+
+.bf-conversation-composer .bf-voice-entry {
+  background: linear-gradient(145deg,#ffb51e,#ff9800);
+}
+.bf-conversation-composer .bf-voice-entry::before {
+  content: "🎙";
+  color: white;
+  font-size: 22px;
+}
+.bf-conversation-composer button:last-child {
+  background: linear-gradient(145deg,#a798e9,#8371d7);
+}
+.bf-conversation-composer button:last-child::before {
+  content: "➤";
+  transform: rotate(-35deg);
+  color: white;
+  font-size: 24px;
+  font-weight: 800;
+}
+.bf-conversation-composer button:disabled { opacity: .54; }
+
+.bf-bottom-nav.bf-bottom-nav-four {
+  position: fixed;
+  z-index: 100;
+  left: 50%;
+  bottom: max(8px, env(safe-area-inset-bottom,0px));
+  transform: translateX(-50%);
+  width: min(calc(100% - 22px), 736px);
+  min-height: 86px;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  align-items: center;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,.9);
+  border-radius: 28px;
+  background: rgba(255,253,250,.97);
+  box-shadow: 0 15px 42px rgba(63,48,99,.16);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.bf-bottom-nav.bf-bottom-nav-four > button,
+.bf-bottom-nav.bf-bottom-nav-four > a {
+  min-width: 0;
+  min-height: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 18px;
+  text-decoration: none;
+  color: #8f879a;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.bf-bottom-nav.bf-bottom-nav-four .bf-bottom-icon-slot {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #f2eef8;
+  font-size: 20px;
+  box-shadow: 0 4px 11px rgba(93,74,145,.06);
+}
+.bf-bottom-nav.bf-bottom-nav-four [data-tab="conversation"] .bf-bottom-icon-slot { background: linear-gradient(145deg,#8b75df,#684fc6); }
+.bf-bottom-nav.bf-bottom-nav-four [data-tab="story"] .bf-bottom-icon-slot { background: #fff0e6; }
+.bf-bottom-nav.bf-bottom-nav-four [data-tab="growth"] .bf-bottom-icon-slot { background: #fff5cc; }
+.bf-bottom-nav.bf-bottom-nav-four [data-tab="record"] .bf-bottom-icon-slot { background: #e9f5f1; }
+.bf-bottom-nav.bf-bottom-nav-four .active { color: #6652bc; }
+
+/* Chat thread */
+.bf-chat-thread,
+.bf-voice-mode,
+.bf-answer-detail,
+.bf-conversation-history {
+  position: relative;
+  z-index: 2;
+  min-height: calc(100dvh - 330px);
+}
+
+.bf-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 10px 0 18px;
+}
+.bf-chat-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.bf-chat-bubble-row.user { flex-direction: row-reverse; }
+.bf-chat-avatar-slot {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 7px 18px rgba(87,66,130,.10);
+}
+.bf-chat-bubble {
+  max-width: min(78%, 520px);
+  padding: 14px 16px;
+  border-radius: 21px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 8px 22px rgba(77,58,115,.08);
+  line-height: 1.7;
+  font-size: 15px;
+}
+.bf-chat-bubble-row.user .bf-chat-bubble {
+  color: #fff;
+  background: linear-gradient(145deg,#846ed8,#6651bc);
+}
+.bf-chat-thinking {
+  width: max-content;
+  max-width: 90%;
+  padding: 10px 14px;
+  border-radius: 15px;
+  color: #776b86;
+  background: rgba(255,255,255,.76);
+  font-size: 12px;
+}
+
+.bf-verse-card,
+.bf-answer-verse-card,
+.bf-answer-explanation-card,
+.bf-history-card {
+  border: 1px solid rgba(108,81,153,.08);
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 10px 28px rgba(80,58,119,.09);
+}
+.bf-verse-card {
+  margin-top: 10px;
+  padding: 18px;
+  border-radius: 22px;
+}
+.bf-verse-card h2 { margin: 8px 0 6px; font-size: 18px; }
+.bf-verse-card p { margin: 0; color: #756b7f; line-height: 1.65; font-size: 13px; }
+
+.bf-followup-actions,
+.bf-answer-actions,
+.bf-voice-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.bf-followup-actions button,
+.bf-answer-actions button,
+.bf-voice-actions button,
+.bf-history-filters button {
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 1px solid rgba(116,91,159,.10);
+  border-radius: 14px;
+  color: #665676;
+  background: rgba(255,255,255,.9);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+/* Voice */
+.bf-voice-mode { text-align: center; padding-top: 14px; }
+.bf-voice-mode-copy h1 { margin: 0; font-size: 30px; }
+.bf-voice-mode-copy p { margin: 7px 0 18px; color: #81768a; font-size: 13px; }
+.bf-voice-mascot-slot,
+.bf-answer-mascot-slot {
+  width: 170px;
+  height: 220px;
+  margin: 0 auto;
+  background: url('/assets/bible-friend-mascot.svg') center bottom / contain no-repeat;
+  filter: drop-shadow(0 16px 22px rgba(91,64,154,.15));
+}
+.bf-voice-status {
+  width: min(310px,90%);
+  margin: -18px auto 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.93);
+  box-shadow: 0 10px 24px rgba(75,56,113,.09);
+}
+.bf-voice-status span { color: #8b8194; font-size: 12px; }
+.bf-voice-mode blockquote {
+  margin: 14px auto;
+  width: min(440px,95%);
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.87);
+  box-shadow: 0 8px 22px rgba(75,56,113,.07);
+  font-size: 17px;
+  line-height: 1.65;
+}
+.bf-voice-actions { justify-content: center; }
+
+/* Answer detail */
+.bf-answer-detail { padding-top: 4px; }
+.bf-answer-detail .bf-back-button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255,255,255,.85);
+  color: #6651bc;
+  font-size: 30px;
+}
+.bf-answer-hero {
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+.bf-answer-hero h1 { margin: 0; font-size: clamp(24px,7vw,36px); letter-spacing: -.045em; }
+.bf-answer-hero p { margin: 8px 0 0; color: #81758b; }
+.bf-answer-mascot-slot { width: 145px; height: 170px; }
+.bf-answer-verse-card,
+.bf-answer-explanation-card { margin-top: 10px; padding: 18px; border-radius: 21px; }
+.bf-answer-verse-card h2,
+.bf-answer-explanation-card h2 { margin: 6px 0; }
+.bf-answer-verse-card p,
+.bf-answer-explanation-card p { margin: 0; color: #756a7e; line-height: 1.7; }
+
+/* History */
+.bf-history-heading h1 { margin: 4px 0; font-size: 30px; }
+.bf-history-heading p { margin: 0 0 14px; color: #81768a; }
+.bf-history-filters {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 9px;
+}
+.bf-history-filters button { flex: 0 0 auto; }
+.bf-history-list { display: grid; gap: 10px; }
+.bf-history-card {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 11px;
+  align-items: start;
+  padding: 15px;
+  border-radius: 19px;
+}
+.bf-history-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff1df;
+  font-size: 22px;
+}
+.bf-history-card h2 { margin: 0 0 4px; font-size: 14px; }
+.bf-history-card p { margin: 0; color: #81768a; font-size: 12px; line-height: 1.55; }
+.bf-history-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; color: #9c93a4; font-size: 10px; }
+
+@media (max-width: 520px) {
+  .bf-conversation-header { min-height: 82px; padding: 11px 14px; }
+  .bf-conversation-header::after { right: 12px; top: 17px; min-height: 44px; padding-inline: 12px; font-size: 11px; border-radius: 16px; }
+  .bf-brand-icon-slot { width: 48px; height: 48px; flex-basis: 48px; background-size: 78px auto,cover; }
+  .bf-brand-button strong { font-size: 18px; }
+  .bf-conversation-main { min-height: calc(100dvh - 82px); padding: 14px 13px calc(198px + env(safe-area-inset-bottom,0px)); }
+  .bf-chat-hero { min-height: 330px; padding-top: 83px; }
+  .bf-chat-hero::before { left: 13px; top: 138px; width: 42px; height: 42px; border-radius: 14px; font-size: 21px; }
+  .bf-chat-hero::after { right: 1px; top: 13px; width: 50px; height: 50px; border-radius: 16px; font-size: 19px; }
+  .bf-chat-greeting-card { width: 72%; margin-left: 52px; padding: 19px 20px; border-radius: 22px; }
+  .bf-chat-greeting-card p { font-size: 18px; line-height: 1.72; }
+  .bf-mascot-slot { right: -30px; top: 62px; width: 150px; height: 220px; }
+  .bf-chat-landing::after { right: 0; bottom: 28px; min-height: 48px; padding-inline: 17px; font-size: 12px; }
+  .bf-conversation-composer { width: calc(100% - 24px); bottom: calc(94px + env(safe-area-inset-bottom,0px)); min-height: 60px; grid-template-columns: 1fr 50px 50px; border-radius: 23px; }
+  .bf-conversation-composer button { width: 47px; height: 47px; border-radius: 16px; }
+  .bf-bottom-nav.bf-bottom-nav-four { width: calc(100% - 12px); min-height: 80px; border-radius: 26px; padding: 6px 6px; }
+  .bf-bottom-nav.bf-bottom-nav-four > button,
+  .bf-bottom-nav.bf-bottom-nav-four > a { min-height: 64px; font-size: 10px; }
+  .bf-bottom-nav.bf-bottom-nav-four .bf-bottom-icon-slot { width: 36px; height: 36px; font-size: 18px; }
+  .bf-answer-hero { grid-template-columns: 1fr 115px; }
+  .bf-answer-mascot-slot { width: 110px; height: 140px; }
+}
+
+@media (max-width: 380px) {
+  .bf-conversation-header::after { content: "🎁 보상"; }
+  .bf-chat-greeting-card { margin-left: 45px; width: 74%; padding-inline: 16px; }
+  .bf-mascot-slot { right: -38px; width: 138px; }
+}

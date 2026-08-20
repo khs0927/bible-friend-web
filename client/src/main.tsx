@@ -8,6 +8,7 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 import "./bible-friend-polish.css";
+import "./conversation-home.css";
 
 const queryClient = new QueryClient();
 
