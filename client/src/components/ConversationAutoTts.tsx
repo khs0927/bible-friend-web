@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 
 const INITIAL_GREETING = "안녕! 무엇이 궁금한지 말해줄래? 😊";
 const ASSISTANT_BUBBLE_SELECTOR = ".bf-chat-bubble-row.assistant .bf-chat-bubble";
-const REPLAY_TTS_EVENT = "bible-friend:replay-tts";
 
 function voiceRequest(text: string): VoiceRequest {
   return {
@@ -55,16 +54,20 @@ export default function ConversationAutoTts() {
       queue.enqueue(voiceRequest(text));
     };
 
-    const replayLatest = (event: Event) => {
-      const detail = (event as CustomEvent<{ text?: string }>).detail;
-      const text = detail?.text?.trim() ?? "";
-      if (!text) return;
-      // This event is dispatched synchronously by the visible replay button,
-      // so queue.prime() inside enqueue still runs during the user's tap.
+    // The visible "음성으로 듣기" button did not previously have a handler.
+    // Handle it globally so the replay starts from the same trusted tap on iOS.
+    const replayFromClick = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest("button");
+      if (!button || !button.textContent?.includes("음성으로 듣기")) return;
+      const bubbles = document.querySelectorAll(ASSISTANT_BUBBLE_SELECTOR);
+      const latest = bubbles.item(bubbles.length - 1);
+      const text = latest?.textContent?.trim() ?? "";
+      if (!text || text === INITIAL_GREETING) return;
       queue.cancel();
       queue.enqueue(voiceRequest(text));
     };
-    window.addEventListener(REPLAY_TTS_EVENT, replayLatest as EventListener);
+    document.addEventListener("click", replayFromClick, true);
 
     const scanNode = (node: Node) => {
       if (!(node instanceof Element)) return;
@@ -92,7 +95,7 @@ export default function ConversationAutoTts() {
       observer.disconnect();
       document.removeEventListener("pointerdown", primeFromGesture, true);
       document.removeEventListener("keydown", primeFromGesture, true);
-      window.removeEventListener(REPLAY_TTS_EVENT, replayLatest as EventListener);
+      document.removeEventListener("click", replayFromClick, true);
       queue.cancel();
     };
   }, []);
