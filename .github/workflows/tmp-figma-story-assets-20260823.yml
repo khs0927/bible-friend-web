@@ -1,3 +1,4 @@
+# trigger: 2026-08-23T03:24+09:00
 name: tmp-figma-story-assets-20260823
 on:
   push:
