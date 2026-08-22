@@ -11,9 +11,6 @@
     },
     "api/voice-tts-stream.js": {
       "maxDuration": 30
-    },
-    "api/voice-prayer-demo.js": {
-      "maxDuration": 30
     }
   },
   "routes": [
@@ -52,10 +49,6 @@
     {
       "src": "/api/voice-probe",
       "dest": "/api/voice-tts31"
-    },
-    {
-      "src": "/api/voice-prayer-demo",
-      "dest": "/api/voice-prayer-demo"
     },
     {
       "src": "/api/(?<path>.*)",
