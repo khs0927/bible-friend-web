@@ -1,6 +1,39 @@
 @import './records-layout-fix.css';
 
-.records-composer{display:none!important}
+/* Records is not a chat room: the message/voice composer must never render. */
+.records-layer .records-composer,
+.records-shell > .records-composer,
+.records-composer{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* Preserve the exact transparent Figma PNGs without cropping or stretching. */
+.records-layer .records-brand-logo,
+.records-layer .records-settings,
+.records-layer .records-nav-icon,
+.records-layer .records-card-icon,
+.records-layer .records-prayer-feature-art,
+.records-layer .records-shortcut-art{
+  object-fit:contain!important;
+  object-position:center!important;
+}
+
+/* 07_기도 Figma frame sizes: shortcut art 42×42, today-prayer art 66×66. */
+.records-layer .records-prayer-shortcuts .records-shortcut-art{
+  width:42px!important;
+  height:42px!important;
+  max-width:42px!important;
+  flex:0 0 42px!important;
+  margin:0 auto 3px!important;
+}
+.records-layer .records-today-prayer .records-prayer-feature-art{
+  width:66px!important;
+  height:66px!important;
+  max-width:66px!important;
+}
+
 .records-main{bottom:74px}
 .records-toast{bottom:78px}
 @media(max-width:520px){
