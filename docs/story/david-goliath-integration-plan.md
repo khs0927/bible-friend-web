@@ -1,80 +1,99 @@
 # 다윗과 골리앗 스토리 통합 계획
 
-## 목적
+## 목표
 
-`스토리` 탭의 **다윗과 골리앗** 항목에 30장의 세로형 이야기 페이지를 연결한다. 현재 다른 UI/기능 작업이 동시에 진행 중이므로, 우선 런타임 코드를 건드리지 않고 에셋만 독립 브랜치에 적재한다.
+`스토리` 탭의 **다윗과 골리앗** 항목에 30장의 독립 생성 원본 페이지를 연결한다. 다른 UI 작업과 충돌하지 않도록 현재 PR은 asset-only staging으로 유지하고, 런타임 리더 연결은 별도 후속 PR에서 진행한다.
 
-## 현재 단계 — Asset only
+## 2026-08-22 현재 상태
 
 - 작업 브랜치: `assets/david-goliath-story-pages`
 - 기준 브랜치: `main`
-- 에셋 위치: `client/public/assets/story/david-goliath/`
-- 파일 규칙: `page-01.png` ~ `page-30.png`
-- 원본 제작 비율: 세로 3:4
-- 1차 배치: `page-01.png` ~ `page-10.png`
-- 이미지에는 상단 장면 제목, 큰 어린이용 나레이션, 성경친구 캐릭터가 이미 포함되어 있다.
-- 현재 단계에서는 `client/src`, 라우터, Story UI, CSS를 수정하지 않는다.
+- GitHub 에셋 위치: `client/public/assets/story/david-goliath/`
+- 페이지 규칙: `page-01.png` ~ `page-30.png`
+- 30개 독립 PNG 원본을 영구 자산 라이브러리에 보관 완료
+- `source-assets.json`에 30개 원본의 durable URL, SHA-256, 원본 폭/높이를 기록
+- `manifest.json`을 30페이지 기준으로 확장
+- 원본을 GitHub 경로로 byte-for-byte 동기화하고 SHA/PNG 크기를 검증하는 Actions workflow를 추가
+- 런타임 `client/src`, Story UI, 라우터, CSS는 아직 수정하지 않음
 
-## 충돌 방지 원칙
+## 원본 품질 원칙
 
-1. 기존 `client/public/assets/story/`의 Noah 및 공용 `story-*` 파일과 이름이 겹치지 않도록 `david-goliath/` 전용 하위 디렉터리를 사용한다.
-2. 현재 `StoryExperience.tsx`, `App.tsx`, 스토리 CSS에는 손대지 않는다.
-3. 에셋 PR은 Draft 상태로 유지하고, 병렬 Story UI 작업이 main에 반영된 뒤 최신 main을 기준으로 재검증한다.
-4. 1–10 / 11–20 / 21–30 배치를 독립 커밋으로 관리해 필요 시 배치 단위로 되돌릴 수 있게 한다.
-5. 생성 이미지를 스프라이트 시트에서 크롭하거나 런타임에서 재가공하지 않는다. 각 페이지의 독립 원본을 그대로 저장한다.
+1. 스프라이트/목업을 크롭해서 페이지를 만들지 않는다.
+2. 생성된 각 페이지 독립 PNG 원본만 사용한다.
+3. 업로드 과정에서 resize, JPEG 변환, 재압축을 하지 않는다.
+4. SHA-256을 기준으로 자산 바이트 일치 여부를 검증한다.
+5. 앱 렌더링은 `object-fit: contain`을 사용하며 화면을 채우기 위해 이미지를 자르지 않는다.
 
-## 현재 Story 구조와 후속 연결 지점
+## 페이지 크기
 
-현재 Story 카탈로그에는 `id: "david"`, 제목 `다윗과 골리앗` 항목이 이미 존재한다. 전용 리더가 완성되는 시점에 다음 순서로 연결한다.
+- page-01 ~ page-10: 1086 × 1448, authored 3:4
+- page-11 ~ page-30: 941 × 1672, authored portrait
 
-1. 에셋 브랜치를 최신 `main` 위로 rebase한다.
-2. `page-01` ~ `page-30`을 읽는 전용 데이터/manifest 계층을 추가한다.
-3. Story UI의 `david` 카드가 전용 상세/리더로 이동하도록 연결한다.
-4. 전용 경로는 병렬 Story 작업 결과를 확인한 뒤 `/story/david` 또는 기존 상세 라우팅 패턴 중 충돌이 가장 적은 방식을 선택한다.
-5. 리더에서는 좌우 스와이프, 이전/다음, 현재 페이지 `n / 30`, 홈 이동을 제공한다.
+따라서 리더는 단일 전역 aspect ratio를 강제하지 않고 `manifest.json`의 페이지별 `width` / `height`를 사용해야 한다. 서로 다른 원본 비율을 맞추기 위해 crop/resize하지 않는다.
 
-## 모바일 이미지 표시 규칙
+## 현재 Story 구조와 연결 지점
 
-- authored 3:4 세로 구도를 유지한다.
-- `object-fit: contain`을 기본으로 하여 제목이나 나레이션이 잘리지 않게 한다.
-- 첫 장은 우선 로딩하고 다음 1–2장만 미리 불러온다.
-- 나머지 페이지는 lazy loading하여 초기 로딩 비용을 줄인다.
-- 앱에서 이미지 위에 동일 텍스트를 중복 렌더링하지 않는다. 현재 글자와 성경친구는 이미지 자체에 포함된 아트워크를 사용한다.
-- 접근성용 `alt` 텍스트는 manifest의 장면 제목을 사용한다.
+현재 Story 카탈로그에는 `id: "david"`, 제목 `다윗과 골리앗` 항목이 이미 존재한다. 30개 에셋 검증 후 다음 순서로 연결한다.
 
-## 성능 기준
+1. asset PR을 최신 `main` 기준으로 재검증한다.
+2. 별도 reader 브랜치/PR을 만든다.
+3. `manifest.json`을 읽는 David 전용 reader를 구현한다.
+4. Story UI의 `david` 카드가 전용 reader로 이동하도록 연결한다.
+5. 현재 main의 Story 라우팅 패턴을 확인해 `/story/david` 또는 기존 상세 라우팅 체계를 사용한다.
 
-- 원본 페이지를 임의로 리사이즈하거나 크롭하지 않는다.
-- 필요 시 배포 최적화 포맷은 원본과 동일한 픽셀 크기를 유지한 상태에서 별도 산출물로 만든다.
-- iPhone Safari와 Android Chrome에서 화면 잘림, CLS, 스와이프 충돌을 확인한다.
-- 첫 화면 진입 시 전체 30장을 한 번에 다운로드하지 않는다.
+## 모바일 reader 요구사항
+
+- 휴대폰 세로 화면을 최우선으로 한다.
+- 페이지 원본 전체가 항상 보이도록 `object-fit: contain`.
+- 좌/우 swipe + 이전/다음 버튼.
+- 현재 페이지 `n / 30` 표시.
+- 뒤로가기 및 홈 이동.
+- 첫 페이지 우선 로딩, 앞뒤 1~2장만 prefetch, 나머지 lazy loading.
+- 이미지에 이미 들어 있는 제목/나레이션/성경친구를 HTML로 중복 표시하지 않는다.
+- 접근성 `alt`는 manifest의 장면 제목을 사용한다.
+
+## 성능/QA
+
+- 첫 진입 시 30장을 한꺼번에 다운로드하지 않는다.
+- 원본 파일은 유지하고 필요할 경우 별도의 캐시/전송 최적화만 적용한다.
+- iPhone Safari와 Android Chrome에서 이미지 잘림과 스와이프 충돌을 검사한다.
+- 최소 확인 뷰포트: 390×844, 360×800, 412×915.
+- page-01, page-10, page-11, page-20, page-21, page-30 경계 전환을 별도로 확인한다.
 
 ## 병합 순서
 
-### PR A — 현재 PR
+### PR A — Asset staging (현재)
 
-에셋과 manifest, 통합 계획만 포함한다. 런타임 변경 없음.
+- 30개 원본 source registry
+- manifest
+- 동기화/무결성 검증 workflow
+- 통합 계획
+- 런타임 변경 없음
 
-### PR B — Story UI 기준선 확정 후
+### PR B — David Story Reader
 
-- 전용 David story reader/detail 연결
-- Story 카드 클릭 동작 연결
-- 필요한 최소 라우팅/CSS만 변경
-- PR A의 파일 경로를 그대로 사용
+- 최신 main에서 시작
+- Story 카드 `david` 연결
+- 30페이지 reader
+- swipe / navigation / progress / prefetch / lazy loading
+- 모바일 QA
 
-### PR C — 선택 사항
+### PR C — 선택 기능
 
-- TTS 자동 읽기
-- 페이지별 재생 상태
-- 이어보기/즐겨찾기/완료 기록
+- 페이지별 TTS 자동 읽기
+- 재생/읽기 상태
+- 이어보기
+- 즐겨찾기/완료 기록
 
 ## 완료 조건
 
-- [ ] 1–10장 원본 독립 이미지가 `client/public/assets/story/david-goliath/`에 존재
-- [ ] 11–20장 원본 독립 이미지 추가
-- [ ] 21–30장 원본 독립 이미지 추가
-- [ ] 모든 파일이 예상 세로 비율과 해상도를 유지
-- [ ] manifest에 30개 페이지 순서와 제목이 기록
-- [ ] 병렬 Story UI 작업 반영 후 충돌 여부 재확인
-- [ ] 전용 다윗과 골리앗 리더 연결
+- [x] 30개 독립 생성 PNG 원본 확보
+- [x] 30개 원본을 영구 자산 라이브러리에 보관
+- [x] 30페이지 source registry 및 SHA 기록
+- [x] manifest를 30페이지/페이지별 크기로 갱신
+- [x] GitHub 원본 동기화 workflow 추가
+- [ ] `page-01.png` ~ `page-30.png` GitHub materialization 및 SHA 최종 확인
+- [ ] 최신 main과 충돌 여부 재확인
+- [ ] David 전용 reader 연결
 - [ ] iPhone/Android 모바일 QA 통과
+- [ ] 선택적으로 TTS/이어보기 추가
