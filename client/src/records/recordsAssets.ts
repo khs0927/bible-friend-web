@@ -52,7 +52,17 @@ const localFigmaAssets = new Set([
   '/assets/bible-friend/records/nav/story.png',
   '/assets/bible-friend/records/nav/growth.png',
   '/assets/bible-friend/records/nav/record.png',
+  '/assets/bible-friend/records/mascot/heart.png',
+  '/assets/bible-friend/records/mascot/reading.png',
   '/assets/bible-friend/records/mascot/praying.png',
+  '/assets/bible-friend/records/verse/open-bible-glow.png',
+  '/assets/bible-friend/records/verse/open-bible-star.png',
+  '/assets/bible-friend/records/verse/scripture-card.png',
+  '/assets/bible-friend/records/verse/dove-branch.png',
+  '/assets/bible-friend/records/verse/rainbow-cloud.png',
+  '/assets/bible-friend/records/verse/courage-lion.png',
+  '/assets/bible-friend/records/verse/scripture-lamp.png',
+  '/assets/bible-friend/records/verse/prayer-ribbon.png',
   '/assets/bible-friend/records/prayer/hands-alt.png',
   '/assets/bible-friend/records/prayer/family.png',
   '/assets/bible-friend/records/prayer/study.png',
@@ -64,7 +74,6 @@ const localFigmaAssets = new Set([
 
 const localFigmaAliases: Record<string, string> = {
   '/assets/bible-friend/records/hq/03_mascot_heart.png': '/assets/bible-friend/records/mascot/praying.png',
-  '/assets/bible-friend/records/verse/prayer-ribbon.png': '/assets/bible-friend/records/prayer/heart-cross.png',
 };
 
 export function recordAssetUrl(path: string) {
