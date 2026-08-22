@@ -1,0 +1,201 @@
+.bf-david-reader-route {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: #e9e4de;
+  color: #1d183f;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+.bf-david-reader-route *,
+.bf-david-reader-route *::before,
+.bf-david-reader-route *::after { box-sizing: border-box; }
+
+.bf-david-reader {
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: #f8f3ec;
+  box-shadow: 0 0 34px rgba(49, 40, 31, .12);
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+  user-select: none;
+}
+
+.bf-david-reader-head {
+  min-height: calc(58px + env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(8px + env(safe-area-inset-top)) 14px 8px 16px;
+  background: #fffdf9;
+  border-bottom: 1px solid rgba(67, 52, 35, .08);
+  z-index: 2;
+}
+
+.bf-david-reader-progress {
+  min-width: 72px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #efe7ff;
+  color: #6135d7;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -.03em;
+}
+
+.bf-david-reader-home {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 15px;
+  background: #ffffff;
+  color: #5630c6;
+  box-shadow: 0 5px 16px rgba(77, 55, 105, .12);
+  cursor: pointer;
+}
+
+.bf-david-reader-home svg { width: 24px; height: 24px; stroke-width: 2.6; }
+
+.bf-david-reader-stage {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 15%, rgba(255,255,255,.72), transparent 42%),
+    #eee7de;
+}
+
+.bf-david-reader-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  opacity: 0;
+  transition: opacity .18s ease;
+  -webkit-user-drag: none;
+}
+
+.bf-david-reader-image.is-ready { opacity: 1; }
+
+.bf-david-reader-loader {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #756b62;
+  background: linear-gradient(110deg, #eee8e0 20%, #f8f4ef 38%, #eee8e0 58%);
+  background-size: 200% 100%;
+  animation: bfDavidLoading 1.3s linear infinite;
+  font-size: 14px;
+  font-weight: 800;
+  z-index: 1;
+}
+
+@keyframes bfDavidLoading {
+  to { background-position-x: -200%; }
+}
+
+.bf-david-reader-error {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 28px;
+  text-align: center;
+}
+
+.bf-david-reader-error strong { font-size: 16px; }
+.bf-david-reader-error button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #7040df;
+  color: white;
+  font-weight: 850;
+}
+
+.bf-david-reader-controls {
+  min-height: calc(86px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+  padding: 8px 18px calc(8px + env(safe-area-inset-bottom));
+  background: #fffdf9;
+  border-top: 1px solid rgba(67, 52, 35, .08);
+  z-index: 2;
+}
+
+.bf-david-reader-control {
+  min-width: 0;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 20px;
+  background: #f2ecf9;
+  color: #4d3c76;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bf-david-reader-control svg {
+  width: 27px;
+  height: 27px;
+  stroke-width: 2.8;
+}
+
+.bf-david-reader-control span {
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 850;
+}
+
+.bf-david-reader-control.is-primary {
+  background: linear-gradient(135deg, #7b4bed, #6031dd);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(98, 49, 221, .22);
+}
+
+.bf-david-reader-control:active,
+.bf-david-reader-home:active { transform: scale(.97); }
+
+.bf-david-reader-control:focus-visible,
+.bf-david-reader-home:focus-visible,
+.bf-david-reader-error button:focus-visible {
+  outline: 3px solid #ffbf47;
+  outline-offset: 2px;
+}
+
+@media (max-width: 360px) {
+  .bf-david-reader-controls { gap: 8px; padding-inline: 12px; }
+  .bf-david-reader-control { min-height: 60px; border-radius: 18px; }
+}
+
+@media (min-width: 700px) {
+  .bf-david-reader { border-inline: 1px solid rgba(67, 52, 35, .08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-david-reader-image { transition: none; }
+  .bf-david-reader-loader { animation: none; }
+}
