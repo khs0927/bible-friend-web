@@ -1,15 +1,8 @@
+export const config = { api: { bodyParser: false } };
+export const maxDuration = 60;
+
 const COSY_SPACE = "https://funaudiollm-fun-cosyvoice3-0-5b.hf.space";
-const QWEN_SPACE = "https://qwen-qwen3-tts.hf.space";
-const REFERENCE_TEXT = "안녕, 성경 친구야. 오늘도 네 이야기를 따뜻하게 들어줄게.";
-const REFERENCE_DESCRIPTION = [
-  "Create an original native Korean female voice in her early twenties.",
-  "The voice should be naturally bright, warm, sweet and reassuring, suitable for children aged six to twelve.",
-  "Use clear Korean diction, a gentle smiling resonance, soft natural breath and subtle emotional expressiveness.",
-  "The baseline feeling is calm affection and trust, with enough energy to become genuinely joyful when needed.",
-  "Do not imitate or reference any existing named voice or real person.",
-  "Avoid cartoonish acting, baby talk, excessive pitch, seductiveness, breathiness, announcer style, or robotic cadence.",
-  "Studio-clean close-microphone sound, conversational and emotionally believable.",
-].join(" ");
+const MAX_REFERENCE_BYTES = 5 * 1024 * 1024;
 
 const SAMPLES = {
   love: {
@@ -48,14 +41,21 @@ async function gradioCall(space, apiName, data) {
     headers: authHeaders({ "content-type": "application/json" }),
     body: JSON.stringify({ data }),
   });
-  if (!start.ok) throw new Error(`${apiName}_start_http_${start.status}:${(await start.text()).slice(0, 500)}`);
+  if (!start.ok) {
+    throw new Error(`${apiName}_start_http_${start.status}:${(await start.text()).slice(0, 500)}`);
+  }
   const started = await start.json();
-  if (!started?.event_id) throw new Error(`${apiName}_bad_start:${JSON.stringify(started).slice(0, 500)}`);
+  if (!started?.event_id) {
+    throw new Error(`${apiName}_bad_start:${JSON.stringify(started).slice(0, 500)}`);
+  }
 
   const result = await fetch(`${space}/gradio_api/call/${apiName}/${encodeURIComponent(started.event_id)}`, {
     headers: authHeaders({ accept: "text/event-stream" }),
   });
-  if (!result.ok) throw new Error(`${apiName}_result_http_${result.status}:${(await result.text()).slice(0, 500)}`);
+  if (!result.ok) {
+    throw new Error(`${apiName}_result_http_${result.status}:${(await result.text()).slice(0, 500)}`);
+  }
+
   const sse = await result.text();
   const parsed = [];
   let currentEvent = "";
@@ -72,23 +72,31 @@ async function gradioCall(space, apiName, data) {
   return last;
 }
 
-async function designReference() {
-  const output = await gradioCall(QWEN_SPACE, "generate_voice_design", [
-    REFERENCE_TEXT,
-    "Korean",
-    REFERENCE_DESCRIPTION,
-  ]);
-  const first = Array.isArray(output) ? output[0] : output;
-  const audioUrl = absoluteAudioUrl(QWEN_SPACE, first);
-  if (!audioUrl) throw new Error(`qwen_reference_unrecognised:${JSON.stringify(output).slice(0, 800)}`);
-  const r = await fetch(audioUrl, { headers: authHeaders(), redirect: "follow" });
-  if (!r.ok) throw new Error(`qwen_reference_audio_http_${r.status}:${(await r.text()).slice(0, 300)}`);
-  return { wav: Buffer.from(await r.arrayBuffer()), audioUrl };
+async function readRawBody(req) {
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === "string") return Buffer.from(req.body);
+  if (req.body?.type === "Buffer" && Array.isArray(req.body.data)) return Buffer.from(req.body.data);
+
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of req) {
+    const part = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    total += part.length;
+    if (total > MAX_REFERENCE_BYTES) throw new Error("reference_too_large_max_5mb");
+    chunks.push(part);
+  }
+  return Buffer.concat(chunks);
 }
 
-async function cosyUpload(wav) {
+function referenceMeta(req) {
+  const mime = String(req.headers?.["content-type"] || "audio/wav").split(";")[0].trim().toLowerCase();
+  const ext = mime.includes("flac") ? "flac" : mime.includes("mpeg") ? "mp3" : mime.includes("mp4") ? "m4a" : "wav";
+  return { mime: mime.startsWith("audio/") ? mime : "audio/wav", filename: `bible-friend-user-reference.${ext}` };
+}
+
+async function cosyUpload(audioBuffer, meta) {
   const form = new FormData();
-  form.append("files", new Blob([wav], { type: "audio/wav" }), "bible-friend-sweet-reference.wav");
+  form.append("files", new Blob([audioBuffer], { type: meta.mime }), meta.filename);
   const r = await fetch(`${COSY_SPACE}/gradio_api/upload`, {
     method: "POST",
     headers: authHeaders(),
@@ -101,22 +109,22 @@ async function cosyUpload(wav) {
   return path;
 }
 
-function cosyFileData(path) {
+function cosyFileData(path, meta) {
   return {
     path,
     url: `${COSY_SPACE}/gradio_api/file=${encodeURIComponent(path)}`,
-    orig_name: "bible-friend-sweet-reference.wav",
-    mime_type: "audio/wav",
+    orig_name: meta.filename,
+    mime_type: meta.mime,
     meta: { _type: "gradio.FileData" },
   };
 }
 
-async function generateCosy(uploadedPath, sample, seed) {
+async function generateCosy(uploadedPath, meta, sample, seed) {
   const output = await gradioCall(COSY_SPACE, "generate_audio", [
     sample.text,
     "instruct",
     "",
-    cosyFileData(uploadedPath),
+    cosyFileData(uploadedPath, meta),
     null,
     sample.instruct,
     seed,
@@ -135,68 +143,56 @@ async function fetchAudio(url) {
   return Buffer.from(await r.arrayBuffer());
 }
 
-async function makeOne(key, uploadedPath, index) {
-  const sample = SAMPLES[key];
-  const startedAt = Date.now();
-  try {
-    const audioUrl = await generateCosy(uploadedPath, sample, 20260823 + index);
-    return { ok: true, sample: key, text: sample.text, audioUrl, elapsedMs: Date.now() - startedAt };
-  } catch (error) {
-    return { ok: false, sample: key, text: sample.text, error: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - startedAt };
-  }
-}
-
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  if (req.method !== "GET") return res.status(405).json({ ok: false, error: "GET only" });
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(204).end();
+
+  if (req.method === "GET" && String(req.query?.health ?? "") === "1") {
+    return res.status(200).json({
+      ok: true,
+      model: "FunAudioLLM/Fun-CosyVoice3-0.5B-2512",
+      referenceMode: "user-upload-transient",
+      persistedInRepo: false,
+      maxReferenceBytes: MAX_REFERENCE_BYTES,
+      samples: Object.fromEntries(Object.entries(SAMPLES).map(([key, value]) => [key, value.text])),
+    });
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST audio reference required" });
+  }
+
+  const play = String(req.query?.play ?? "");
+  if (!SAMPLES[play]) {
+    return res.status(400).json({ ok: false, error: "play must be love, comfort, or joy" });
+  }
 
   const startedAt = Date.now();
   try {
-    const reference = await designReference();
+    const reference = await readRawBody(req);
+    if (!reference.length) return res.status(400).json({ ok: false, error: "empty reference audio" });
+    if (reference.length > MAX_REFERENCE_BYTES) return res.status(413).json({ ok: false, error: "reference audio exceeds 5 MB" });
 
-    if (String(req.query?.reference ?? "") === "1") {
-      res.setHeader("Content-Type", "audio/wav");
-      res.setHeader("Content-Disposition", "inline; filename=bible-friend-sweet-reference.wav");
-      return res.status(200).send(reference.wav);
-    }
+    const meta = referenceMeta(req);
+    const uploadedPath = await cosyUpload(reference, meta);
+    const audioUrl = await generateCosy(uploadedPath, meta, SAMPLES[play], 20260823 + ["love", "comfort", "joy"].indexOf(play));
+    const wav = await fetchAudio(audioUrl);
 
-    const play = String(req.query?.play ?? "");
-    if (play) {
-      if (!SAMPLES[play]) return res.status(400).json({ ok: false, error: "play must be love, comfort, or joy" });
-      const uploadedPath = await cosyUpload(reference.wav);
-      const audioUrl = await generateCosy(uploadedPath, SAMPLES[play], 20260823);
-      const wav = await fetchAudio(audioUrl);
-      res.setHeader("Content-Type", "audio/wav");
-      res.setHeader("Content-Disposition", `inline; filename=bible-friend-cosy-${play}.wav`);
-      res.setHeader("X-Bible-Friend-Model", "Fun-CosyVoice3-0.5B-2512");
-      res.setHeader("X-Bible-Friend-Elapsed-Ms", String(Date.now() - startedAt));
-      return res.status(200).send(wav);
-    }
-
-    const requested = String(req.query?.sample ?? "all");
-    const keys = requested === "all" ? ["love", "comfort", "joy"] : [requested];
-    if (keys.some((key) => !SAMPLES[key])) {
-      return res.status(400).json({ ok: false, error: "sample must be all, love, comfort, or joy" });
-    }
-
-    const uploadedPath = await cosyUpload(reference.wav);
-    const outputs = await Promise.all(keys.map((key, index) => makeOne(key, uploadedPath, index)));
-    return res.status(outputs.every((item) => item.ok) ? 200 : 207).json({
-      ok: outputs.every((item) => item.ok),
-      model: "FunAudioLLM/Fun-CosyVoice3-0.5B-2512",
-      inferenceMode: "instruct2-with-original-reference",
-      outputs,
-      reference: {
-        sourceModel: "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
-        text: REFERENCE_TEXT,
-        description: REFERENCE_DESCRIPTION,
-        bytes: reference.wav.length,
-        persisted: false,
-      },
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Content-Disposition", `inline; filename=bible-friend-cosy-${play}.wav`);
+    res.setHeader("X-Bible-Friend-Model", "Fun-CosyVoice3-0.5B-2512");
+    res.setHeader("X-Bible-Friend-Reference", "user-upload-transient");
+    res.setHeader("X-Bible-Friend-Elapsed-Ms", String(Date.now() - startedAt));
+    return res.status(200).send(wav);
+  } catch (error) {
+    return res.status(502).json({
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
       elapsedMs: Date.now() - startedAt,
     });
-  } catch (error) {
-    return res.status(502).json({ ok: false, error: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - startedAt });
   }
 }
