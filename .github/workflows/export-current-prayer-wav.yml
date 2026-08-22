@@ -1,12 +1,11 @@
 name: Export current prayer WAV
 
 on:
-  push:
-    branches:
-      - chore/export-current-prayer-wav-20260823
   pull_request:
     branches:
       - main
+    paths:
+      - .github/export-wav-trigger.txt
 
 jobs:
   export-wav:
