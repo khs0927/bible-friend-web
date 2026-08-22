@@ -1,0 +1,7 @@
+[build]
+  publish = "public"
+  command = "echo 'Bible Friend Voice Lab static build'"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
