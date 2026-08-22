@@ -8,6 +8,9 @@
     },
     "api/voice-tts-stream.js": {
       "maxDuration": 30
+    },
+    "api/voice-lab-cosy.js": {
+      "maxDuration": 60
     }
   },
   "routes": [
@@ -42,6 +45,10 @@
     {
       "src": "/api/voice-probe",
       "dest": "/api/voice-tts"
+    },
+    {
+      "src": "/api/voice-lab-cosy",
+      "dest": "/api/voice-lab-cosy"
     },
     {
       "src": "/api/(?<path>.*)",
