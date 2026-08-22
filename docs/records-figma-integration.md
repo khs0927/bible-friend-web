@@ -18,4 +18,6 @@ Bottom-navigation handoff supports both buttons and anchors. Growth additionally
 
 ## Verification
 
-The Vercel verification command includes `client/src/records/recordExperienceState.test.ts` together with the project's existing targeted tests, followed by the production Vite/API bundle build. The repository-wide `pnpm check` currently reports pre-existing type errors in Growth/audio code outside this records integration, so it is tracked separately rather than used as the records merge gate.
+During PR verification, a dedicated Vercel build ran `client/src/records/recordExperienceState.test.ts` together with the project's existing targeted tests: 5 test files / 28 tests passed, followed by successful Vite production and API esbuild bundles. After that verification, `package.json` was restored byte-for-byte to `main` so this records-only PR does not activate the unrelated Growth CI path solely because of a package-script change. The final runtime build therefore uses the repository's normal Vercel build command.
+
+The repository-wide `pnpm check` currently reports pre-existing type errors in Growth/audio code outside this records integration, so it is tracked separately rather than used as the records merge gate.
