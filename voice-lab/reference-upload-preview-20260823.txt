@@ -1,0 +1,2 @@
+Trigger isolated Vercel preview for transient user-reference CosyVoice3 audition.
+Production main is intentionally untouched.
