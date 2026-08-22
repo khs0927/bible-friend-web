@@ -1,9 +1,8 @@
 name: Sync Bible Friend HQ Assets
 
 on:
-  push:
-    paths:
-      - '.github/workflows/sync-bible-friend-hq-assets.yml'
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -11,29 +10,20 @@ permissions:
 
 jobs:
   sync:
+    if: github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
-
-      - name: Prove workflow execution
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p public/assets/bible-friend/generated/hq
-          printf 'GitHub Actions HQ asset sync executed successfully.\n' > public/assets/bible-friend/generated/hq/action-proof.txt
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/assets/bible-friend/generated/hq/action-proof.txt
-          git commit -m 'chore: mark HQ asset sync execution'
-          git push
 
       - name: Download and verify lossless HQ source assets
         shell: bash
         run: |
           set -euo pipefail
           root='public/assets/bible-friend/generated/hq'
+          mkdir -p "$root"
           names=(01_app_logo.png 02_mascot_wave.png 03_mascot_heart.png 04_settings.png 05_heart.png 06_praying_hands.png 07_dove.png 08_gift.png 09_chat.png 10_story.png)
           srcs=(
             'https://cdn.creativeclaw.co/u/448e94a9/images/f1168ec5-1dc5-4e3e-917a-49ff55c4ea71.png'
@@ -53,17 +43,18 @@ jobs:
             python - "$path" <<'PY'
 import struct,sys
 p=sys.argv[1]
-b=open(p,'rb').read(29)
-if b[:8] != b'\x89PNG\r\n\x1a\n': raise SystemExit(f'not PNG: {p}')
-w,h=struct.unpack('>II',b[16:24])
+data=open(p,'rb').read()
+if data[:8] != b'\x89PNG\r\n\x1a\n': raise SystemExit(f'not PNG: {p}')
+w,h=struct.unpack('>II',data[16:24])
 if w < 1000 or h < 1000: raise SystemExit(f'asset too small: {p} {w}x{h}')
-print(f'VERIFIED {p}: {w}x{h}')
+print(f'VERIFIED {p}: {w}x{h}, {len(data)} bytes')
 PY
           done
 
           python - <<'PY'
 import hashlib,json,os,struct
 root='public/assets/bible-friend/generated/hq'
+names=['01_app_logo.png','02_mascot_wave.png','03_mascot_heart.png','04_settings.png','05_heart.png','06_praying_hands.png','07_dove.png','08_gift.png','09_chat.png','10_story.png']
 srcs=[
 'https://cdn.creativeclaw.co/u/448e94a9/images/f1168ec5-1dc5-4e3e-917a-49ff55c4ea71.png',
 'https://cdn.creativeclaw.co/u/448e94a9/images/d44e983b-86e6-43f4-ac90-598c0798f42e.png',
@@ -75,14 +66,25 @@ srcs=[
 'https://cdn.creativeclaw.co/u/448e94a9/images/09720e49-2ed2-4877-b5bb-1fd9dff9bf3e.png',
 'https://cdn.creativeclaw.co/u/448e94a9/images/2cc4bec8-8aa7-4fce-9f54-80507c07b940.png',
 'https://cdn.creativeclaw.co/u/448e94a9/images/6e667058-c6a3-4d7a-ac49-31bd30762e80.png']
-names=['01_app_logo.png','02_mascot_wave.png','03_mascot_heart.png','04_settings.png','05_heart.png','06_praying_hands.png','07_dove.png','08_gift.png','09_chat.png','10_story.png']
+figma=['45:49','45:42','45:43','45:45','45:47','45:44','45:48','45:41','45:40','45:46']
 items=[]
-for name,src in zip(names,srcs):
+for name,src,node in zip(names,srcs,figma):
  p=os.path.join(root,name); data=open(p,'rb').read(); w,h=struct.unpack('>II',data[16:24])
- items.append({'file':name,'width':w,'height':h,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'source':src})
-open(os.path.join(root,'manifest.json'),'w').write(json.dumps({'figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3','quality':'original PNG bytes, no recompression','assets':items},indent=2)+'\n')
+ items.append({'file':name,'width':w,'height':h,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'source':src,'figmaNodeId':node})
+manifest={'figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3','figmaBoardNodeId':'38:2','qualityPolicy':'Original generated PNG bytes; no resize, JPEG conversion, or lossy recompression','assets':items}
+open(os.path.join(root,'manifest.json'),'w',encoding='utf-8').write(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
 PY
 
-          git add "$root"
-          git commit -m 'assets: add verified HQ Bible Friend PNG source pack'
-          git push
+      - name: Commit original PNG assets into PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/bible-friend/generated/hq
+          if git diff --cached --quiet; then
+            echo 'Assets already present.'
+          else
+            git commit -m 'assets: materialize HQ Bible Friend PNG source pack'
+            git push origin HEAD:${{ github.head_ref }}
+          fi
