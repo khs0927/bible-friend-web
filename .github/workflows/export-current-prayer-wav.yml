@@ -1,0 +1,68 @@
+name: Export current prayer WAV
+
+on:
+  push:
+    branches:
+      - chore/export-current-prayer-wav-20260823
+
+jobs:
+  export-wav:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Call production Gemini 3.1 TTS and write WAV
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import urllib.request
+
+          text = '''안녕! 기도가 무엇인지 궁금했구나? 기도는 전혀 어렵지 않아요. 사랑하는 가장 친한 친구에게 마음을 털어놓듯 하나님께 편하게 이야기하는 거랍니다.
+
+          성경에는 하나님께서 우리의 작은 목소리에도 항상 귀를 기울이신다고 기록되어 있어요. "하나님, 오늘 너무 기뻤어요"라고 감사하거나, 힘들 때 "저 좀 도와주세요" 하고 마음을 말하면 돼요.
+
+          마지막에는 "예수님의 이름으로 기도합니다, 아멘" 하고 마치면 된단다. 오늘 하나님께 제일 먼저 하고 싶은 말은 무엇인가요?'''.strip()
+
+          payload = {
+              "text": text,
+              "speaker": "CHILD_FRIEND",
+              "emotion": "따뜻하고 친근한 격려",
+              "style": "자연스럽고 또렷하게, 문장 사이에 짧게 호흡하며 읽어 줘.",
+              "speed": 1,
+              "context": "성경친구 대화 답변 WAV 내보내기",
+          }
+          request = urllib.request.Request(
+              "https://bible-friend-web.vercel.app/api/voice-tts",
+              data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+              headers={"Content-Type": "application/json", "Accept": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=90) as response:
+              result = json.loads(response.read().decode("utf-8"))
+
+          if not result.get("success") or not result.get("audioBase64"):
+              raise SystemExit(f"TTS failed: {result.get('errorCode')} {result.get('error')}")
+
+          wav = base64.b64decode(result["audioBase64"])
+          if wav[:4] != b"RIFF" or wav[8:12] != b"WAVE":
+              raise SystemExit("TTS response was not a valid WAV/RIFF file")
+
+          filename = "bible-friend-prayer-gemini31-leda.wav"
+          with open(filename, "wb") as f:
+              f.write(wav)
+          print(json.dumps({
+              "filename": filename,
+              "bytes": len(wav),
+              "model": result.get("model"),
+              "voice": result.get("voice"),
+              "fallback": result.get("fallback"),
+          }, ensure_ascii=False))
+          PY
+      - name: Upload WAV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bible-friend-prayer-gemini31-leda
+          path: bible-friend-prayer-gemini31-leda.wav
+          if-no-files-found: error
+          retention-days: 1
