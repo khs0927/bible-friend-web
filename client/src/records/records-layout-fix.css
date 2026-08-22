@@ -1,0 +1,26 @@
+/* Records mobile layout hardening.
+   Keep the scroll viewport full-height so content is never sliced by an
+   artificial bottom edge; reserve space for the floating nav with padding. */
+.records-layer .records-main{
+  bottom:0!important;
+  padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))!important;
+  scroll-padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))!important;
+  z-index:2!important;
+}
+.records-layer .records-bottom-nav{
+  bottom:max(12px,calc(env(safe-area-inset-bottom,0px) + 6px))!important;
+  z-index:30!important;
+}
+.records-layer .records-toast{
+  bottom:calc(88px + env(safe-area-inset-bottom,0px))!important;
+}
+@media(max-width:520px){
+  .records-layer .records-main{
+    bottom:0!important;
+    padding-bottom:calc(136px + env(safe-area-inset-bottom,0px))!important;
+    scroll-padding-bottom:calc(136px + env(safe-area-inset-bottom,0px))!important;
+  }
+  .records-layer .records-bottom-nav{
+    bottom:max(12px,calc(env(safe-area-inset-bottom,0px) + 6px))!important;
+  }
+}
