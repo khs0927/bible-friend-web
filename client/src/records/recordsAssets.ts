@@ -42,6 +42,7 @@ const remoteAssets: Record<string, string> = {
 
 const localFigmaAssets = new Set([
   '/assets/bible-friend/records/hq/01_app_logo.png',
+  '/assets/bible-friend/records/hq/02_mascot_wave.png',
   '/assets/bible-friend/records/hq/04_settings.png',
   '/assets/bible-friend/records/hq/05_heart.png',
   '/assets/bible-friend/records/hq/06_praying_hands.png',
