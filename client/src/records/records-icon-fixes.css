@@ -1,7 +1,33 @@
-.records-composer{display:none!important}
-.records-main{bottom:74px}
-.records-toast{bottom:78px}
+.records-shell>.records-composer,
+.records-composer{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+.records-main{bottom:74px!important}
+.records-toast{bottom:78px!important}
+.records-card-icon,
+.records-nav-icon,
+.records-settings,
+.records-brand-logo,
+.records-stat-icon{
+  object-fit:contain!important;
+  object-position:center!important;
+}
+.records-shortcut-art{
+  width:42px!important;
+  height:42px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0 auto 3px!important;
+}
+.records-prayer-feature-art{
+  width:66px!important;
+  height:66px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
 @media(max-width:520px){
-  .records-main{bottom:calc(68px + env(safe-area-inset-bottom))}
-  .records-toast{bottom:calc(74px + env(safe-area-inset-bottom))}
+  .records-main{bottom:calc(68px + env(safe-area-inset-bottom))!important}
+  .records-toast{bottom:calc(74px + env(safe-area-inset-bottom))!important}
 }
