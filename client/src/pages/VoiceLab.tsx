@@ -166,30 +166,42 @@ function directEmotion(text: string): DirectedSegment[] {
   });
 }
 
-function applySoftEnvelope(samples: number[], gain: number, sampleRate: number) {
-  const out = new Array<number>(samples.length);
-  const fade = Math.min(samples.length >> 1, Math.floor(sampleRate * 0.018));
-
-  for (let i = 0; i < samples.length; i++) {
-    let envelope = 1;
-    if (fade > 0 && i < fade) envelope = i / fade;
-    if (fade > 0 && i >= samples.length - fade) envelope = Math.min(envelope, (samples.length - 1 - i) / fade);
-    out[i] = samples[i] * gain * Math.max(0, envelope);
-  }
-
-  return out;
-}
-
+/**
+ * Join rendered sentences without spreading large audio arrays into Function#apply.
+ * iOS Safari has a relatively small argument/call-stack ceiling, so
+ * `array.push(...hundredsOfThousandsOfSamples)` can throw
+ * "Maximum call stack size exceeded" even though inference itself succeeded.
+ * A single preallocated Float32Array is both safer and substantially lighter on memory.
+ */
 function joinSegments(parts: Array<{ wav: number[]; pauseMs: number; gain: number }>, sampleRate: number) {
-  const joined: number[] = [];
+  const pauseLengths = parts.map((part, index) =>
+    index < parts.length - 1 ? Math.floor(sampleRate * (part.pauseMs / 1000)) : 0,
+  );
+  const totalLength = parts.reduce(
+    (sum, part, index) => sum + part.wav.length + pauseLengths[index],
+    0,
+  );
+  const joined = new Float32Array(totalLength);
+  let offset = 0;
 
-  parts.forEach((part, index) => {
-    joined.push(...applySoftEnvelope(part.wav, part.gain, sampleRate));
-    if (index < parts.length - 1) {
-      const pauseLength = Math.floor(sampleRate * (part.pauseMs / 1000));
-      for (let i = 0; i < pauseLength; i++) joined.push(0);
+  for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+    const part = parts[partIndex];
+    const fade = Math.min(part.wav.length >> 1, Math.floor(sampleRate * 0.018));
+
+    for (let i = 0; i < part.wav.length; i++) {
+      let envelope = 1;
+      if (fade > 0 && i < fade) envelope = i / fade;
+      if (fade > 0 && i >= part.wav.length - fade) {
+        envelope = Math.min(envelope, (part.wav.length - 1 - i) / fade);
+      }
+      joined[offset + i] = part.wav[i] * part.gain * Math.max(0, envelope);
     }
-  });
+
+    offset += part.wav.length;
+    // Float32Array is already zero-filled, so advancing the offset creates silence
+    // without allocating or pushing thousands of zero values.
+    offset += pauseLengths[partIndex];
+  }
 
   return joined;
 }
