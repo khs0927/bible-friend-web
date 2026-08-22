@@ -1,12 +1,12 @@
+import * as supertonicHelper from "@/lib/supertonicHelper";
 import { trpc } from "@/lib/trpc";
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./voice-lab.css";
 
 const HF_BASE = "https://huggingface.co/Supertone/supertonic-3/resolve/main";
 const ONNX_BASE = `${HF_BASE}/onnx`;
-const ORT_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort.min.mjs";
+const ORT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort.min.js";
 const ORT_WASM_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/";
-const HELPER_URL = "https://cdn.jsdelivr.net/npm/supertonic-tts@0.1.0/app/helper.js";
 
 const VOICES = [
   { id: "F1", label: "F1", note: "맑고 밝음" },
@@ -41,19 +41,74 @@ const EMOTIONS: Array<{
 
 const SAMPLE_TEXT = "하나님은 너를 정말 사랑하신단다. 오늘도 네 마음을 알고 계시고, 언제나 네 곁에 함께하셔.";
 
+let ortRuntimePromise: Promise<any> | null = null;
+
 function isIOSLike() {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent ?? "";
   return /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
+function loadOrtRuntime() {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return Promise.reject(new Error("브라우저에서만 로컬 음성 엔진을 사용할 수 있어요."));
+  }
+
+  const currentOrt = (window as any).ort;
+  if (currentOrt?.InferenceSession) return Promise.resolve(currentOrt);
+
+  if (!ortRuntimePromise) {
+    ortRuntimePromise = new Promise((resolve, reject) => {
+      const selector = 'script[data-voice-lab-ort="true"]';
+      let script = document.querySelector<HTMLScriptElement>(selector);
+
+      const cleanup = () => {
+        script?.removeEventListener("load", onLoad);
+        script?.removeEventListener("error", onError);
+      };
+      const onLoad = () => {
+        cleanup();
+        const ort = (window as any).ort;
+        if (ort?.InferenceSession) {
+          resolve(ort);
+        } else {
+          reject(new Error("ONNX Runtime 스크립트는 열렸지만 실행 엔진을 찾지 못했어요."));
+        }
+      };
+      const onError = () => {
+        cleanup();
+        script?.remove();
+        reject(new Error("iPhone 호환 ONNX Runtime 스크립트를 불러오지 못했어요."));
+      };
+
+      if (!script) {
+        script = document.createElement("script");
+        script.src = ORT_SCRIPT_URL;
+        script.async = true;
+        script.dataset.voiceLabOrt = "true";
+        document.head.appendChild(script);
+      }
+
+      if ((window as any).ort?.InferenceSession) {
+        onLoad();
+        return;
+      }
+
+      script.addEventListener("load", onLoad, { once: true });
+      script.addEventListener("error", onError, { once: true });
+    });
+  }
+
+  return ortRuntimePromise.catch(error => {
+    ortRuntimePromise = null;
+    throw error;
+  });
+}
+
 function decorateText(text: string, emotion: EmotionId, sweetness: number) {
   const clean = text.trim();
   if (!clean) return clean;
 
-  // Supertonic 3 officially documents simple inline expression tags such as
-  // <laugh>, <breath>, and <sigh>. We deliberately use only the documented tags
-  // here; the lab is meant to verify the exact Korean result on the target iPhone.
   const softPause = sweetness >= 65 ? " <breath> " : " ";
 
   if (emotion === "joy") {
@@ -107,17 +162,19 @@ export default function VoiceLab() {
     if (runtimeRef.current) return runtimeRef.current;
     setIsLoading(true);
     setError(null);
-    setStatus("무료 로컬 음성 엔진을 준비하고 있어요…");
+    setStatus("iPhone 호환 로컬 음성 런타임을 준비하고 있어요…");
     setProgress(2);
 
     try {
-      const ort: any = await import(/* @vite-ignore */ ORT_URL);
+      const ort: any = await loadOrtRuntime();
       ort.env.wasm.wasmPaths = ORT_WASM_BASE;
       ort.env.wasm.numThreads = 1;
       ort.env.wasm.proxy = false;
 
-      const helper: any = await import(/* @vite-ignore */ HELPER_URL);
+      const helper: any = supertonicHelper;
       helper.configureOrt(ort);
+      setProgress(4);
+      setStatus("Supertonic 음성 모델을 불러오는 중이에요. 처음 한 번은 시간이 걸릴 수 있어요…");
 
       const loadOptions = (provider: "webgpu" | "wasm") => ({
         executionProviders: [provider],
