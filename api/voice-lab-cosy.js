@@ -4,70 +4,22 @@ const REFERENCE_URL = "https://raw.githubusercontent.com/FunAudioLLM/CosyVoice/m
 const SAMPLES = {
   love: {
     text: "하나님은 너를 정말 사랑하신단다. 오늘도 네 마음을 알고 계셔.",
-    instruct: "한국어로 말해. 어린아이에게 진심으로 사랑을 전하는 따뜻하고 다정한 친구처럼 말해. 은은한 미소와 포근함이 느껴지게 하되 유아 말투나 과장은 피하고 자연스럽게 말해.",
+    instruct: "You are a helpful assistant. Please say a sentence in a very soft voice.<|endofprompt|>",
   },
   comfort: {
     text: "괜찮아. 천천히 이야기해 줘. 성경 친구가 함께 들어줄게.",
-    instruct: "한국어로 말해. 속상한 아이를 안심시키는 친구처럼 부드럽고 차분하고 공감하는 목소리로 말해. 조금 천천히, 따뜻한 호흡과 위로가 느껴지되 우울하게 처지지 않게 말해.",
+    instruct: "You are a helpful assistant. 请用尽可能慢地语速说一句话。<|endofprompt|>",
   },
   joy: {
     text: "우와, 정말 잘했어! 오늘도 하나님의 말씀을 함께 알아보자.",
-    instruct: "한국어로 말해. 아이를 진심으로 칭찬하는 친구처럼 밝고 기쁘고 생기 있게 말해. 미소가 자연스럽게 느껴지고 즐거운 에너지가 있으나 만화 같은 과장은 피해서 말해.",
+    instruct: "You are a helpful assistant. 请非常开心地说一句话。<|endofprompt|>",
   },
 };
-
-function trimPcmWav(input, maxSeconds = 8.0) {
-  if (input.subarray(0, 4).toString("ascii") !== "RIFF" || input.subarray(8, 12).toString("ascii") !== "WAVE") return input;
-  let off = 12;
-  let fmt = null;
-  let dataOff = -1;
-  let dataLen = 0;
-  while (off + 8 <= input.length) {
-    const id = input.subarray(off, off + 4).toString("ascii");
-    const len = input.readUInt32LE(off + 4);
-    const body = off + 8;
-    if (id === "fmt " && len >= 16) {
-      fmt = {
-        audioFormat: input.readUInt16LE(body),
-        channels: input.readUInt16LE(body + 2),
-        sampleRate: input.readUInt32LE(body + 4),
-        byteRate: input.readUInt32LE(body + 8),
-        blockAlign: input.readUInt16LE(body + 12),
-        bitsPerSample: input.readUInt16LE(body + 14),
-      };
-    }
-    if (id === "data") {
-      dataOff = body;
-      dataLen = Math.min(len, input.length - body);
-      break;
-    }
-    off = body + len + (len % 2);
-  }
-  if (!fmt || fmt.audioFormat !== 1 || dataOff < 0 || !fmt.byteRate) return input;
-  const maxBytes = Math.floor(Math.floor(fmt.byteRate * maxSeconds) / fmt.blockAlign) * fmt.blockAlign;
-  if (dataLen <= maxBytes) return input;
-  const pcm = input.subarray(dataOff, dataOff + maxBytes);
-  const header = Buffer.alloc(44);
-  header.write("RIFF", 0, "ascii");
-  header.writeUInt32LE(36 + pcm.length, 4);
-  header.write("WAVE", 8, "ascii");
-  header.write("fmt ", 12, "ascii");
-  header.writeUInt32LE(16, 16);
-  header.writeUInt16LE(fmt.audioFormat, 20);
-  header.writeUInt16LE(fmt.channels, 22);
-  header.writeUInt32LE(fmt.sampleRate, 24);
-  header.writeUInt32LE(fmt.byteRate, 28);
-  header.writeUInt16LE(fmt.blockAlign, 32);
-  header.writeUInt16LE(fmt.bitsPerSample, 34);
-  header.write("data", 36, "ascii");
-  header.writeUInt32LE(pcm.length, 40);
-  return Buffer.concat([header, pcm]);
-}
 
 async function fetchReference() {
   const r = await fetch(REFERENCE_URL, { redirect: "follow" });
   if (!r.ok) throw new Error(`reference_http_${r.status}`);
-  return trimPcmWav(Buffer.from(await r.arrayBuffer()), 8.0);
+  return Buffer.from(await r.arrayBuffer());
 }
 
 async function gradioUpload(wav) {
@@ -82,46 +34,48 @@ async function gradioUpload(wav) {
 }
 
 function fileData(path) {
-  return { path, meta: { _type: "gradio.FileData" } };
+  const name = path.split("/").pop() || "cosyvoice-reference.wav";
+  return {
+    path,
+    url: `${HF_SPACE}/gradio_api/file=${encodeURIComponent(path)}`,
+    orig_name: name,
+    mime_type: "audio/wav",
+    meta: { _type: "gradio.FileData" },
+  };
 }
 
-async function startGeneration(uploadedPath, sample) {
-  const payload = {
-    data: [sample.text, "instruct", "", fileData(uploadedPath), null, sample.instruct, 20260823, false, "En"],
-  };
-  const r = await fetch(`${HF_SPACE}/gradio_api/call/generate_audio`, {
+async function generate(uploadedPath, sample) {
+  const start = await fetch(`${HF_SPACE}/gradio_api/call/generate_audio`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      data: [sample.text, "instruct", "", fileData(uploadedPath), null, sample.instruct, 20260823, false, "En"],
+    }),
   });
-  if (!r.ok) throw new Error(`gradio_call_http_${r.status}:${(await r.text()).slice(0, 500)}`);
-  const body = await r.json();
-  if (!body?.event_id) throw new Error(`gradio_call_bad_response:${JSON.stringify(body).slice(0, 500)}`);
-  return body.event_id;
-}
+  if (!start.ok) throw new Error(`gradio_call_http_${start.status}:${(await start.text()).slice(0, 500)}`);
+  const started = await start.json();
+  if (!started?.event_id) throw new Error(`gradio_call_bad_response:${JSON.stringify(started).slice(0, 500)}`);
 
-function extractOutputFromSse(text) {
-  const lines = text.split(/\r?\n/);
-  let last = null;
-  for (const line of lines) {
+  const result = await fetch(`${HF_SPACE}/gradio_api/call/generate_audio/${encodeURIComponent(started.event_id)}`, {
+    headers: { accept: "text/event-stream" },
+  });
+  if (!result.ok) throw new Error(`gradio_result_http_${result.status}:${(await result.text()).slice(0, 500)}`);
+  const sse = await result.text();
+  const events = [];
+  let currentEvent = "";
+  for (const line of sse.split(/\r?\n/)) {
+    if (line.startsWith("event:")) currentEvent = line.slice(6).trim();
     if (!line.startsWith("data:")) continue;
     const raw = line.slice(5).trim();
+    if (currentEvent === "error") throw new Error(`gradio_generation_error:${raw}`);
     if (!raw) continue;
-    try { last = JSON.parse(raw); } catch {}
+    try { events.push(JSON.parse(raw)); } catch {}
   }
-  if (!last) throw new Error(`gradio_no_sse_data:${text.slice(-500)}`);
+  const last = events.at(-1);
   const first = Array.isArray(last) ? last[0] : last;
-  if (typeof first === "string") return first;
-  if (first?.url) return first.url;
-  if (first?.path) return `${HF_SPACE}/gradio_api/file=${encodeURIComponent(first.path)}`;
-  if (first?.data?.url) return first.data.url;
-  throw new Error(`gradio_output_unrecognised:${JSON.stringify(last).slice(0, 1000)}`);
-}
-
-async function waitGeneration(eventId) {
-  const r = await fetch(`${HF_SPACE}/gradio_api/call/generate_audio/${encodeURIComponent(eventId)}`, { headers: { accept: "text/event-stream" } });
-  if (!r.ok) throw new Error(`gradio_result_http_${r.status}:${(await r.text()).slice(0, 500)}`);
-  return extractOutputFromSse(await r.text());
+  const audioUrl = typeof first === "string" ? first : first?.url ?? first?.data?.url ?? null;
+  if (!audioUrl) throw new Error(`gradio_output_unrecognised:${sse.slice(-1000)}`);
+  return audioUrl;
 }
 
 export default async function handler(req, res) {
@@ -135,8 +89,7 @@ export default async function handler(req, res) {
   try {
     const reference = await fetchReference();
     const uploadedPath = await gradioUpload(reference);
-    const eventId = await startGeneration(uploadedPath, sample);
-    const audioUrl = await waitGeneration(eventId);
+    const audioUrl = await generate(uploadedPath, sample);
     return res.status(200).json({
       ok: true,
       model: "FunAudioLLM/Fun-CosyVoice3-0.5B-2512",
@@ -145,7 +98,7 @@ export default async function handler(req, res) {
       text: sample.text,
       instruct: sample.instruct,
       audioUrl,
-      reference: { source: "FunAudioLLM/CosyVoice asset/zero_shot_prompt.wav", purpose: "transport probe only", maxSecondsUsed: 8 },
+      reference: { source: "FunAudioLLM/CosyVoice asset/zero_shot_prompt.wav", purpose: "transport probe only" },
       elapsedMs: Date.now() - startedAt,
     });
   } catch (error) {
