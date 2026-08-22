@@ -6,6 +6,9 @@
     "api/voice-tts.js": {
       "maxDuration": 30
     },
+    "api/voice-tts31.js": {
+      "maxDuration": 30
+    },
     "api/voice-tts-stream.js": {
       "maxDuration": 30
     }
@@ -29,7 +32,11 @@
     },
     {
       "src": "/api/trpc/tts\\.synthesize",
-      "dest": "/api/voice-tts"
+      "dest": "/api/voice-tts31"
+    },
+    {
+      "src": "/api/voice-tts",
+      "dest": "/api/voice-tts31"
     },
     {
       "src": "/api/voice-tts-stream",
@@ -37,11 +44,11 @@
     },
     {
       "src": "/api/voice-health",
-      "dest": "/api/voice-tts"
+      "dest": "/api/voice-tts31"
     },
     {
       "src": "/api/voice-probe",
-      "dest": "/api/voice-tts"
+      "dest": "/api/voice-tts31"
     },
     {
       "src": "/api/(?<path>.*)",
