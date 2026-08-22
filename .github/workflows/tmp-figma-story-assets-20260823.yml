@@ -1,11 +1,10 @@
-# trigger: 2026-08-23T03:24+09:00
 name: tmp-figma-story-assets-20260823
 on:
-  push:
-    paths:
-      - '.github/workflows/tmp-figma-story-assets-20260823.yml'
+  issues:
+    types: [opened]
 jobs:
   transfer:
+    if: contains(github.event.issue.title, '[FIGMA-ASSET-TRANSFER-20260823]')
     runs-on: ubuntu-latest
     steps:
       - name: Transfer existing generated images to Figma
@@ -18,13 +17,13 @@ jobs:
             curl -fSs -X POST -F "file=@/tmp/$name;filename=$name" "$dst"
             echo "uploaded $name"
           }
-          upload 'story-david-goliath.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/2f145564-6a43-4bdb-a560-86e81cb098fe.png' 'https://mcp.figma.com/mcp/upload/67786c85-d0f2-4fdd-bf53-ff22c518bb8d/submit?scaleMode=FIT'
-          upload 'story-noah-ark.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/85af64f7-68b6-4b1c-a2d0-17ab93cf52b6.png' 'https://mcp.figma.com/mcp/upload/654feb2b-08c0-478f-973f-1e486283ff8c/submit?scaleMode=FIT'
-          upload 'story-jonah-whale.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/864ec02d-6191-4f3a-921b-95ae39031dab.png' 'https://mcp.figma.com/mcp/upload/022790c6-789a-4d4f-a1e8-0e96cf64b3ba/submit?scaleMode=FIT'
-          upload 'story-jesus-birth.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/422da108-c85c-46f0-a805-281262cda3b1.png' 'https://mcp.figma.com/mcp/upload/aeccf41d-3b59-4e4e-b55f-d85dbd3f34a5/submit?scaleMode=FIT'
-          upload 'story-good-samaritan.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/fcac6d0e-d944-4626-90bf-27530d78e535.png' 'https://mcp.figma.com/mcp/upload/1a9199b3-aec5-41dd-ae0e-bf5a8cba43db/submit?scaleMode=FIT'
-          upload 'story-lost-sheep.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/04df2ae2-5e4e-48d8-bf2a-1c1e1e639037.png' 'https://mcp.figma.com/mcp/upload/3e538de2-7111-4798-b412-4798a92ba264/submit?scaleMode=FIT'
-          upload 'story-resurrection.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/2e085265-a88c-46ff-a382-655bb203f35f.png' 'https://mcp.figma.com/mcp/upload/4cc6ee58-e7e9-480b-90d3-603a6bbd5b4f/submit?scaleMode=FIT'
-          upload 'story-creation.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/292b4248-226d-4a74-b62f-d9f86f606ee7.png' 'https://mcp.figma.com/mcp/upload/df780e48-4d78-4f50-9ec9-526bc0bc1f29/submit?scaleMode=FIT'
-          upload 'story-jesus-love.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/ca857cf2-3acd-41af-99fb-daf9e7a803c4.png' 'https://mcp.figma.com/mcp/upload/684a60ae-ef77-4611-8a53-18e4c4282de9/submit?scaleMode=FIT'
-          upload 'story-solomon-wisdom.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/b5a233c9-5700-463f-984b-095785d0b2d5.png' 'https://mcp.figma.com/mcp/upload/803549ba-b1b7-452e-b82b-98f475375d01/submit?scaleMode=FIT'
+          upload 'story-david-goliath.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/2f145564-6a43-4bdb-a560-86e81cb098fe.png' 'https://mcp.figma.com/mcp/upload/310ed0f5-8314-44c3-aeee-8b35e8c487ae/submit?scaleMode=FIT'
+          upload 'story-noah-ark.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/85af64f7-68b6-4b1c-a2d0-17ab93cf52b6.png' 'https://mcp.figma.com/mcp/upload/41e44f7e-f0b4-46d6-a3eb-49ee3300d8dd/submit?scaleMode=FIT'
+          upload 'story-jonah-whale.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/864ec02d-6191-4f3a-921b-95ae39031dab.png' 'https://mcp.figma.com/mcp/upload/ae908ebb-a912-47a2-9829-f50547d0c0f7/submit?scaleMode=FIT'
+          upload 'story-jesus-birth.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/422da108-c85c-46f0-a805-281262cda3b1.png' 'https://mcp.figma.com/mcp/upload/a86d2393-0957-4f2a-bc0f-63972c4ac82e/submit?scaleMode=FIT'
+          upload 'story-good-samaritan.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/fcac6d0e-d944-4626-90bf-27530d78e535.png' 'https://mcp.figma.com/mcp/upload/b6f6a993-b9e1-405a-b8cb-525ec3a92ec8/submit?scaleMode=FIT'
+          upload 'story-lost-sheep.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/04df2ae2-5e4e-48d8-bf2a-1c1e1e639037.png' 'https://mcp.figma.com/mcp/upload/b6bc2f0e-d1ce-42f0-8a82-06da7162bb44/submit?scaleMode=FIT'
+          upload 'story-resurrection.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/2e085265-a88c-46ff-a382-655bb203f35f.png' 'https://mcp.figma.com/mcp/upload/219a24a3-403e-4cee-a578-d95a82716f3c/submit?scaleMode=FIT'
+          upload 'story-creation.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/292b4248-226d-4a74-b62f-d9f86f606ee7.png' 'https://mcp.figma.com/mcp/upload/8b42b820-a03f-4689-aed8-09bca62611ed/submit?scaleMode=FIT'
+          upload 'story-jesus-love.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/ca857cf2-3acd-41af-99fb-daf9e7a803c4.png' 'https://mcp.figma.com/mcp/upload/045faaf3-3a6b-4e78-811f-5b6d064980a0/submit?scaleMode=FIT'
+          upload 'story-solomon-wisdom.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/b5a233c9-5700-463f-984b-095785d0b2d5.png' 'https://mcp.figma.com/mcp/upload/4c351dd2-b467-4362-bab4-9025d22a18b2/submit?scaleMode=FIT'
