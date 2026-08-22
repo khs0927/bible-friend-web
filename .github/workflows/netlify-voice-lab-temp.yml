@@ -4,12 +4,16 @@ on:
   push:
     branches:
       - netlify-voice-lab-deploy-temp
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
 
 jobs:
   deploy:
+    if: github.head_ref == 'netlify-voice-lab-deploy-temp' || github.ref_name == 'netlify-voice-lab-deploy-temp'
     runs-on: ubuntu-latest
     defaults:
       run:
