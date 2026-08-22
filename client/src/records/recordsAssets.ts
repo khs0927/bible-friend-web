@@ -1,3 +1,5 @@
+import './records-icon-fixes.css';
+
 const remoteAssets: Record<string, string> = {
   '/assets/bible-friend/records/hq/01_app_logo.png': 'https://cdn.creativeclaw.co/u/448e94a9/images/f1168ec5-1dc5-4e3e-917a-49ff55c4ea71.png',
   '/assets/bible-friend/records/hq/02_mascot_wave.png': 'https://cdn.creativeclaw.co/u/448e94a9/images/d44e983b-86e6-43f4-ac90-598c0798f42e.png',
@@ -38,7 +40,26 @@ const remoteAssets: Record<string, string> = {
   '/assets/bible-friend/records/nav/record.png': 'https://cdn.creativeclaw.co/u/448e94a9/images/29dccce9-fd39-4e01-9c0c-f327adc3c365.png',
 };
 
+const localFigmaAssets = new Set([
+  '/assets/bible-friend/records/mascot/praying.png',
+  '/assets/bible-friend/records/prayer/hands-alt.png',
+  '/assets/bible-friend/records/prayer/family.png',
+  '/assets/bible-friend/records/prayer/study.png',
+  '/assets/bible-friend/records/prayer/friends-teacher.png',
+  '/assets/bible-friend/records/prayer/candle.png',
+  '/assets/bible-friend/records/prayer/answered-check.png',
+  '/assets/bible-friend/records/prayer/heart-cross.png',
+]);
+
+const localFigmaAliases: Record<string, string> = {
+  '/assets/bible-friend/records/hq/03_mascot_heart.png': '/assets/bible-friend/records/mascot/praying.png',
+  '/assets/bible-friend/records/verse/prayer-ribbon.png': '/assets/bible-friend/records/prayer/heart-cross.png',
+};
+
 export function recordAssetUrl(path: string) {
+  const alias = localFigmaAliases[path];
+  if (alias) return alias;
+  if (localFigmaAssets.has(path)) return path;
   return remoteAssets[path] ?? path;
 }
 
