@@ -36,8 +36,7 @@
 }
 
 /* Keep the message composer immediately above the shared dock instead of using
- * the old fixed Figma Y coordinate. This applies to the conversation composer
- * and to Records when that screen keeps its composer visible. */
+ * the old fixed Figma Y coordinate. */
 .bf-conversation-app > .bf-conversation-composer {
   position: fixed !important;
   top: auto !important;
@@ -52,15 +51,54 @@
   bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
-/* Reserve exactly the dock/composer footprint so the final cards and prayer
- * fields can scroll fully into view rather than being trapped underneath them. */
+/*
+ * Records scroll fix:
+ * The records scroll viewport previously ended ~132px above the physical bottom.
+ * Because overflow-y:auto clips at that padding box, rows looked as if a hidden
+ * white layer was slicing cards/images while they crossed that boundary.
+ *
+ * Let the scroll viewport extend all the way to the shell bottom and reserve
+ * space with padding instead. Content can now scroll naturally behind the dock,
+ * while the final item can still be brought completely above it.
+ */
 .records-layer .records-main {
-  bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
-  scroll-padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  bottom: 0 !important;
+  padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)) !important;
+  scroll-padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
 }
 
 .records-layer .records-toast {
-  bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Prayer shortcut illustrations directly below "기도 제목" are intentionally
+ * larger for children. Keep contain so none of the Figma PNG artwork is cropped. */
+.records-layer .records-prayer-shortcuts button {
+  min-height: 122px;
+  padding: 8px 5px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.records-layer .records-prayer-shortcuts .records-shortcut-art {
+  width: 70px !important;
+  height: 64px !important;
+  max-width: 76px;
+  object-fit: contain !important;
+  flex: 0 0 auto;
+  margin: 0 auto 5px;
+}
+
+.records-layer .records-prayer-shortcuts b {
+  font-size: 11.2px;
+  line-height: 1.25;
+}
+
+.records-layer .records-prayer-shortcuts span {
+  font-size: 9.4px;
+  line-height: 1.35;
 }
 
 .bf-global-bottom-nav > button {
