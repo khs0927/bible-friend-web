@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff8ef">
+  <title>Bible Friend · CosyVoice3 Voice Lab</title>
+  <style>
+    *{box-sizing:border-box}:root{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:#332820;background:#fff8ef}
+    body{margin:0;padding:max(22px,env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));background:linear-gradient(#fffaf4,#fff4e6);min-height:100vh}
+    main{max-width:720px;margin:auto}.pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#f1e2ce;font-size:12px;font-weight:800;color:#654a35}
+    h1{font-size:28px;line-height:1.2;margin:12px 0 8px}.lead{line-height:1.65;color:#6b5c50;margin:0 0 18px}
+    .card{background:#fff;border:1px solid #eadfce;border-radius:20px;padding:18px;margin:14px 0;box-shadow:0 8px 28px rgba(90,65,44,.06)}
+    .notice{font-size:14px;line-height:1.6;color:#6d5e51;background:#fffdf9}.filebox{border:2px dashed #d9c4a6;border-radius:16px;padding:16px;text-align:center;background:#fffaf3}
+    input[type=file]{width:100%;font-size:16px}.meta{font-size:13px;color:#7c6d61;margin-top:10px;word-break:break-all}.good{color:#32734b}.bad{color:#a13c35}
+    button{width:100%;border:0;border-radius:15px;padding:14px 16px;font-size:16px;font-weight:800;background:#76583d;color:#fff;margin-top:10px;cursor:pointer}
+    button.secondary{background:#efe1cf;color:#5c4431}button:disabled{opacity:.45;cursor:wait}.sentence{font-size:17px;line-height:1.6;margin:8px 0 12px}
+    audio{width:100%;margin-top:8px}.status{min-height:24px;margin-top:10px;font-size:14px;font-weight:650;line-height:1.5}.mode{font-size:13px;color:#7b6a5c}.footer{font-size:12px;color:#88796d;line-height:1.5;margin-top:18px}
+  </style>
+</head>
+<body>
+<main>
+  <span class="pill">VOICE LAB · NETLIFY · PRODUCTION 미반영</span>
+  <h1>성경친구 CosyVoice3 청음실</h1>
+  <p class="lead">지금 선택한 레퍼런스 음색을 유지한 채 CosyVoice3 0.5B-2512의 자연어 감정 제어로 사랑·위로·기쁨을 순서대로 테스트합니다.</p>
+
+  <section class="card notice">
+    <strong>사용할 레퍼런스</strong><br>
+    앞에서 만든 <b>bible-friend-cosy-reference-9s.wav</b>를 선택하세요. 공식 CosyVoice3 제한에 맞춘 24 kHz / mono / 약 8.96초 파일입니다. 파일은 GitHub에 저장하지 않고 생성 요청 때만 전송됩니다.
+  </section>
+
+  <section class="card">
+    <div class="filebox">
+      <input id="reference" type="file" accept="audio/wav,audio/x-wav">
+      <div id="fileMeta" class="meta">아직 레퍼런스를 선택하지 않았습니다.</div>
+    </div>
+    <button id="runAll" disabled>사랑 → 위로 → 기쁨 순차 생성</button>
+  </section>
+
+  <section id="cards"></section>
+  <p class="footer">모델: FunAudioLLM/Fun-CosyVoice3-0.5B-2512 · 실행: Hugging Face 공식 ZeroGPU Space · 호스팅: Netlify 전용 Voice Lab. 기존 Gemini/Leda Production은 변경하지 않습니다.</p>
+</main>
+<script>
+const samples=[
+  {key:'love',label:'사랑',text:'하나님은 너를 정말 사랑하신단다. 오늘도 네 마음을 알고 계셔.'},
+  {key:'comfort',label:'위로',text:'괜찮아. 천천히 이야기해 줘. 성경 친구가 함께 들어줄게.'},
+  {key:'joy',label:'기쁨',text:'우와, 정말 잘했어! 오늘도 하나님의 말씀을 함께 알아보자.'}
+];
+const input=document.getElementById('reference');
+const meta=document.getElementById('fileMeta');
+const runAll=document.getElementById('runAll');
+const cards=document.getElementById('cards');
+let referenceFile=null;
+
+function renderCards(){
+  cards.innerHTML='';
+  for(const s of samples){
+    const el=document.createElement('article');el.className='card';
+    el.innerHTML=`<span class="pill">${s.label}</span><div class="sentence">${s.text}</div><div class="mode">CosyVoice3 Natural language control · reference-conditioned</div><div class="status" id="status-${s.key}">대기</div><audio id="audio-${s.key}" controls hidden></audio><button class="secondary" data-key="${s.key}" disabled>이 문장만 생성</button>`;
+    cards.appendChild(el);
+  }
+  cards.querySelectorAll('button[data-key]').forEach(b=>b.onclick=()=>runOne(b.dataset.key));
+}
+renderCards();
+
+input.onchange=()=>{
+  referenceFile=input.files?.[0]||null;
+  if(!referenceFile){meta.textContent='아직 레퍼런스를 선택하지 않았습니다.';runAll.disabled=true;return}
+  meta.innerHTML=`<span class="good">선택 완료</span> · ${referenceFile.name} · ${(referenceFile.size/1024/1024).toFixed(2)} MB`;
+  runAll.disabled=false;cards.querySelectorAll('button[data-key]').forEach(b=>b.disabled=false);
+};
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function poll(jobId,key){
+  const statusEl=document.getElementById('status-'+key);
+  for(let i=0;i<240;i++){
+    await sleep(3000);
+    const r=await fetch('/api/cosy-status?id='+encodeURIComponent(jobId),{cache:'no-store'});
+    if(r.status===404){statusEl.textContent='ZeroGPU 작업 시작 대기 중…';continue}
+    const data=await r.json();
+    if(data.status==='queued'||data.status==='running'){statusEl.textContent=data.message||'CosyVoice3 생성 중…';continue}
+    if(data.status==='done'){
+      const audio=document.getElementById('audio-'+key);
+      audio.src='/api/cosy-audio?id='+encodeURIComponent(jobId)+'&t='+Date.now();audio.hidden=false;
+      statusEl.innerHTML='<span class="good">생성 완료 · 재생해 보세요.</span>';return true;
+    }
+    if(data.status==='error')throw new Error(data.error||'CosyVoice 생성 실패');
+  }
+  throw new Error('생성 대기 시간이 12분을 넘었습니다.');
+}
+
+async function runOne(key){
+  if(!referenceFile)throw new Error('레퍼런스 WAV를 먼저 선택하세요.');
+  const statusEl=document.getElementById('status-'+key);
+  const jobId=crypto.randomUUID();const fd=new FormData();
+  fd.append('jobId',jobId);fd.append('sample',key);fd.append('reference',referenceFile,referenceFile.name);
+  statusEl.textContent='Netlify Background Function에 전달 중…';
+  const r=await fetch('/.netlify/functions/cosy-background',{method:'POST',body:fd});
+  if(!r.ok&&r.status!==202)throw new Error('작업 시작 실패: '+await r.text());
+  statusEl.textContent='ZeroGPU 큐에서 대기 중…';
+  return await poll(jobId,key);
+}
+
+runAll.onclick=async()=>{
+  runAll.disabled=true;input.disabled=true;cards.querySelectorAll('button[data-key]').forEach(b=>b.disabled=true);
+  try{for(const s of samples)await runOne(s.key)}
+  catch(e){alert(String(e.message||e))}
+  finally{input.disabled=false;runAll.disabled=!referenceFile;cards.querySelectorAll('button[data-key]').forEach(b=>b.disabled=!referenceFile)}
+};
+</script>
+</body>
+</html>
