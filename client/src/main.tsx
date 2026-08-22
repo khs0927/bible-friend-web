@@ -6,7 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import ConversationAutoTts from "./components/ConversationAutoTts";
-import RecordsExperienceBridge from "./records/RecordsExperienceBridge";
+import RecordsExperience from "./records/RecordsExperience";
 import { startLogin } from "./const";
 import "./index.css";
 import "./bible-friend-polish.css";
@@ -79,7 +79,7 @@ createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <ConversationAutoTts />
-      <RecordsExperienceBridge />
+      <RecordsExperience />
       <App />
     </QueryClientProvider>
   </trpc.Provider>
