@@ -11,18 +11,18 @@ permissions:
 
 jobs:
   sync:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download HQ assets, verify PNG headers, and upload originals to Figma
+      - name: Download and verify lossless HQ source assets
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p public/assets/bible-friend/generated/hq
+          root='public/assets/bible-friend/generated/hq'
+          mkdir -p "$root"
 
           names=(
             01_app_logo.png
@@ -48,53 +48,52 @@ jobs:
             'https://cdn.creativeclaw.co/u/448e94a9/images/2cc4bec8-8aa7-4fce-9f54-80507c07b940.png'
             'https://cdn.creativeclaw.co/u/448e94a9/images/6e667058-c6a3-4d7a-ac49-31bd30762e80.png'
           )
-          dsts=(
-            'https://mcp.figma.com/mcp/upload/fbb32a65-14b6-4e35-8729-a7c55a693450/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/655a245b-520a-4e1e-b464-a4694d64a6fc/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/af6d07b4-3a51-44b6-ac5d-84e36ef03e09/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/251b4c92-4514-4cee-b011-0370d124d482/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/9367cec3-70fa-409f-999c-107c8dfe04e9/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/5cb1abb2-dafd-4b37-b328-b70c8205ea99/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/7b721f57-51a8-4317-9879-775113873f82/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/12c888e4-6bca-4e33-a9f3-c3b74b9857b1/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/8b235516-7855-4c7e-9074-c7d404ce5339/submit?scaleMode=FIT'
-            'https://mcp.figma.com/mcp/upload/2a373cce-1747-4200-bdfb-27705fcc1644/submit?scaleMode=FIT'
-          )
 
           for i in "${!names[@]}"; do
-            path="public/assets/bible-friend/generated/hq/${names[$i]}"
-            curl -fsSL --retry 3 "${srcs[$i]}" -o "$path"
+            path="$root/${names[$i]}"
+            curl -fsSL --retry 3 --retry-delay 2 "${srcs[$i]}" -o "$path"
             python - "$path" <<'PY'
 import struct, sys
 p=sys.argv[1]
 with open(p,'rb') as f:
-    sig=f.read(8)
-    if sig != b'\x89PNG\r\n\x1a\n':
+    if f.read(8) != b'\x89PNG\r\n\x1a\n':
         raise SystemExit(f'not PNG: {p}')
     length=struct.unpack('>I',f.read(4))[0]
     typ=f.read(4)
-    if typ != b'IHDR' or length < 8:
+    if typ != b'IHDR' or length < 13:
         raise SystemExit(f'bad IHDR: {p}')
-    w,h=struct.unpack('>II',f.read(8))
+    w,h,bit_depth,color_type,compression,filter_method,interlace=struct.unpack('>IIBBBBB',f.read(13))
     if w < 1000 or h < 1000:
         raise SystemExit(f'asset too small: {p} {w}x{h}')
-    print(f'VERIFIED {p}: {w}x{h}')
+    if bit_depth != 8:
+        raise SystemExit(f'unexpected bit depth: {p} {bit_depth}')
+    print(f'VERIFIED {p}: {w}x{h}, color_type={color_type}, alpha-capable={color_type in (4,6)}')
 PY
-            echo "SHA256 $(sha256sum "$path" | cut -d' ' -f1) ${names[$i]}"
-            curl -fsS --retry 2 -F "file=@${path};type=image/png" "${dsts[$i]}" >/tmp/figma-${i}.json
-            echo "FIGMA_OK ${names[$i]} $(cat /tmp/figma-${i}.json | head -c 180)"
           done
 
           python - <<'PY'
 import hashlib, json, os, struct
 root='public/assets/bible-friend/generated/hq'
+sources={
+'01_app_logo.png':'https://cdn.creativeclaw.co/u/448e94a9/images/f1168ec5-1dc5-4e3e-917a-49ff55c4ea71.png',
+'02_mascot_wave.png':'https://cdn.creativeclaw.co/u/448e94a9/images/d44e983b-86e6-43f4-ac90-598c0798f42e.png',
+'03_mascot_heart.png':'https://cdn.creativeclaw.co/u/448e94a9/images/f07cced3-af37-42d2-8871-e823d7d559ba.png',
+'04_settings.png':'https://cdn.creativeclaw.co/u/448e94a9/images/8c4c133c-9cde-4e7c-8aa5-edd5d904c5f5.png',
+'05_heart.png':'https://cdn.creativeclaw.co/u/448e94a9/images/60e97b46-3a6a-40c2-b545-ee2228e22af2.png',
+'06_praying_hands.png':'https://cdn.creativeclaw.co/u/448e94a9/images/c16d1ac9-fbeb-4414-aadd-466733c52b6a.png',
+'07_dove.png':'https://cdn.creativeclaw.co/u/448e94a9/images/4cfaa18d-b15f-46cb-aa8a-5b20b5359d04.png',
+'08_gift.png':'https://cdn.creativeclaw.co/u/448e94a9/images/09720e49-2ed2-4877-b5bb-1fd9dff9bf3e.png',
+'09_chat.png':'https://cdn.creativeclaw.co/u/448e94a9/images/2cc4bec8-8aa7-4fce-9f54-80507c07b940.png',
+'10_story.png':'https://cdn.creativeclaw.co/u/448e94a9/images/6e667058-c6a3-4d7a-ac49-31bd30762e80.png'}
 items=[]
-for name in sorted(n for n in os.listdir(root) if n.endswith('.png')):
+for name in sorted(sources):
     p=os.path.join(root,name)
     b=open(p,'rb').read()
-    w,h=struct.unpack('>II', b[16:24])
-    items.append({'file':name,'width':w,'height':h,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
-open(os.path.join(root,'manifest.json'),'w').write(json.dumps({'source':'ChatGPT image generation','figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3','assets':items},ensure_ascii=False,indent=2)+'\n')
+    w,h=struct.unpack('>II',b[16:24])
+    items.append({'file':name,'width':w,'height':h,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'source':sources[name]})
+manifest={'sourceType':'ChatGPT generated transparent PNG','figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3','qualityPolicy':'Original PNG bytes; no resize, no JPEG conversion, no lossy recompression','assets':items}
+open(os.path.join(root,'manifest.json'),'w',encoding='utf-8').write(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps(manifest,ensure_ascii=False,indent=2))
 PY
 
       - name: Commit verified source assets
@@ -107,6 +106,6 @@ PY
           if git diff --cached --quiet; then
             echo 'No asset changes to commit.'
           else
-            git commit -m 'assets: add HQ Bible Friend generated source pack'
+            git commit -m 'assets: add verified HQ Bible Friend PNG source pack'
             git push
           fi
