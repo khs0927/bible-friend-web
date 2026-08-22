@@ -4,7 +4,6 @@ import {
   Check,
   ChevronRight,
   Copy,
-  Mic,
   Search,
   Share2,
   Star,
@@ -299,7 +298,6 @@ export default function RecordsExperience() {
           )}
         </main>
 
-        <div className="records-composer"><span>메시지를 입력해 주세요</span><button onClick={() => setToast('음성 질문은 대화 탭에서 사용할 수 있어요')}><Mic size={16}/> 말하기</button></div>
         <nav className="records-bottom-nav" aria-label="기록 화면 메뉴"><button onClick={() => handoff('대화')}>{asset(`${NAV}/chat.png`, '', 'records-nav-icon')}<span>대화</span></button><button onClick={() => handoff('스토리')}>{asset(`${NAV}/story.png`, '', 'records-nav-icon')}<span>스토리</span></button><button onClick={() => handoff('성장')}>{asset(`${NAV}/growth.png`, '', 'records-nav-icon')}<span>성장</span></button><button className="active" onClick={() => setScreen('favorites')}>{asset(`${NAV}/record.png`, '', 'records-nav-icon')}<span>기록</span></button></nav>
         {toast && <div className="records-toast" role="status">{toast}</div>}
       </div>
