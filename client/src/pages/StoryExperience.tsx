@@ -114,7 +114,7 @@ function StoryCard({ story, variant = "compact", onClick }: { story: StoryInfo; 
   );
 }
 
-function StoryHomeScreen({ goTo }: { goTo: (screen: number) => void }) {
+function StoryHomeScreen({ goTo, onOpenStory }: { goTo: (screen: number) => void; onOpenStory: (story: StoryKey) => void }) {
   return <>
     <header className="bf-story-head"><Brand /><PagePill page={1} /><h1>스토리</h1><p>말씀 속 모험을 시작해요</p></header>
     <section className="bf-story-hero">
@@ -122,7 +122,7 @@ function StoryHomeScreen({ goTo }: { goTo: (screen: number) => void }) {
       <div className="bf-story-hero-copy"><span className="bf-story-kicker">오늘의 이야기</span><h2>예수님의 사랑</h2><p>예수님이 우리를<br />얼마나 사랑하시는지<br />이야기로 만나봐요.</p><button type="button" onClick={() => goTo(2)}>읽기 시작하기 <ChevronRight /></button></div>
     </section>
     <section className="bf-story-home-grid">
-      <StoryCard story={STORIES[1]} onClick={() => goTo(2)} />
+      <StoryCard story={STORIES[1]} onClick={() => onOpenStory("david")} />
       <StoryCard story={STORIES[2]} onClick={() => goTo(2)} />
       <StoryCard story={STORIES[3]} onClick={() => goTo(2)} />
       <StoryCard story={STORIES[4]} onClick={() => goTo(2)} />
@@ -139,11 +139,11 @@ function FaithScreen({ goTo }: { goTo: (screen: number) => void }) {
   </>;
 }
 
-function CatalogScreen() {
+function CatalogScreen({ onOpenStory }: { onOpenStory: (story: StoryKey) => void }) {
   return <>
     <header className="bf-story-head is-compact"><Brand /><PagePill page={3} /><h1>스토리</h1><p>한눈에 보는 전체 이야기</p></header>
     <div className="bf-story-filters" role="tablist" aria-label="스토리 필터"><button className="is-active">전체 8</button><button>구약</button><button>예수님</button><button>완료</button></div>
-    <section className="bf-story-catalog">{STORIES.map(story => <StoryCard key={story.id} story={story} variant="catalog" />)}</section>
+    <section className="bf-story-catalog">{STORIES.map(story => <StoryCard key={story.id} story={story} variant="catalog" onClick={story.id === "david" ? () => onOpenStory(story.id) : undefined} />)}</section>
   </>;
 }
 
@@ -157,12 +157,16 @@ function JourneyScreen({ goHome }: { goHome: () => void }) {
 }
 
 export default function StoryExperience() {
+  const [, navigate] = useLocation();
   const [screen, setScreenState] = useState(initialStoryScreen);
   const setScreen = useCallback((next: number) => {
     const value = clamp(next, 0, STORY_SCREENS - 1);
     setScreenState(value);
     if (typeof window !== "undefined") window.history.replaceState(window.history.state, "", `/story?screen=${value + 1}`);
   }, []);
+  const openStory = useCallback((story: StoryKey) => {
+    if (story === "david") navigate("/story/david");
+  }, [navigate]);
   const previous = useCallback(() => setScreen(screen - 1), [screen, setScreen]);
   const next = useCallback(() => setScreen(screen + 1), [screen, setScreen]);
   const swipeHandlers = useHorizontalSwipe(previous, next);
@@ -179,9 +183,9 @@ export default function StoryExperience() {
     <main className="bf-story-route" data-design-source="figma:HHXt8qYYdgUwyaIbmO9US1">
       <section className="bf-story-app" {...swipeHandlers}>
         <div className="bf-story-content">
-          {screen === 0 && <StoryHomeScreen goTo={setScreen} />}
+          {screen === 0 && <StoryHomeScreen goTo={setScreen} onOpenStory={openStory} />}
           {screen === 1 && <FaithScreen goTo={setScreen} />}
-          {screen === 2 && <CatalogScreen />}
+          {screen === 2 && <CatalogScreen onOpenStory={openStory} />}
           {screen === 3 && <JourneyScreen goHome={() => setScreen(0)} />}
         </div>
         <StoryBottomNav onStoryHome={() => setScreen(0)} />
