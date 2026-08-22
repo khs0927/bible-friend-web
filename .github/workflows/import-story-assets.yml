@@ -1,12 +1,12 @@
 name: Import story assets
 on:
-  push:
-    paths:
-      - '.github/story-assets-trigger.txt'
+  issues:
+    types: [opened]
 permissions:
   contents: write
 jobs:
   import-assets:
+    if: contains(github.event.issue.title, '[IMPORT-STORY-ASSETS]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
