@@ -15,6 +15,7 @@ import "./conversation-home.css";
 import "./figma-conversation-assets.css";
 import "./conversation-mobile-hotfix.css";
 import "./conversation-themes.css";
+import "./conversation-typography.css";
 import "./unified-mobile-shell.css";
 
 const queryClient = new QueryClient();

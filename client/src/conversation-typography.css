@@ -1,0 +1,92 @@
+/* Bible Friend production typography.
+ * Source of truth for the conversation experience and Figma handoff:
+ * - Jua: display/headings and short emphasis labels
+ * - Gowun Dodum: body copy, controls, inputs, metadata, and navigation
+ *
+ * This file is loaded after conversation-themes.css so theme selection cannot
+ * accidentally force the entire UI into a single display font.
+ */
+
+.bf-conversation-shell {
+  font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-synthesis: none;
+}
+
+.bf-conversation-app button,
+.bf-conversation-app textarea,
+.bf-conversation-app input,
+.bf-conversation-app a {
+  font-family: inherit;
+}
+
+/* Display / heading roles */
+.bf-conversation-app h1,
+.bf-conversation-app h2,
+.bf-conversation-app h3,
+.bf-brand-button strong,
+.bf-chat-greeting-card p,
+.bf-quick-label,
+.bf-voice-status strong,
+.bf-voice-entry,
+.bf-send-entry,
+.bf-theme-panel-heading strong {
+  font-family: "Jua", "Gowun Dodum", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif !important;
+  font-weight: 400 !important;
+  font-synthesis: none;
+}
+
+/* Jua is already visually full; avoid synthetic bold and overly tight tracking. */
+.bf-brand-button strong,
+.bf-chat-greeting-card p,
+.bf-quick-label,
+.bf-voice-status strong,
+.bf-voice-entry,
+.bf-send-entry,
+.bf-theme-panel-heading strong {
+  letter-spacing: -0.01em !important;
+}
+
+.bf-home-hero-copy h1,
+.bf-voice-heading h1,
+.bf-history-heading h1 {
+  letter-spacing: -0.035em !important;
+}
+
+/* Reading / UI roles */
+.bf-home-hero-copy p,
+.bf-chat-bubble,
+.bf-chat-thinking,
+.bf-verse-card p,
+.bf-answer-verse-card p,
+.bf-answer-explanation-card p,
+.bf-history-heading p,
+.bf-history-filters button,
+.bf-history-copy p,
+.bf-history-card time,
+.bf-conversation-composer textarea,
+.bf-bottom-nav > button,
+.bf-bottom-nav > a,
+.bf-theme-panel-heading span:not(.bf-theme-current-badge),
+.bf-theme-current-badge,
+.bf-theme-card {
+  font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif !important;
+  font-synthesis: none;
+}
+
+/* Keep control text calm and consistent with the Figma production mockups. */
+.bf-home-hero-copy p,
+.bf-history-filters button,
+.bf-conversation-composer textarea,
+.bf-bottom-nav > button,
+.bf-bottom-nav > a,
+.bf-theme-panel-heading span:not(.bf-theme-current-badge),
+.bf-theme-current-badge,
+.bf-theme-card {
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
+.bf-bottom-nav .active,
+.bf-history-filters button[aria-selected="true"] {
+  font-weight: 400 !important;
+}
