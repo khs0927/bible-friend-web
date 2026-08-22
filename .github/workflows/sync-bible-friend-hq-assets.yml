@@ -3,6 +3,8 @@ name: Sync Bible Friend HQ Assets
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches: [agent/records-figma-integration-20260822]
   workflow_dispatch:
 
 permissions:
@@ -10,12 +12,12 @@ permissions:
 
 jobs:
   sync:
-    if: github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.actor != 'github-actions[bot]' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Prepare lossless image tooling
@@ -60,27 +62,18 @@ import hashlib, json, struct
 root=Path('client/public/assets/bible-friend/records')
 
 def split_sheet(source, outdir, names, cols, rows):
-    img=Image.open(source).convert('RGBA')
-    w,h=img.size
-    outdir.mkdir(parents=True,exist_ok=True)
+    img=Image.open(source).convert('RGBA'); w,h=img.size; outdir.mkdir(parents=True,exist_ok=True)
     for idx,name in enumerate(names):
         c=idx%cols; r=idx//cols
-        x0=round(c*w/cols); x1=round((c+1)*w/cols)
-        y0=round(r*h/rows); y1=round((r+1)*h/rows)
-        tile=img.crop((x0,y0,x1,y1))
+        tile=img.crop((round(c*w/cols),round(r*h/rows),round((c+1)*w/cols),round((r+1)*h/rows)))
         box=tile.getchannel('A').getbbox()
         if box: tile=tile.crop(box)
         tile.save(outdir/name,format='PNG',optimize=False,compress_level=6)
 
-split_sheet(root/'_sources/nav-sheet.png',root/'nav',[
- 'app-logo.png','chat.png','story.png','growth.png','record.png','microphone.png','hearts.png','sparkles.png','stars.png','shooting-star.png'],2,5)
-split_sheet(root/'_sources/verse-sheet.png',root/'verse',[
- 'open-bible-glow.png','open-bible-star.png','scripture-card.png','cross-hill.png','dove-branch.png','rainbow-cloud.png','courage-lion.png','scripture-lamp.png','heart-bible.png','prayer-ribbon.png'],2,5)
-split_sheet(root/'_sources/prayer-sheet.png',root/'prayer',[
- 'family.png','child-bedside.png','study.png','friends-teacher.png','candle.png','answered-check.png','gratitude-flower.png','calendar.png','hands-alt.png','heart-cross.png'],2,5)
-split_sheet(root/'_sources/mascot-sheet.png',root/'mascot',[
- 'wave.png','heart.png','praying.png','reading.png','pointing.png','celebrating.png','listening.png','sitting.png'],2,4)
-
+split_sheet(root/'_sources/nav-sheet.png',root/'nav',['app-logo.png','chat.png','story.png','growth.png','record.png','microphone.png','hearts.png','sparkles.png','stars.png','shooting-star.png'],2,5)
+split_sheet(root/'_sources/verse-sheet.png',root/'verse',['open-bible-glow.png','open-bible-star.png','scripture-card.png','cross-hill.png','dove-branch.png','rainbow-cloud.png','courage-lion.png','scripture-lamp.png','heart-bible.png','prayer-ribbon.png'],2,5)
+split_sheet(root/'_sources/prayer-sheet.png',root/'prayer',['family.png','child-bedside.png','study.png','friends-teacher.png','candle.png','answered-check.png','gratitude-flower.png','calendar.png','hands-alt.png','heart-cross.png'],2,5)
+split_sheet(root/'_sources/mascot-sheet.png',root/'mascot',['wave.png','heart.png','praying.png','reading.png','pointing.png','celebrating.png','listening.png','sitting.png'],2,4)
 items=[]
 for p in sorted(root.rglob('*.png')):
     if '_sources' in p.parts: continue
@@ -89,20 +82,12 @@ for p in sorted(root.rglob('*.png')):
     w,h=struct.unpack('>II',data[16:24])
     if w < 100 or h < 100: raise SystemExit(f'asset unexpectedly small: {p} {w}x{h}')
     items.append({'file':str(p.relative_to(root)),'width':w,'height':h,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
-manifest={
- 'figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3',
- 'figmaBoardNodeId':'38:2',
- 'qualityPolicy':'Original standalone PNGs are copied byte-for-byte. Sheet assets are cell-cropped and alpha-trimmed only; PNG encoding remains lossless and no asset is downscaled or converted to JPEG.',
- 'count':len(items),
- 'assets':items,
-}
-(root/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+(root/'manifest.json').write_text(json.dumps({'figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3','figmaBoardNodeId':'38:2','qualityPolicy':'Original standalone PNGs copied byte-for-byte; sheet assets cell-cropped and alpha-trimmed only; no downscale or JPEG conversion.','count':len(items),'assets':items},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(f'VERIFIED {len(items)} runtime PNG assets')
 PY
-
           rm -rf "$root/_sources"
 
-      - name: Commit verified runtime assets into PR branch
+      - name: Commit verified runtime assets into branch
         shell: bash
         run: |
           set -euo pipefail
@@ -113,5 +98,5 @@ PY
             echo 'Assets already materialized.'
           else
             git commit -m 'assets: materialize Figma records experience PNG pack'
-            git push origin HEAD:${{ github.head_ref }}
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi

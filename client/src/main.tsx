@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import ConversationAutoTts from "./components/ConversationAutoTts";
+import RecordsExperience from "./records/RecordsExperience";
 import { startLogin } from "./const";
 import "./index.css";
 import "./bible-friend-polish.css";
@@ -49,10 +50,6 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       headers() {
-        // Preview auto-login fallback: when the browser blocks iframe cookies
-        // (Safari ITP / private browsing / WebView), the runtime mirrors the
-        // session into sessionStorage so we can forward it as a Bearer token.
-        // The regular OAuth cookie flow keeps working and takes priority server-side.
         try {
           const raw = sessionStorage.getItem("manus-cookie");
           if (raw) {
@@ -82,6 +79,7 @@ createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <ConversationAutoTts />
+      <RecordsExperience />
       <App />
     </QueryClientProvider>
   </trpc.Provider>
