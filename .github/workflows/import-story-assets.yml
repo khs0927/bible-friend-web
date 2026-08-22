@@ -1,15 +1,18 @@
 name: Import story assets
 on:
-  issues:
-    types: [opened]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/story-assets-trigger-pr.txt'
 permissions:
   contents: write
 jobs:
   import-assets:
-    if: contains(github.event.issue.title, '[IMPORT-STORY-ASSETS]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - name: Download existing generated story images
         shell: bash
         run: |
@@ -50,7 +53,7 @@ jobs:
             ]
           }
           JSON
-      - name: Commit assets
+      - name: Commit assets to PR branch
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
@@ -61,4 +64,4 @@ jobs:
             exit 0
           fi
           git commit -m 'assets: add generated Bible Friend story artwork'
-          git push origin HEAD:main
+          git push origin HEAD:${{ github.head_ref }}
