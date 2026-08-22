@@ -1,0 +1,75 @@
+{
+  "id": "david-goliath",
+  "title": "다윗과 골리앗",
+  "totalPages": 30,
+  "availablePages": 10,
+  "aspectRatio": "3:4",
+  "sourceDimensions": {
+    "width": 1086,
+    "height": 1448
+  },
+  "format": "png",
+  "integrationStatus": "asset-only",
+  "pages": [
+    {
+      "page": 1,
+      "title": "이스라엘에 찾아온 큰 위기",
+      "src": "/assets/story/david-goliath/page-01.png",
+      "sha256": "6d2d2b92a7d2ffd27bab95f89093a942ab4325ea6d594c114fda8b59c0d8c908"
+    },
+    {
+      "page": 2,
+      "title": "무서운 블레셋 군대",
+      "src": "/assets/story/david-goliath/page-02.png",
+      "sha256": "920f1cf49f074dd2e412c0d0b7a15ec1ceb6c1fecefab24abf35f4350ea5e3c6"
+    },
+    {
+      "page": 3,
+      "title": "거인 골리앗",
+      "src": "/assets/story/david-goliath/page-03.png",
+      "sha256": "44db4a9540f1df890189377884b99af4e78e5efed600b0743687d80de0408311"
+    },
+    {
+      "page": 4,
+      "title": "골리앗의 외침",
+      "src": "/assets/story/david-goliath/page-04.png",
+      "sha256": "f9011eb0fe6eb6edd4b2a417286b2824b285863110d89c6d1aa6675d22be5fe0"
+    },
+    {
+      "page": 5,
+      "title": "두려움에 빠진 이스라엘",
+      "src": "/assets/story/david-goliath/page-05.png",
+      "sha256": "8a6bec4e61db681bafb92b5e78af436e54e34f2fe187f352d5ec9001d057a7bf"
+    },
+    {
+      "page": 6,
+      "title": "베들레헴의 작은 목동",
+      "src": "/assets/story/david-goliath/page-06.png",
+      "sha256": "785bd81cab40d4277aa41cda7c04f5b64f7e2a61c52f65d00c60d2c1a0e41e1f"
+    },
+    {
+      "page": 7,
+      "title": "양들을 돌보는 다윗",
+      "src": "/assets/story/david-goliath/page-07.png",
+      "sha256": "5e01a43e66f2d12f4770b70665a62021ce6a5e46b66a69886015f48ff816bc7c"
+    },
+    {
+      "page": 8,
+      "title": "하나님을 믿는 마음",
+      "src": "/assets/story/david-goliath/page-08.png",
+      "sha256": "de75952ed126a14b5439f3d4f5294a5dacf2f187d308c0e873d21ec07e240119"
+    },
+    {
+      "page": 9,
+      "title": "아버지의 심부름",
+      "src": "/assets/story/david-goliath/page-09.png",
+      "sha256": "c2799e1cd9e70b12258106316dfcd28490eaaa9d11949f011ee05666b025e014"
+    },
+    {
+      "page": 10,
+      "title": "전쟁터에 도착한 다윗",
+      "src": "/assets/story/david-goliath/page-10.png",
+      "sha256": "fd0f80763d94e14f8adbb5b1308ae2b9d2d291c2fb92ff314be872e9e507b4a3"
+    }
+  ]
+}
