@@ -12,84 +12,130 @@
     h1 { font-size: 28px; margin: 8px 0; }
     p { line-height: 1.62; }
     .muted { color: #77675a; }
-    .notice, .card { background: #fff; border: 1px solid #eadfce; border-radius: 18px; padding: 17px; margin: 14px 0; }
+    .notice, .card, .picker { background: #fff; border: 1px solid #eadfce; border-radius: 18px; padding: 17px; margin: 14px 0; }
     .card { box-shadow: 0 8px 28px rgba(93,69,48,.06); }
     .pill { display: inline-block; border-radius: 999px; background: #f7e8d4; padding: 5px 9px; font-size: 12px; font-weight: 800; }
     button { width: 100%; border: 0; border-radius: 16px; padding: 15px 18px; font-size: 17px; font-weight: 800; background: #755338; color: #fff; cursor: pointer; margin-top: 10px; }
-    button.secondary { background: #eee0ce; color: #59422f; }
-    button:disabled { opacity: .55; cursor: wait; }
-    audio { width: 100%; margin-top: 8px; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    input[type=file] { width: 100%; font-size: 16px; padding: 12px 0; }
+    audio { width: 100%; margin-top: 10px; }
     .sentence { font-size: 17px; line-height: 1.6; margin: 8px 0; }
     #status { min-height: 28px; margin: 15px 2px; font-weight: 650; }
     .error { color: #a13c35; white-space: pre-wrap; word-break: break-word; }
+    .ok { color: #316a45; }
+    .meta { font-size: 13px; color: #8b7969; margin-top: 6px; word-break: break-all; }
   </style>
 </head>
 <body>
 <main>
   <span class="pill">VOICE LAB · PRODUCTION 미반영</span>
   <h1>Bible Friend Sweet Voice</h1>
-  <p class="muted">Qwen3-TTS VoiceDesign으로 이름 있는 기존 음성을 복제하지 않고, 밝고 따뜻하고 달달한 독립 한국 여성 레퍼런스를 만든 뒤 CosyVoice3 0.5B-2512가 같은 음색으로 세 문장을 말하게 합니다.</p>
+  <p class="muted">이번 청음은 사용자가 선택한 레퍼런스 음성을 그대로 CosyVoice3 0.5B-2512에 일시 전송해 같은 음색으로 사랑·위로·기쁨 세 문장을 생성합니다. 레퍼런스 파일은 GitHub 저장소에 넣지 않습니다.</p>
+
   <div class="notice"><strong>비교 포인트</strong><br>한국어 자연스러움 · 아이 친화성 · 따뜻함 · 달달함 · 위로의 진정성 · 기쁨의 생동감 · 문장 끝 억양 · 기계음 여부</div>
 
-  <button id="referenceBtn" class="secondary">① Sweet Voice 레퍼런스 먼저 듣기</button>
-  <button id="runBtn">② 같은 레퍼런스로 3문장 생성하기</button>
-  <div id="status"></div>
-
-  <section id="referenceCard" class="card" hidden>
+  <section class="picker">
     <span class="pill">REFERENCE</span>
-    <div class="sentence">안녕, 성경 친구야. 오늘도 네 이야기를 따뜻하게 들어줄게.</div>
-    <audio id="referenceAudio" controls></audio>
+    <p><strong>① 지금 보내주신 레퍼런스 WAV를 선택하세요.</strong></p>
+    <input id="referenceFile" type="file" accept="audio/wav,audio/x-wav,audio/flac,audio/mpeg,audio/mp4,audio/*" />
+    <div id="fileMeta" class="meta">아직 파일이 선택되지 않았습니다.</div>
+    <audio id="referenceAudio" controls hidden></audio>
   </section>
+
+  <button id="runBtn" disabled>② 이 목소리로 CosyVoice3 3문장 생성하기</button>
+  <div id="status"></div>
   <section id="results"></section>
 </main>
 <script>
 const labels = { love: '사랑', comfort: '위로', joy: '기쁨' };
-const referenceBtn = document.getElementById('referenceBtn');
+const texts = {
+  love: '하나님은 너를 정말 사랑하신단다. 오늘도 네 마음을 알고 계셔.',
+  comfort: '괜찮아. 천천히 이야기해 줘. 성경 친구가 함께 들어줄게.',
+  joy: '우와, 정말 잘했어! 오늘도 하나님의 말씀을 함께 알아보자.'
+};
+const keys = ['love', 'comfort', 'joy'];
+const referenceFile = document.getElementById('referenceFile');
+const referenceAudio = document.getElementById('referenceAudio');
+const fileMeta = document.getElementById('fileMeta');
 const runBtn = document.getElementById('runBtn');
 const status = document.getElementById('status');
-const referenceCard = document.getElementById('referenceCard');
-const referenceAudio = document.getElementById('referenceAudio');
 const results = document.getElementById('results');
+let selectedFile = null;
+let referenceObjectUrl = '';
+const resultObjectUrls = [];
 
-function busy(v, text='') { referenceBtn.disabled = v; runBtn.disabled = v; status.textContent = text; }
+function formatSize(bytes) {
+  return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
 
-referenceBtn.onclick = async () => {
-  busy(true, '독립 Sweet Voice 레퍼런스를 생성 중입니다…');
-  try {
-    const r = await fetch('/api/voice-lab-cosy?reference=1', { cache: 'no-store' });
-    if (!r.ok) throw new Error(await r.text());
-    const blob = await r.blob();
-    if (referenceAudio.src) URL.revokeObjectURL(referenceAudio.src);
-    referenceAudio.src = URL.createObjectURL(blob);
-    referenceCard.hidden = false;
-    status.textContent = '레퍼런스가 준비됐습니다.';
-    referenceAudio.play().catch(() => {});
-  } catch (e) {
-    status.innerHTML = '<span class="error">레퍼런스 생성 실패: ' + String(e.message || e) + '</span>';
-  } finally { referenceBtn.disabled = false; runBtn.disabled = false; }
-};
+function clearResultUrls() {
+  while (resultObjectUrls.length) URL.revokeObjectURL(resultObjectUrls.pop());
+}
+
+referenceFile.addEventListener('change', () => {
+  const file = referenceFile.files && referenceFile.files[0];
+  selectedFile = file || null;
+  runBtn.disabled = !selectedFile;
+  if (referenceObjectUrl) URL.revokeObjectURL(referenceObjectUrl);
+  if (!selectedFile) {
+    referenceAudio.hidden = true;
+    referenceAudio.removeAttribute('src');
+    fileMeta.textContent = '아직 파일이 선택되지 않았습니다.';
+    return;
+  }
+  referenceObjectUrl = URL.createObjectURL(selectedFile);
+  referenceAudio.src = referenceObjectUrl;
+  referenceAudio.hidden = false;
+  fileMeta.textContent = `${selectedFile.name} · ${formatSize(selectedFile.size)} · ${selectedFile.type || 'audio'}`;
+  status.innerHTML = '<span class="ok">레퍼런스가 준비됐습니다. 먼저 위 플레이어에서 원본을 확인한 뒤 생성하세요.</span>';
+});
+
+async function generateOne(key) {
+  const r = await fetch(`/api/voice-lab-cosy?play=${encodeURIComponent(key)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': selectedFile.type || 'audio/wav' },
+    body: selectedFile,
+    cache: 'no-store'
+  });
+  if (!r.ok) {
+    let detail = '';
+    try { detail = await r.text(); } catch {}
+    throw new Error(`${labels[key]} 생성 실패 · HTTP ${r.status}${detail ? `\n${detail}` : ''}`);
+  }
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  resultObjectUrls.push(url);
+  const elapsed = r.headers.get('x-bible-friend-elapsed-ms');
+  return { url, elapsed };
+}
+
+function addCard(key, result) {
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.innerHTML = `<span class="pill">${labels[key]}</span><div class="sentence">${texts[key]}</div><audio controls src="${result.url}"></audio><p class="muted">CosyVoice3 0.5B-2512${result.elapsed ? ` · ${(Number(result.elapsed) / 1000).toFixed(1)}초` : ''}</p>`;
+  results.appendChild(card);
+}
 
 runBtn.onclick = async () => {
-  busy(true, '같은 Sweet Voice 레퍼런스로 사랑·위로·기쁨을 생성 중입니다…');
+  if (!selectedFile) return;
+  runBtn.disabled = true;
+  referenceFile.disabled = true;
+  clearResultUrls();
   results.innerHTML = '';
   try {
-    const r = await fetch('/api/voice-lab-cosy?sample=all', { cache: 'no-store' });
-    const data = await r.json();
-    if (!r.ok && r.status !== 207) throw new Error(data.error || JSON.stringify(data));
-    for (const item of data.outputs || []) {
-      const card = document.createElement('article');
-      card.className = 'card';
-      if (!item.ok) {
-        card.innerHTML = `<span class="pill">${labels[item.sample] || item.sample}</span><div class="error">${item.error}</div>`;
-      } else {
-        card.innerHTML = `<span class="pill">${labels[item.sample] || item.sample}</span><div class="sentence">${item.text}</div><audio controls src="${item.audioUrl}"></audio><p class="muted">CosyVoice3 0.5B-2512 · ${Math.round(item.elapsedMs/100)/10}s</p>`;
-      }
-      results.appendChild(card);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      status.textContent = `${i + 1}/3 · ${labels[key]} 음성을 CosyVoice3로 생성 중입니다… 무료 Space 대기열에 따라 시간이 걸릴 수 있습니다.`;
+      const result = await generateOne(key);
+      addCard(key, result);
     }
-    status.textContent = data.ok ? '세 음성이 준비됐습니다. 사랑 → 위로 → 기쁨 순서로 들어보세요.' : '일부 항목만 생성되었습니다.';
+    status.innerHTML = '<span class="ok">완료했습니다. 사랑 → 위로 → 기쁨 순서로 들어보세요.</span>';
   } catch (e) {
-    status.innerHTML = '<span class="error">CosyVoice 생성 실패: ' + String(e.message || e) + '</span>';
-  } finally { referenceBtn.disabled = false; runBtn.disabled = false; }
+    status.innerHTML = `<span class="error">${String(e.message || e)}</span>`;
+  } finally {
+    runBtn.disabled = false;
+    referenceFile.disabled = false;
+  }
 };
 </script>
 </body>
