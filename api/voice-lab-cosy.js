@@ -34,22 +34,21 @@ async function gradioUpload(wav) {
 }
 
 function fileData(path) {
-  const name = path.split("/").pop() || "cosyvoice-reference.wav";
   return {
     path,
     url: `${HF_SPACE}/gradio_api/file=${encodeURIComponent(path)}`,
-    orig_name: name,
+    orig_name: path.split("/").pop() || "cosyvoice-reference.wav",
     mime_type: "audio/wav",
     meta: { _type: "gradio.FileData" },
   };
 }
 
-async function generate(uploadedPath, sample) {
+async function generate(uploadedPath, sample, seed) {
   const start = await fetch(`${HF_SPACE}/gradio_api/call/generate_audio`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      data: [sample.text, "instruct", "", fileData(uploadedPath), null, sample.instruct, 20260823, false, "En"],
+      data: [sample.text, "instruct", "", fileData(uploadedPath), null, sample.instruct, seed, false, "En"],
     }),
   });
   if (!start.ok) throw new Error(`gradio_call_http_${start.status}:${(await start.text()).slice(0, 500)}`);
@@ -78,30 +77,42 @@ async function generate(uploadedPath, sample) {
   return audioUrl;
 }
 
+async function makeOne(key, uploadedPath, index) {
+  const sample = SAMPLES[key];
+  const startedAt = Date.now();
+  try {
+    const audioUrl = await generate(uploadedPath, sample, 20260823 + index);
+    return { ok: true, sample: key, text: sample.text, instruct: sample.instruct, audioUrl, elapsedMs: Date.now() - startedAt };
+  } catch (error) {
+    return { ok: false, sample: key, text: sample.text, error: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - startedAt };
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method !== "GET") return res.status(405).json({ ok: false, error: "GET only" });
-  const key = String(req.query?.sample ?? "love");
-  const sample = SAMPLES[key];
-  if (!sample) return res.status(400).json({ ok: false, error: "sample must be love, comfort, or joy" });
+
+  const requested = String(req.query?.sample ?? "all");
+  const keys = requested === "all" ? ["love", "comfort", "joy"] : [requested];
+  if (keys.some((key) => !SAMPLES[key])) {
+    return res.status(400).json({ ok: false, error: "sample must be all, love, comfort, or joy" });
+  }
+
   const startedAt = Date.now();
   try {
     const reference = await fetchReference();
     const uploadedPath = await gradioUpload(reference);
-    const audioUrl = await generate(uploadedPath, sample);
-    return res.status(200).json({
-      ok: true,
+    const outputs = await Promise.all(keys.map((key, index) => makeOne(key, uploadedPath, index)));
+    return res.status(outputs.every((item) => item.ok) ? 200 : 207).json({
+      ok: outputs.every((item) => item.ok),
       model: "FunAudioLLM/Fun-CosyVoice3-0.5B-2512",
       inferenceMode: "instruct",
-      sample: key,
-      text: sample.text,
-      instruct: sample.instruct,
-      audioUrl,
+      outputs,
       reference: { source: "FunAudioLLM/CosyVoice asset/zero_shot_prompt.wav", purpose: "transport probe only" },
       elapsedMs: Date.now() - startedAt,
     });
   } catch (error) {
-    return res.status(502).json({ ok: false, sample: key, error: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - startedAt });
+    return res.status(502).json({ ok: false, error: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - startedAt });
   }
 }
