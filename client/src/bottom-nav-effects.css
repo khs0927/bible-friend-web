@@ -1,0 +1,106 @@
+/* Bible Friend — final mobile dock position + restrained interaction effects.
+   Loaded last so it can safely refine the shared nav without touching legacy layouts. */
+
+/* Move the shared dock slightly closer to the physical bottom edge while
+   preserving iOS safe-area spacing. Previous visual offset was 8px. */
+.bf-global-bottom-nav {
+  bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 6px 18px rgba(46, 31, 82, 0.1);
+}
+
+.bf-global-bottom-nav > button {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 160ms ease-out,
+    transform 160ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.bf-global-bottom-nav > button .bf-icon-tile {
+  transition:
+    transform 180ms cubic-bezier(.22, 1, .36, 1),
+    filter 180ms ease-out;
+}
+
+/* Tactile press: short and subtle so the child gets feedback without the UI
+   feeling jumpy. */
+.bf-global-bottom-nav > button:active {
+  transform: translateY(1px) scale(.95);
+}
+
+/* Selected tab gets one small spring lift. The existing purple underline is
+   kept as the strongest state cue. */
+.bf-global-bottom-nav > button.active .bf-icon-tile {
+  transform: translateY(-1px) scale(1.06);
+  filter: drop-shadow(0 4px 7px rgba(115, 66, 228, .14));
+}
+
+.bf-global-bottom-nav > button.active::after {
+  transform-origin: center;
+  animation: bf-dock-indicator-in 220ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+/* Reusable soft press treatment for the conversation cards already present
+   in the current UI. No permanent bouncing is added. */
+.bf-quick-question,
+.bf-followup-actions button,
+.bf-answer-actions button,
+.bf-voice-actions button,
+.bf-history-filters button {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 150ms cubic-bezier(.22, 1, .36, 1),
+    box-shadow 150ms ease-out,
+    filter 150ms ease-out;
+}
+
+.bf-quick-question:active,
+.bf-followup-actions button:active,
+.bf-answer-actions button:active,
+.bf-voice-actions button:active,
+.bf-history-filters button:active {
+  transform: scale(.985);
+  filter: brightness(.985);
+}
+
+/* The mascot and greeting sparkle are the only ambient animations added.
+   They are deliberately slow and low-amplitude to avoid distracting children. */
+.bf-home-mascot img {
+  animation: bf-home-mascot-float 5.2s ease-in-out infinite;
+}
+
+.bf-greeting-sparkle {
+  animation: bf-greeting-sparkle 2.8s ease-in-out infinite;
+}
+
+@keyframes bf-dock-indicator-in {
+  from { opacity: .2; scale: .45 1; }
+  to { opacity: 1; scale: 1 1; }
+}
+
+@keyframes bf-home-mascot-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(1deg); }
+}
+
+@keyframes bf-greeting-sparkle {
+  0%, 100% { opacity: .72; transform: scale(.9) rotate(-4deg); }
+  50% { opacity: 1; transform: scale(1.08) rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-global-bottom-nav > button,
+  .bf-global-bottom-nav > button .bf-icon-tile,
+  .bf-quick-question,
+  .bf-followup-actions button,
+  .bf-answer-actions button,
+  .bf-voice-actions button,
+  .bf-history-filters button {
+    transition: none;
+  }
+
+  .bf-global-bottom-nav > button.active::after,
+  .bf-home-mascot img,
+  .bf-greeting-sparkle {
+    animation: none;
+  }
+}
