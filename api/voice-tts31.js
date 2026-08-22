@@ -241,7 +241,21 @@ async function synthesizeUncached(input) {
       attempts,
     };
   } catch (error) {
-    console.warn("[VOICE31_DIRECT] primary failed", { reason: error instanceof Error ? error.message : String(error), attempts });
+    const status = Number(error?.status ?? 0);
+    const reason = error instanceof Error ? error.message : String(error);
+    console.warn("[VOICE31_DIRECT] primary failed", { reason, status, attempts });
+    if (status === 429 || reason === "gemini31_http_429") {
+      return {
+        success: false,
+        provider: "device",
+        errorCode: "gemini_free_quota",
+        error: "Gemini 3.1 무료 음성 한도에 도달해 기기 음성으로 바로 이어서 들려줘요.",
+        fallbackSuggested: true,
+        costMode: "zero-external-cost-fallback",
+        serverResponseAt: Date.now(),
+        attempts,
+      };
+    }
   }
 
   try {
