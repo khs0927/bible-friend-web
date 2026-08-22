@@ -1,0 +1,17 @@
+{
+  "pack": "story-ui-v1",
+  "strategy": "lossless-git-blob-reuse",
+  "note": "These 10 assets are copied by Git blob SHA from the already-proven conversation asset set. No resize, recompression, or raster re-encoding occurs.",
+  "assets": [
+    {"name":"nav-chat.png","role":"bottom-nav/chat","source":"client/public/assets/figma/conversation/nav-chat.png","blob":"cb4e1b1fce6f5ad2897bf5ff9550452dc8df44dd"},
+    {"name":"nav-story.png","role":"bottom-nav/story","source":"client/public/assets/figma/conversation/nav-story.png","blob":"13e63a04967594aa85e64deac69e33c9e895f253"},
+    {"name":"nav-growth.png","role":"bottom-nav/growth","source":"client/public/assets/figma/conversation/nav-growth.png","blob":"fcfdbf1b43ac5e600c9cadc09d595281ba951177"},
+    {"name":"nav-record.png","role":"bottom-nav/record","source":"client/public/assets/figma/conversation/nav-record.png","blob":"3ea2396e8a4fbceadf43bf27632c4497c9ec2bc5"},
+    {"name":"voice-mic.png","role":"control/voice","source":"client/public/assets/figma/conversation/voice-button.png","blob":"9aeed17b78e1535515797263f52eae9ab90d8c72"},
+    {"name":"mascot-wave.png","role":"mascot/wave","source":"client/public/assets/figma/conversation/mascot-wave.png","blob":"53c0067d6119db570740fac72f4cefc949e6b349"},
+    {"name":"mascot-listen.png","role":"mascot/listen","source":"client/public/assets/figma/conversation/mascot-listen.png","blob":"b826c016a066de3f79395a420eafb81afef2ba00"},
+    {"name":"mascot-teach.png","role":"mascot/teach","source":"client/public/assets/figma/conversation/mascot-teach.png","blob":"e3c22e98fd741741596b133266af68debe424f51"},
+    {"name":"action-heart.png","role":"sticker/heart","source":"client/public/assets/figma/conversation/action-heart.png","blob":"ad8001aa32ebd90ab88d813ac7a9e5d2e7016d86"},
+    {"name":"action-pray.png","role":"sticker/pray","source":"client/public/assets/figma/conversation/action-pray.png","blob":"6eb91a244309597ed649169250fd5d4ca2e2cf68"}
+  ]
+}
