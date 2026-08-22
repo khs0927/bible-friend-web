@@ -1,0 +1,1 @@
+Import existing Bible Friend generated story PNG assets into public/assets/story/generated.
