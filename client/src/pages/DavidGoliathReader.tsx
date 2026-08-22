@@ -25,6 +25,7 @@ export default function DavidGoliathReader() {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const pointerStartX = useRef<number | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const current = DAVID_GOLIATH_PAGES[pageIndex];
 
   const sourceFor = useCallback(
@@ -77,6 +78,7 @@ export default function DavidGoliathReader() {
   }, []);
 
   useEffect(() => {
+    stageRef.current?.scrollTo({ top: 0, behavior: "auto" });
     setImageLoaded(false);
     setImageFailed(false);
     [pageIndex - 1, pageIndex + 1, pageIndex + 2]
@@ -124,7 +126,7 @@ export default function DavidGoliathReader() {
           </button>
         </header>
 
-        <div className="bf-david-reader-stage" aria-busy={!imageLoaded && !imageFailed}>
+        <div ref={stageRef} className="bf-david-reader-stage" aria-busy={!imageLoaded && !imageFailed}>
           {!imageLoaded && !imageFailed && <div className="bf-david-reader-loader" role="status">이야기를 불러오는 중…</div>}
           {!imageFailed ? (
             <img
