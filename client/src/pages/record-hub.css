@@ -1,0 +1,563 @@
+:root {
+  --record-ink: #17154c;
+  --record-muted: #77738d;
+  --record-purple: #7b3ff0;
+  --record-purple-2: #9a63f7;
+  --record-purple-soft: #ead1ff;
+  --record-card: rgba(255, 255, 255, 0.94);
+}
+
+.record-shell {
+  min-height: 100dvh;
+  color: var(--record-ink);
+  background: #eee;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+.record-app {
+  position: relative;
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02)),
+    url('/assets/bible-friend-chat-bg.svg') center / cover fixed;
+  box-shadow: 0 8px 30px rgba(44, 31, 75, .08);
+}
+
+.record-app::before,
+.record-app::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset: 0;
+}
+
+.record-theme-verses .record-app::before {
+  background:
+    radial-gradient(circle at 14% 25%, rgba(190, 231, 153, .56), transparent 27%),
+    radial-gradient(circle at 90% 22%, rgba(255, 242, 191, .72), transparent 30%),
+    radial-gradient(circle at 60% 76%, rgba(246, 222, 176, .52), transparent 36%),
+    linear-gradient(180deg, rgba(223, 241, 196, .6), rgba(255, 244, 218, .46) 49%, rgba(180, 225, 164, .58));
+  backdrop-filter: blur(1px);
+}
+
+.record-theme-prayer .record-app::before {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(228, 193, 250, .55), transparent 28%),
+    radial-gradient(circle at 86% 28%, rgba(255, 215, 166, .7), transparent 31%),
+    radial-gradient(circle at 20% 78%, rgba(165, 225, 194, .58), transparent 30%),
+    linear-gradient(180deg, rgba(251, 219, 231, .62), rgba(255, 231, 190, .52) 52%, rgba(211, 197, 255, .62));
+  backdrop-filter: blur(1px);
+}
+
+.record-theme-recent .record-app::before,
+.record-theme-favorites .record-app::before {
+  background: linear-gradient(180deg, rgba(246,225,255,.62), rgba(255,236,211,.58), rgba(209,235,212,.56));
+}
+
+.record-app::after {
+  opacity: .38;
+  background:
+    radial-gradient(circle at 12% 34%, #fff 0 3px, transparent 4px),
+    radial-gradient(circle at 84% 12%, #fff 0 4px, transparent 5px),
+    radial-gradient(circle at 92% 50%, #fff 0 3px, transparent 4px),
+    radial-gradient(circle at 28% 70%, #fff 0 3px, transparent 4px);
+}
+
+.record-header {
+  position: relative;
+  z-index: 20;
+  height: calc(94px + env(safe-area-inset-top, 0px));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 28px 17px;
+}
+
+.record-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.record-brand-icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffd76f, #8c5df5);
+  box-shadow: 0 3px 8px rgba(76, 47, 143, .13);
+}
+
+.record-brand-icon img {
+  width: 37px;
+  height: 37px;
+  object-fit: contain;
+}
+
+.record-brand strong {
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: -.055em;
+  color: #161555;
+}
+
+.record-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.record-header-actions button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 13px;
+  background: rgba(255,255,255,.92);
+  color: #636076;
+  box-shadow: 0 4px 10px rgba(45, 35, 71, .08);
+}
+
+.record-header-actions button svg { width: 24px; height: 24px; stroke-width: 2.3; }
+.record-header-actions .record-settings {
+  color: #7f45ed;
+  border: 2px solid rgba(159, 94, 241, .34);
+  box-shadow: inset 0 0 0 3px rgba(210, 170, 255, .18), 0 4px 10px rgba(45, 35, 71, .08);
+}
+
+.record-content {
+  position: relative;
+  z-index: 4;
+  padding: 0 28px calc(112px + env(safe-area-inset-bottom, 0px));
+}
+
+.record-tabs {
+  height: 57px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 5px;
+  border-radius: 29px;
+  background: rgba(255,255,255,.93);
+  box-shadow: 0 5px 13px rgba(39, 28, 71, .05);
+}
+
+.record-tabs button {
+  min-width: 0;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  color: #676279;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.record-tabs button.active {
+  color: #6f36d7;
+  background: linear-gradient(180deg, #ead0ff, #e4c5ff);
+  box-shadow: inset 0 0 0 1px rgba(154, 92, 238, .12);
+}
+
+.record-panel { padding-top: 17px; }
+
+.today-card {
+  position: relative;
+  min-height: 158px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 23px 22px;
+  background: var(--record-card);
+  box-shadow: 0 5px 14px rgba(43, 31, 72, .045);
+}
+
+.today-copy { min-width: 0; position: relative; z-index: 2; }
+.today-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #7940e3;
+  font-size: 12px;
+  font-weight: 900;
+}
+.today-label svg { width: 13px; height: 13px; fill: currentColor; }
+.today-copy small { display: block; margin-top: 8px; color: #8c8797; font-size: 12px; }
+.today-copy h1 {
+  margin: 12px 0 0;
+  max-width: 285px;
+  color: #15134c;
+  font-size: 20px;
+  line-height: 1.48;
+  font-weight: 900;
+  letter-spacing: -.045em;
+}
+.today-illustration {
+  position: absolute;
+  right: 19px;
+  top: 49px;
+  max-width: 105px;
+  font-size: 39px;
+  line-height: 1;
+  transform: rotate(1deg);
+  filter: drop-shadow(0 5px 4px rgba(56, 33, 98, .08));
+}
+.today-verse-card .today-copy { padding-right: 82px; }
+
+.verse-categories {
+  display: flex;
+  gap: 8px;
+  margin: 19px 0 19px;
+}
+
+.verse-categories button {
+  min-width: 48px;
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 20px;
+  color: #716d7d;
+  background: rgba(255,255,255,.91);
+  font-size: 13px;
+  font-weight: 800;
+}
+.verse-categories button.active {
+  color: #fff;
+  background: linear-gradient(135deg, #8846f3, #6b2de1);
+}
+
+.verse-list,
+.prayer-list,
+.recent-list {
+  display: grid;
+  gap: 11px;
+}
+
+.verse-row {
+  position: relative;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 52px minmax(0,1fr) 30px;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 14px 11px 15px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 5px 12px rgba(42,31,72,.045);
+}
+
+.verse-emoji {
+  width: 52px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  background: linear-gradient(150deg, #fff8d7, #fff);
+  border-radius: 17px;
+}
+
+.verse-row-copy { min-width: 0; }
+.verse-row-copy h2 {
+  margin: 0;
+  color: #17154c;
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 950;
+  letter-spacing: -.04em;
+}
+.verse-row-copy p {
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: #827d91;
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bookmark {
+  width: 30px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: #1c1a56;
+  background: transparent;
+}
+.bookmark svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.bookmark.saved { color: #7b3ff0; }
+
+.more-verses {
+  width: 100%;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 13px;
+  border: 0;
+  border-radius: 23px;
+  color: #7941e6;
+  background: rgba(255,255,255,.96);
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 5px 12px rgba(42,31,72,.04);
+}
+.more-verses svg { width: 20px; height: 20px; }
+
+.today-prayer-card {
+  min-height: 162px;
+  padding: 22px 22px 21px;
+  background: linear-gradient(135deg, rgba(250,247,255,.96), rgba(248,243,255,.9));
+}
+.today-prayer-card .today-copy { padding-right: 80px; }
+.prayer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #8748ef, #6f31e2);
+  font-size: 11px;
+  font-weight: 900;
+}
+.prayer-badge svg { width: 12px; height: 12px; fill: currentColor; }
+.today-prayer-card h1 { margin-top: 13px; font-size: 20px; }
+.today-prayer-card p {
+  margin: 11px 0 0;
+  max-width: 300px;
+  color: #716c7c;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.prayer-hands { top: 59px; right: 21px; font-size: 40px; }
+
+.prayer-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 4px 12px;
+}
+.prayer-heading h2 { margin: 0; font-size: 20px; font-weight: 950; letter-spacing: -.045em; }
+.prayer-heading button { border: 0; color: #7a3fe5; background: transparent; font-size: 13px; font-weight: 900; }
+
+.prayer-topics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 9px;
+  margin-bottom: 13px;
+}
+.prayer-topics button {
+  min-width: 0;
+  min-height: 126px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 8px;
+  border: 0;
+  border-radius: 24px;
+  background: rgba(255,255,255,.94);
+  color: var(--record-ink);
+  box-shadow: 0 4px 10px rgba(42,31,72,.04);
+}
+.prayer-topics span { font-size: 31px; line-height: 1.05; margin-bottom: 8px; }
+.prayer-topics strong { font-size: 13px; font-weight: 950; letter-spacing: -.04em; white-space: nowrap; }
+.prayer-topics small { margin-top: 5px; color: #868190; font-size: 9.5px; line-height: 1.45; }
+
+.prayer-row {
+  position: relative;
+  min-height: 80px;
+  display: grid;
+  grid-template-columns: 55px minmax(0,1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 72px 10px 13px;
+  border-radius: 23px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 4px 10px rgba(42,31,72,.04);
+}
+.prayer-row-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  font-size: 31px;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #fff9df, #fff);
+}
+.prayer-row h3 {
+  margin: 0;
+  overflow: hidden;
+  color: #17154c;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 950;
+  letter-spacing: -.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prayer-row p {
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: #827e90;
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prayer-status {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  min-width: 55px;
+  height: 34px;
+  padding: 0 9px;
+  border-radius: 17px;
+  color: #7a3fe5;
+  background: #f0e4ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+.prayer-status.answered { color: #ef765e; background: #fff0e7; }
+
+.prayer-composer {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 56px;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.92);
+}
+.prayer-composer input {
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e4d7f5;
+  border-radius: 13px;
+  outline: none;
+  color: var(--record-ink);
+  background: #fff;
+}
+.prayer-composer button { border: 0; border-radius: 13px; color: #fff; background: #7940e8; font-weight: 800; }
+
+.new-prayer {
+  width: 100%;
+  height: 58px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(110deg, #8847f3, #6f2de2);
+  font-size: 17px;
+  font-weight: 600;
+  box-shadow: 0 7px 16px rgba(110, 45, 226, .18);
+}
+.new-prayer span { font-size: 21px; vertical-align: -1px; }
+
+.recent-intro {
+  min-height: 118px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 28px;
+  background: rgba(255,255,255,.93);
+}
+.recent-intro > span { font-size: 40px; }
+.recent-intro strong { font-size: 21px; font-weight: 950; }
+.recent-intro p { margin: 5px 0 0; color: var(--record-muted); font-size: 12px; }
+.recent-list { margin-top: 14px; }
+.recent-row {
+  position: relative;
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: 54px minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 13px 55px 13px 14px;
+  border-radius: 23px;
+  background: rgba(255,255,255,.95);
+}
+.recent-row > span { width: 54px; height: 54px; display:grid; place-items:center; border-radius:16px; background:#faf3ff; font-size:30px; }
+.recent-row h2 { margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:16px; font-weight:900; }
+.recent-row p { margin:5px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--record-muted); font-size:11px; }
+.recent-row time { position:absolute; top:14px; right:12px; color:#938e9e; font-size:9px; }
+.recent-row svg { position:absolute; right:16px; bottom:14px; width:20px; color:#7d46db; }
+
+.record-bottom-nav {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  bottom: calc(9px + env(safe-area-inset-bottom, 0px));
+  translate: -50% 0;
+  width: min(calc(100% - 34px), 396px);
+  height: 77px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  padding: 5px 9px 4px;
+  border-radius: 27px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 8px 20px rgba(44, 31, 75, .09);
+  backdrop-filter: blur(16px);
+}
+.record-bottom-nav a {
+  position: relative;
+  min-width: 0;
+  height: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #615d70;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+.record-bottom-nav img { width: 38px; height: 34px; object-fit: contain; image-rendering: auto; }
+.record-bottom-nav a.active { color: #7840e7; font-weight: 800; }
+.record-bottom-nav a.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 25px;
+  height: 3px;
+  translate: -50% 0;
+  border-radius: 3px;
+  background: #7c43ea;
+}
+
+@media (max-width: 390px) {
+  .record-header { padding-inline: 20px; }
+  .record-content { padding-inline: 20px; }
+  .record-brand strong { font-size: 23px; }
+  .record-tabs button { font-size: 14px; }
+  .today-copy h1 { font-size: 18px; }
+  .today-illustration { font-size: 34px; }
+  .verse-categories { gap: 6px; }
+  .verse-categories button { min-width: 44px; padding-inline: 11px; }
+  .prayer-topics { gap: 7px; }
+  .prayer-topics strong { font-size: 12px; }
+}
+
+@media (min-width: 600px) {
+  .record-app { min-height: 860px; margin-block: 16px; border-radius: 34px; }
+}
