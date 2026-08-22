@@ -1,11 +1,66 @@
-/* Bible Friend — final mobile dock position + restrained interaction effects.
-   Loaded last so it can safely refine the shared nav without touching legacy layouts. */
+/* Bible Friend — viewport-anchored mobile dock + restrained interaction effects.
+   Loaded last so it can correct page-specific Figma coordinates without touching
+   the source mockup styles. */
 
-/* Move the shared dock slightly closer to the physical bottom edge while
-   preserving iOS safe-area spacing. Previous visual offset was 8px. */
+/*
+ * IMPORTANT: figma-conversation-assets.css gives `.bf-bottom-nav` an absolute
+ * `top` coordinate for the 844px Figma artboard. The shared GlobalBottomNav is
+ * not an artboard element, so reset every leaked positioning value here.
+ *
+ * The dock itself touches the viewport bottom. iOS safe-area space is added as
+ * INTERNAL padding instead of lifting the whole dock upward. This keeps the
+ * visual bar as low as possible while keeping the buttons clear of the home
+ * indicator.
+ */
 .bf-global-bottom-nav {
-  bottom: calc(2px + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 6px 18px rgba(46, 31, 82, 0.1);
+  position: fixed !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  translate: -50% 0 !important;
+  width: min(calc(100% - 24px), 406px) !important;
+  height: auto !important;
+  min-height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  padding: 5px 8px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+  border-radius: 28px 28px 0 0 !important;
+  background: rgba(255,255,255,.985) !important;
+  box-shadow: 0 -6px 20px rgba(46, 31, 82, 0.10) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.bf-global-bottom-nav > button,
+.bf-global-bottom-nav > a {
+  min-height: 53px;
+}
+
+/* Keep the message composer immediately above the shared dock instead of using
+ * the old fixed Figma Y coordinate. This applies to the conversation composer
+ * and to Records when that screen keeps its composer visible. */
+.bf-conversation-app > .bf-conversation-composer {
+  position: fixed !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  translate: -50% 0 !important;
+  width: min(calc(100% - 44px), 386px) !important;
+}
+
+.records-layer .records-composer {
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Reserve exactly the dock/composer footprint so the final cards and prayer
+ * fields can scroll fully into view rather than being trapped underneath them. */
+.records-layer .records-main {
+  bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
+  scroll-padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.records-layer .records-toast {
+  bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 .bf-global-bottom-nav > button {
