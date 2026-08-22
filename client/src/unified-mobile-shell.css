@@ -1,0 +1,263 @@
+/* Shared mobile frame and navigation sizing.
+   Conversation tab is the single sizing source of truth. */
+
+/* Keep the legacy per-screen navs in the DOM for existing handoff logic,
+   but render only one shared nav across every primary tab. */
+.bf-conversation-app > .bf-bottom-nav,
+.bf-story-bottom-nav,
+.records-bottom-nav {
+  display: none !important;
+}
+
+.bf-global-bottom-nav {
+  display: grid !important;
+  z-index: 17010;
+}
+
+/* Story: same 430px app frame and 24px content rhythm as conversation. */
+.bf-story-route {
+  min-height: 100dvh;
+  background: #ececec;
+}
+
+.bf-story-app {
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(46,31,82,.05);
+}
+
+.bf-story-content {
+  min-height: 100dvh;
+  padding: 20px 24px calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+.bf-story-brand {
+  height: 56px;
+  gap: 10px;
+}
+
+.bf-story-brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  box-shadow: none;
+}
+
+.bf-story-brand-logo img {
+  width: 34px;
+  height: 34px;
+}
+
+.bf-story-brand strong {
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.bf-story-head h1,
+.bf-story-head.is-compact h1 {
+  font-size: 58px;
+  line-height: 1.05;
+  margin-top: 18px;
+}
+
+/* Records: full conversation-sized viewport, matching composer + content inset. */
+.records-layer {
+  place-items: start center;
+  background: #ececec;
+}
+
+.records-shell {
+  width: min(100%, 430px);
+  height: 100dvh;
+  max-height: none;
+  margin: 0 auto;
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(46,31,82,.05);
+}
+
+.records-header {
+  height: 76px;
+  padding: 20px 24px 14px;
+}
+
+.records-brand-logo {
+  width: 42px;
+  height: 42px;
+}
+
+.records-brand {
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.records-main {
+  inset: 76px 0 calc(154px + env(safe-area-inset-bottom, 0px));
+  padding: 0 24px 32px;
+}
+
+.records-composer {
+  left: 50%;
+  right: auto;
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  width: min(calc(100% - 44px), 386px);
+  height: 46px;
+  transform: translateX(-50%);
+  padding: 5px 6px 5px 18px;
+  border-radius: 23px;
+  box-shadow: 0 4px 12px rgba(46,31,82,.07);
+}
+
+.records-composer span {
+  font-size: 14px;
+}
+
+.records-composer button {
+  height: 36px;
+  min-width: 108px;
+  padding: 0 15px;
+  border-radius: 18px;
+  font-size: 14px;
+}
+
+/* Growth: use the same narrow mobile canvas even on desktop previews. */
+.growth-shell.growth-shell-v4 {
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 0 24px calc(96px + env(safe-area-inset-bottom, 0px));
+  overflow-x: clip;
+  box-shadow: 0 8px 24px rgba(46,31,82,.05);
+}
+
+.growth-shell-v4 .growth-topbar,
+.growth-shell-v4 .growth-login-note,
+.growth-shell-v4 .growth-notice,
+.growth-shell-v4 .growth2d-hero,
+.growth-shell-v4 .growth-journey-head,
+.growth-shell-v4 .growth-zone-cards,
+.growth-shell-v4 .growth-quick-actions,
+.growth-shell-v4 .growth-card,
+.growth-shell-v4 .growth-footer {
+  width: 100%;
+  max-width: none;
+}
+
+.growth-shell-v4 .growth-topbar {
+  min-height: 76px;
+  padding: 16px 0 10px;
+}
+
+.growth-shell-v4 .growth2d-hero {
+  grid-template-columns: 1fr;
+  min-height: auto;
+  border-radius: 24px;
+}
+
+.growth-shell-v4 .growth2d-character-stage {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 470px;
+}
+
+.growth-shell-v4 .growth2d-stats-panel {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0 12px 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
+}
+
+.growth-shell-v4 .growth2d-stats-panel .growth2d-panel-title,
+.growth-shell-v4 .growth2d-stats-panel .growth2d-soul-card {
+  grid-column: 1 / -1;
+}
+
+.growth-shell-v4 .growth2d-equipment-panel {
+  grid-column: 1;
+  grid-row: 3;
+  margin: 0 12px 12px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  padding: 10px;
+}
+
+.growth-shell-v4 .growth2d-equipment-panel .growth2d-panel-title {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.growth-shell-v4 .growth2d-equipment-row {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  border: 0;
+  padding: 6px 2px;
+}
+
+.growth-shell-v4 .growth2d-equipment-row b {
+  font-size: 8px;
+}
+
+.growth-shell-v4 .growth2d-equipment-hint {
+  display: none;
+}
+
+.growth-shell-v4 .growth-zone-cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.growth-shell-v4 .growth-quick-actions {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.growth-shell-v4 .growth-quick-actions button,
+.growth-shell-v4 .growth-action-link {
+  min-height: 83px;
+  padding: 4px;
+}
+
+.growth-shell-v4 .growth-quick-actions span {
+  font-size: 23px;
+}
+
+.growth-shell-v4 .growth-quick-actions b {
+  font-size: 8px;
+}
+
+.growth-shell-v4 .growth-quick-actions small {
+  display: none;
+}
+
+.growth-shell-v4 .growth-journey-head {
+  display: block;
+}
+
+.growth-shell-v4 .growth-journey-head p {
+  margin-top: 3px;
+  text-align: left;
+}
+
+@media (max-width: 520px) {
+  .bf-story-content,
+  .growth-shell.growth-shell-v4 {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .records-header {
+    height: calc(76px + env(safe-area-inset-top, 0px));
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  }
+
+  .records-main {
+    top: calc(76px + env(safe-area-inset-top, 0px));
+    bottom: calc(154px + env(safe-area-inset-bottom, 0px));
+  }
+}

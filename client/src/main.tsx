@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import ConversationAutoTts from "./components/ConversationAutoTts";
+import GlobalBottomNav from "./components/GlobalBottomNav";
 import RecordsExperience from "./records/RecordsExperience";
 import { startLogin } from "./const";
 import "./index.css";
@@ -14,6 +15,7 @@ import "./conversation-home.css";
 import "./figma-conversation-assets.css";
 import "./conversation-mobile-hotfix.css";
 import "./conversation-themes.css";
+import "./unified-mobile-shell.css";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +82,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ConversationAutoTts />
       <RecordsExperience />
+      <GlobalBottomNav />
       <App />
     </QueryClientProvider>
   </trpc.Provider>
