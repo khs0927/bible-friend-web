@@ -2,7 +2,9 @@ const MODEL = "gemini-3.1-flash-tts-preview";
 const GEMINI_HOST = "https://generativelanguage.googleapis.com";
 const MAX_TEXT_CHARS = 900;
 const STREAM_TIMEOUT_MS = 20_000;
-const STREAMING_ENABLED = process.env.GEMINI_TTS_ENABLE_31_STREAM === "1";
+// Gemini 3.1 Flash TTS standard requests are supported on the Gemini API Free Tier.
+// Keep streaming on by default; set GEMINI_TTS_ENABLE_31_STREAM=0 only for emergency rollback.
+const STREAMING_ENABLED = process.env.GEMINI_TTS_ENABLE_31_STREAM !== "0";
 
 const VOICES = {
   NARRATOR: "Sulafat",
@@ -38,14 +40,16 @@ function extractVoiceInput(body) {
 function buildPrompt(input) {
   const pace = input.speed <= 0.92 ? "조금 천천히" : input.speed >= 1.08 ? "조금 경쾌하게" : "자연스러운 속도로";
   return [
-    "밝고 친근하며 따뜻한 성경 친구처럼 말해.",
-    "6~12세 어린이가 이해하기 쉬운 자연스러운 한국어 발음으로 말해.",
-    "너무 느리거나 과장된 유아 말투는 피하고, 또렷하고 편안하게 말해.",
-    `${pace} 말해.`,
-    input.emotion ? `감정은 ${input.emotion}으로 표현해.` : "감정은 따뜻하고 자연스럽게 표현해.",
-    input.style || "문장 사이에 자연스러운 호흡을 두고 중요한 부분은 살짝 강조해.",
+    "음성 합성 요청입니다. 아래 '낭독할 본문'만 실제 음성으로 합성하고, 지시문 자체는 읽지 마세요.",
+    "밝고 친근하며 따뜻한 성경 친구처럼 말해 주세요.",
+    "6~12세 어린이가 이해하기 쉬운 자연스러운 한국어 발음으로 말해 주세요.",
+    "너무 느리거나 과장된 유아 말투는 피하고, 또렷하고 편안하게 말해 주세요.",
+    `${pace} 말해 주세요.`,
+    input.emotion ? `감정은 ${input.emotion}으로 표현해 주세요.` : "감정은 따뜻하고 자연스럽게 표현해 주세요.",
+    input.style || "문장 사이에 자연스러운 호흡을 두고 중요한 부분은 살짝 강조해 주세요.",
     input.context ? `맥락: ${input.context}` : "",
-    `다음 문장을 뜻을 바꾸지 말고 정확히 읽어 줘:\n${input.text}`,
+    "낭독할 본문:",
+    input.text,
   ].filter(Boolean).join("\n");
 }
 
@@ -62,36 +66,34 @@ function isIOSChrome(req) {
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("X-Bible-Friend-TTS-Cost-Mode", "free-tier-compatible");
 
   if (req.method === "GET") {
     return res.status(200).json({
       ok: true,
       model: MODEL,
       streaming: STREAMING_ENABLED,
-      mode: STREAMING_ENABLED ? "gemini-3.1-stream" : "gemini-2.5-direct-primary",
+      mode: STREAMING_ENABLED ? "gemini-3.1-stream" : "gemini-3.1-direct-primary",
       format: "native-pcm",
       sampleRate: 24000,
       configured: Boolean(process.env.GEMINI_API_KEY),
-      iosChromeStrategy: "direct-tts-fallback",
+      freeTierCompatible: true,
+      iosChromeStrategy: "gemini-3.1-direct-fallback",
     });
   }
 
   if (req.method !== "POST") return jsonError(res, 405, "method_not_allowed", "POST only");
 
-  // Gemini 3.1 TTS is still Preview and currently has a much easier-to-hit
-  // rate limit. Production defaults to the proven Gemini 2.5 direct path.
-  // Set GEMINI_TTS_ENABLE_31_STREAM=1 only when we intentionally want to spend
-  // the 3.1 Preview quota for low-latency streaming.
   if (!STREAMING_ENABLED) {
-    res.setHeader("X-Bible-Friend-Voice-Strategy", "gemini-2.5-direct-primary");
-    return jsonError(res, 409, "gemini_31_preview_disabled", "Use stable direct TTS");
+    res.setHeader("X-Bible-Friend-Voice-Strategy", "gemini-3.1-direct-primary");
+    return jsonError(res, 409, "gemini_31_stream_disabled", "Use Gemini 3.1 direct TTS");
   }
 
-  // Chrome on iOS uses WebKit but has a different media-activation lifecycle.
-  // Skip streaming so the client immediately continues to the direct TTS path.
+  // iOS Chrome uses WebKit with a stricter media-activation lifecycle. Skip SSE
+  // there and continue through the direct endpoint, which is also Gemini 3.1 first.
   if (isIOSChrome(req)) {
-    res.setHeader("X-Bible-Friend-Voice-Fallback", "direct-tts");
-    return jsonError(res, 409, "ios_chrome_direct_fallback", "Use direct TTS on iOS Chrome");
+    res.setHeader("X-Bible-Friend-Voice-Fallback", "gemini-3.1-direct");
+    return jsonError(res, 409, "ios_chrome_direct_fallback", "Use Gemini 3.1 direct TTS on iOS Chrome");
   }
 
   const apiKey = process.env.GEMINI_API_KEY || "";
@@ -140,7 +142,7 @@ export default async function handler(req, res) {
         elapsedMs: Date.now() - startedAt,
         detail: detail.slice(0, 200),
       });
-      return jsonError(res, 502, `gemini_http_${upstream.status}`, "Gemini streaming TTS was unavailable");
+      return jsonError(res, 502, `gemini_http_${upstream.status}`, "Gemini 3.1 streaming TTS was unavailable");
     }
 
     res.statusCode = 200;
@@ -181,7 +183,7 @@ export default async function handler(req, res) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn("[VOICE_STREAM] failed", { message, elapsedMs: Date.now() - startedAt });
-    if (!res.headersSent) return jsonError(res, 502, "stream_failed", "Gemini streaming TTS failed");
+    if (!res.headersSent) return jsonError(res, 502, "stream_failed", "Gemini 3.1 streaming TTS failed");
     res.end();
   } finally {
     clearTimeout(timer);
