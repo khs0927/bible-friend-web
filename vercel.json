@@ -1,62 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm run vercel-build",
-  "outputDirectory": "dist/public",
-  "functions": {
-    "api/voice-tts.js": {
-      "maxDuration": 30
-    },
-    "api/voice-tts-stream.js": {
-      "maxDuration": 30
+  "services": {
+    "wordlight": {
+      "runtime": "container",
+      "root": "kotlin-wordlight/",
+      "entrypoint": "Dockerfile.vercel"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/manus-storage/bible-friend-mascot_06125680.png",
-      "dest": "/assets/bible-friend-mascot.svg"
-    },
-    {
-      "src": "/manus-storage/bible-friend-chat-bg_371dab14.png",
-      "dest": "/assets/bible-friend-chat-bg.svg"
-    },
-    {
-      "src": "/manus-storage/game_banner_bg_51b6ddc7.png",
-      "dest": "/assets/game-banner-bg.svg"
-    },
-    {
-      "src": "/manus-storage/game_icon_trophy_8a4e9737.png",
-      "dest": "/assets/game-icon-trophy.svg"
-    },
-    {
-      "src": "/api/trpc/tts\\.synthesize",
-      "dest": "/api/voice-tts"
-    },
-    {
-      "src": "/api/voice-tts-stream",
-      "dest": "/api/voice-tts-stream"
-    },
-    {
-      "src": "/api/voice-health",
-      "dest": "/api/voice-tts"
-    },
-    {
-      "src": "/api/voice-probe",
-      "dest": "/api/voice-tts"
-    },
-    {
-      "src": "/api/(?<path>.*)",
-      "dest": "/api/vercel-handler?path=$path"
-    },
-    {
-      "src": "/manus-storage/(.*)",
-      "dest": "/api/vercel-handler?path=manus-storage/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": { "service": "wordlight" }
     }
   ]
 }
