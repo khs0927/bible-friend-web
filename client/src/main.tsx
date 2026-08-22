@@ -17,6 +17,7 @@ import "./conversation-mobile-hotfix.css";
 import "./conversation-themes.css";
 import "./conversation-typography.css";
 import "./unified-mobile-shell.css";
+import "./bottom-nav-effects.css";
 
 const queryClient = new QueryClient();
 
