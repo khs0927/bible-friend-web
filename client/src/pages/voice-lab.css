@@ -1,0 +1,351 @@
+.voice-lab-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fff9f1 0%, #fffdf9 46%, #f7f1ff 100%);
+  color: #3f3453;
+  padding: 22px 14px 48px;
+}
+
+.voice-lab-shell {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.voice-lab-header {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.voice-lab-kicker {
+  display: inline-block;
+  margin-bottom: 7px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  color: #9b79c9;
+}
+
+.voice-lab-header h1 {
+  margin: 0;
+  font-size: clamp(25px, 7vw, 38px);
+  line-height: 1.12;
+  letter-spacing: -.04em;
+}
+
+.voice-lab-header p {
+  margin: 9px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #766986;
+}
+
+.voice-lab-home {
+  flex: 0 0 auto;
+  border: 1px solid #eadff4;
+  background: rgba(255,255,255,.86);
+  border-radius: 999px;
+  color: #694e87;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 9px 12px;
+}
+
+.voice-lab-note,
+.voice-lab-panel,
+.voice-lab-status,
+.voice-lab-gate {
+  border: 1px solid rgba(126, 91, 166, .11);
+  background: rgba(255, 255, 255, .91);
+  box-shadow: 0 14px 36px rgba(73, 49, 104, .07);
+  border-radius: 22px;
+}
+
+.voice-lab-note {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: #fff4df;
+}
+
+.voice-lab-note strong {
+  color: #a76219;
+  font-size: 13px;
+}
+
+.voice-lab-note span {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #765c3d;
+}
+
+.voice-lab-panel {
+  padding: 18px;
+  margin-top: 12px;
+}
+
+.voice-lab-panel h2,
+.voice-lab-gate h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+
+.voice-lab-voice-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.voice-lab-voice-grid button,
+.voice-lab-emotions button {
+  border: 1px solid #ece6f3;
+  background: #fff;
+  color: #51445f;
+  border-radius: 16px;
+  min-width: 0;
+  cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.voice-lab-voice-grid button {
+  min-height: 76px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.voice-lab-voice-grid button strong {
+  font-size: 15px;
+}
+
+.voice-lab-voice-grid button span {
+  font-size: 10px;
+  line-height: 1.25;
+  color: #8a7b98;
+}
+
+.voice-lab-voice-grid button.is-active,
+.voice-lab-emotions button.is-active {
+  border-color: #ff9a76;
+  background: #fff5ef;
+  box-shadow: 0 8px 20px rgba(255, 125, 83, .12);
+}
+
+.voice-lab-voice-grid button:active,
+.voice-lab-emotions button:active,
+.voice-lab-actions button:active {
+  transform: scale(.985);
+}
+
+.voice-lab-emotions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.voice-lab-emotions button {
+  min-height: 74px;
+  padding: 12px;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+}
+
+.voice-lab-emotions button strong {
+  font-size: 13px;
+}
+
+.voice-lab-emotions button span {
+  color: #8b7e99;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.voice-lab-slider {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #f0ebf4;
+}
+
+.voice-lab-slider > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.voice-lab-slider b {
+  color: #f27855;
+}
+
+.voice-lab-slider input {
+  accent-color: #ff875f;
+  width: 100%;
+}
+
+.voice-lab-slider small {
+  color: #90849b;
+  line-height: 1.5;
+}
+
+.voice-lab-panel textarea {
+  width: 100%;
+  min-height: 118px;
+  resize: vertical;
+  border: 1px solid #ece5f1;
+  background: #fffefa;
+  border-radius: 16px;
+  box-sizing: border-box;
+  padding: 14px;
+  color: #45384f;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+}
+
+.voice-lab-panel textarea:focus {
+  border-color: #d9c4e9;
+  box-shadow: 0 0 0 3px rgba(184, 143, 214, .1);
+}
+
+.voice-lab-debug {
+  margin-top: 9px;
+  font-size: 11px;
+  color: #83788e;
+}
+
+.voice-lab-debug code {
+  display: block;
+  margin-top: 7px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #f8f5fa;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.voice-lab-actions {
+  display: grid;
+  grid-template-columns: 1.25fr .75fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.voice-lab-actions button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 15px;
+  padding: 0 14px;
+  font-weight: 900;
+  cursor: pointer;
+  background: #f1ebf6;
+  color: #684c82;
+}
+
+.voice-lab-actions button.primary {
+  color: #fff;
+  background: linear-gradient(135deg, #ff9d67, #ff745d);
+  box-shadow: 0 10px 22px rgba(246, 111, 74, .18);
+}
+
+.voice-lab-actions button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.voice-lab-status {
+  margin-top: 12px;
+  padding: 14px 16px;
+}
+
+.voice-lab-progress {
+  height: 7px;
+  border-radius: 999px;
+  background: #eee9f2;
+  overflow: hidden;
+}
+
+.voice-lab-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #b995db, #ff9970);
+  transition: width .22s ease;
+}
+
+.voice-lab-status-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 9px;
+  color: #786b85;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.voice-lab-error {
+  margin: 10px 0 0;
+  color: #ba443f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.voice-lab-status audio {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.voice-lab-gate {
+  margin-top: 12px;
+  padding: 16px;
+  background: #f8f3ff;
+}
+
+.voice-lab-gate p {
+  margin: 0;
+  color: #766887;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+@media (max-width: 620px) {
+  .voice-lab-page {
+    padding-inline: 10px;
+  }
+
+  .voice-lab-header {
+    gap: 10px;
+  }
+
+  .voice-lab-home {
+    padding-inline: 9px;
+  }
+
+  .voice-lab-voice-grid {
+    grid-template-columns: repeat(5, minmax(58px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 3px;
+  }
+
+  .voice-lab-voice-grid button {
+    min-width: 62px;
+  }
+
+  .voice-lab-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .voice-lab-status-row {
+    display: grid;
+    gap: 3px;
+  }
+}
