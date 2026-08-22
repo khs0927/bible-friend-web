@@ -50,13 +50,11 @@
 .bf-story-head h1 { margin: 22px 0 2px; font-size: 52px; line-height: 1; font-weight: 950; letter-spacing: -.075em; }
 .bf-story-head p { margin: 12px 0 0; color: var(--bf-story-muted); font-size: 16px; font-weight: 650; letter-spacing: -.03em; }
 .bf-story-head.is-compact h1 { margin-top: 18px; font-size: 48px; }
-.bf-story-head.is-detail h1 { margin-top: 24px; font-size: 46px; }
 
 .bf-story-art { background-image: url("/assets/story/story-3.avif"); background-repeat: no-repeat; background-size: 340% 605%; background-color: #eee8e0; background-position: 0% 29.3%; }
 .bf-art-jesus { background-position: 0% 29.3%; }
 .bf-art-david { background-position: 50% 29.3%; }
 .bf-art-jonah { background-position: 96% 29.3%; }
-.bf-art-noah { background-position: 0% 54.5%; }
 .bf-art-thanks { background-position: 50% 54.5%; }
 .bf-art-resurrection { background-position: 96% 54.5%; }
 .bf-art-stars { background-position: 0% 80%; }
@@ -101,19 +99,6 @@
 .bf-story-catalog-label { display: block; min-height: 38px; padding: 8px 2px 0; font-size: 11px; line-height: 1.35; font-weight: 750; letter-spacing: -.035em; }
 .bf-story-catalog-label b { color: #6640d7; }
 
-.bf-noah-detail-art { margin-top: 22px; overflow: hidden; border-radius: 28px; border: 4px solid #fff; box-shadow: 0 10px 24px rgba(60,39,82,.10); }
-.bf-noah-detail-art .bf-story-art { width: 100%; aspect-ratio: 1.15 / 1; }
-.bf-noah-detail-copy { position: relative; z-index: 2; margin: -24px 10px 0; padding: 24px 22px 20px; border-radius: 28px; background: white; box-shadow: 0 10px 28px rgba(60,39,82,.08); }
-.bf-noah-detail-copy h2 { margin: 0 0 10px; font-size: 26px; font-weight: 900; letter-spacing: -.05em; }
-.bf-noah-detail-copy p { margin: 0; color: #342e45; font-size: 14px; line-height: 1.65; font-weight: 600; }
-.bf-noah-detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-.bf-noah-detail-actions button { min-height: 58px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 22px; font-size: 15px; font-weight: 850; }
-.bf-noah-detail-actions svg { width: 20px; }
-.bf-primary-orange { color: white; background: linear-gradient(135deg,#ff8b22,#ff721f); box-shadow: 0 8px 18px rgba(239,103,21,.2); }
-.bf-secondary-purple { color: #6638db; background: #eee5ff; }
-.bf-mini-mascot { width: 30px; height: 30px; display: grid; place-items: center; }
-.bf-mini-mascot img { width: 30px; height: 30px; object-fit: contain; }
-
 .bf-story-progress-card { margin-top: 24px; padding: 18px; border-radius: 24px; background: linear-gradient(135deg,#fff9f0,#fff1e3); box-shadow: 0 8px 20px rgba(61,42,82,.06); }
 .bf-story-progress-card > div:first-child { display: flex; align-items: center; gap: 12px; }
 .bf-story-progress-card > div:first-child > svg { width: 30px; color: #ffb52f; }
@@ -121,7 +106,7 @@
 .bf-story-progress-card small { display: block; margin-top: 3px; color: var(--bf-story-muted); font-size: 12px; }
 .bf-story-progress-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; margin-top: 14px; }
 .bf-story-progress-row > span { height: 10px; overflow: hidden; border-radius: 999px; background: #f0d9c7; }
-.bf-story-progress-row i { display: block; width: 67%; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#7746ef,#9b68f8); }
+.bf-story-progress-row i { display: block; width: 75%; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#7746ef,#9b68f8); }
 .bf-story-progress-row b { color: #6337df; font-size: 15px; }
 .bf-story-journey-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px 10px; margin-top: 14px; }
 .bf-story-journey-item { position: relative; min-width: 0; text-align: center; }
@@ -145,46 +130,7 @@
 .bf-story-nav-기록 { color: #8051cf; background: #ede5ff; }
 .bf-story-bottom-nav button.is-active::after { content: ""; width: 38px; height: 4px; margin-top: -1px; border-radius: 999px; background: #6d38e8; }
 
-.bf-noah-reader-route { align-items: stretch; background: #ece8e4; }
-.bf-noah-reader { position: relative; width: min(100%, 430px); min-height: 100dvh; margin: 0 auto; overflow: hidden; padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); background: var(--bf-story-cream); box-shadow: 0 10px 32px rgba(49,32,81,.08); }
-.bf-noah-reader-art { position: relative; width: 100%; height: min(68dvh, 610px); min-height: 510px; overflow: hidden; border-radius: 0 0 34px 34px; background: #e9e2da; }
-.bf-noah-reader-art::after { content: ""; position: absolute; inset: auto 0 0; height: 22%; background: linear-gradient(to bottom,transparent,rgba(255,248,240,.28)); pointer-events: none; }
-.bf-noah-reader-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; transform: scale(1.30); user-select: none; -webkit-user-drag: none; }
-.bf-noah-reader-art-2 img { object-position: 50% 48%; }
-.bf-noah-reader-art-3 img { object-position: 50% 49%; }
-.bf-noah-reader-art-4 img { object-position: 50% 52%; }
-.bf-noah-reader-art-5 img { object-position: 50% 50%; }
-.bf-noah-reader-art-6 img { object-position: 50% 49%; }
-.bf-noah-reader-art-7 img { object-position: 50% 51%; }
-.bf-noah-reader-art-8 img { object-position: 50% 51%; }
-.bf-noah-reader-caption { position: relative; z-index: 3; width: calc(100% - 28px); min-height: 178px; margin: -74px auto 0; padding: 20px 22px 19px; border-radius: 30px; background: rgba(255,253,249,.97); box-shadow: 0 12px 34px rgba(51,35,76,.12); backdrop-filter: blur(12px); }
-.bf-noah-story-chip { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px 0 7px; border-radius: 999px; color: #6540cf; background: #efe7ff; font-size: 11px; font-weight: 850; }
-.bf-noah-story-chip img { width: 22px; height: 22px; object-fit: contain; }
-.bf-noah-caption-sparkle { position: absolute; right: 22px; top: 20px; width: 20px; color: #ffbd34; }
-.bf-noah-reader-caption h1 { margin: 13px 0 7px; font-size: 24px; line-height: 1.25; font-weight: 900; letter-spacing: -.055em; }
-.bf-noah-reader-caption p { margin: 0; color: #3d3748; font-size: 14px; line-height: 1.6; font-weight: 600; letter-spacing: -.025em; }
-.bf-noah-reader-progress { display: flex; justify-content: center; align-items: center; gap: 7px; height: 30px; margin-top: 5px; }
-.bf-noah-reader-progress span { width: 7px; height: 7px; border-radius: 999px; background: #d9d0e4; transition: width .18s ease, background .18s ease; }
-.bf-noah-reader-progress span.is-active { width: 22px; background: #7143e6; }
-.bf-noah-reader-controls { position: absolute; z-index: 6; left: 16px; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); height: 76px; display: grid; grid-template-columns: 58px minmax(0,1fr) 58px; gap: 10px; align-items: center; }
-.bf-noah-reader-controls button { border: 0; }
-.bf-noah-arrow { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; color: #6a3ce1; background: #eee5ff; box-shadow: inset 0 0 0 1px #dfd2ff, 0 8px 18px rgba(77,48,130,.10); }
-.bf-noah-arrow svg { width: 30px; height: 30px; stroke-width: 3; }
-.bf-noah-primary { min-width: 0; height: 68px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 34px; color: white; background: linear-gradient(135deg,#ff922e,#ff731e); box-shadow: 0 10px 24px rgba(237,101,20,.24); font-size: 18px; font-weight: 900; letter-spacing: -.035em; }
-.bf-noah-button-mascot { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.88); }
-.bf-noah-button-mascot img { width: 34px; height: 34px; object-fit: contain; }
-
-@media (max-height: 760px) {
-  .bf-noah-reader-art { height: 60dvh; min-height: 440px; }
-  .bf-noah-reader-caption { min-height: 160px; margin-top: -64px; padding-top: 16px; }
-  .bf-noah-reader-caption h1 { font-size: 21px; margin-top: 10px; }
-  .bf-noah-reader-caption p { font-size: 13px; line-height: 1.48; }
-}
-
 @media (min-width: 431px) {
-  .bf-story-app, .bf-noah-reader { border-radius: 30px; }
+  .bf-story-app { border-radius: 30px; }
   .bf-story-route { padding: 20px 0; }
-  .bf-noah-reader-route { padding: 20px 0; }
 }
-
-@media (prefers-reduced-motion: reduce) { .bf-noah-reader-progress span { transition: none; } }
