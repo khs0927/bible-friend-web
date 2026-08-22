@@ -1,0 +1,53 @@
+name: Temporary Materialize David Goliath 30 Assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch that contains source-assets.json
+        required: true
+        default: assets/david-goliath-story-pages
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Download exact PNG originals and verify SHA/dimensions
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='client/public/assets/story/david-goliath'
+          spec="$root/source-assets.json"
+          test -f "$spec"
+          count="$(jq '.pages | length' "$spec")"
+          test "$count" = '30'
+          while IFS=$'\t' read -r page url sha width height; do
+            printf -v num '%02d' "$page"
+            target="$root/page-$num.png"
+            curl -fsSL --retry 3 --retry-delay 2 "$url" -o "$target"
+            printf '%s  %s\n' "$sha" "$target" | sha256sum -c -
+            python -c 'import struct,sys; d=open(sys.argv[1],"rb").read(24); assert d[:8]==b"\x89PNG\r\n\x1a\n"; w,h=struct.unpack(">II",d[16:24]); exp=(int(sys.argv[2]),int(sys.argv[3])); assert (w,h)==exp, ((w,h),exp)' "$target" "$width" "$height"
+            echo "verified page-$num.png ${width}x${height}"
+          done < <(jq -r '.pages[] | [.page,.url,.sha256,.width,.height] | @tsv' "$spec")
+
+      - name: Commit exact originals to target branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add client/public/assets/story/david-goliath/page-*.png
+          if git diff --cached --quiet; then
+            echo 'All 30 exact originals already materialized.'
+          else
+            git commit -m 'assets(story): materialize David Goliath pages 01-30'
+            git push origin HEAD:${{ inputs.target_branch }}
+          fi
