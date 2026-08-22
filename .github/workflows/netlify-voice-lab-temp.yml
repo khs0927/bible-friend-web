@@ -1,0 +1,28 @@
+name: Netlify Voice Lab Temp Deploy
+
+on:
+  push:
+    branches:
+      - netlify-voice-lab-deploy-temp
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: voice-lab-netlify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deploy isolated Voice Lab to Netlify
+        run: >-
+          npx -y @netlify/mcp@latest
+          --site-id d4485da2-a439-437b-99b2-f8d9690aeb1f
+          --proxy-path "https://netlify-mcp.netlify.app/proxy/eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..tkpfFC2qwwCj6FIV.ufhOExVJ-tIXBJ8vLj7_fpXZVTaQH_RxuHdb9zF5_youBEY5j_d7m_8tiPDd374wtl8Ow7q5m7jSWFfRmWdP1qxfxjGRz-CzkDA9795aqYZ0q41O6M2aHcb1NeAHRqpeC2SspUG_53_nAl9EDe-rMU7Tzpsvsid2hnFNeds_zAJwFulauB0t5qSrQvcYMzPF1Q1lFub7sxjulCJiwFx_E8JGMuqjNsVPWZyPFlqGcyGw7-Zs-5Y_W_-icoLE3dEL_xXdwcR0qhgTmNmHAW12rMnA03L6lOdFO6ONDf4w4AIghxDj9G90ZnZwsaFzjsweNGIatRp_o0eTGBDWk2g3UlvjAcZ0Yzw2zVZmUVRNeOPyQDbgrWhQ1kYBzM3MyyXxUVQvgqY3.gflK3VGvrkkMXN7kmdpILg"
