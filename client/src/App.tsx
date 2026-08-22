@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import ConversationHome from "./pages/ConversationHome";
 import ComicAdventure from "./pages/ComicAdventure";
 import StoryExperience from "./pages/StoryExperience";
+import DavidGoliathReader from "./pages/DavidGoliathReader";
 import "./growth/growth-fallback.css";
 import "./growth/growth-glb-runtime.css";
 
@@ -36,6 +37,7 @@ function Router() {
         <ConversationHome />
         <ConversationThemeSwitcher />
       </Route>
+      <Route path={"/story/david"} component={DavidGoliathReader} />
       <Route path={"/story"} component={StoryExperience} />
       <Route path={"/legacy-home"} component={Home} />
       <Route path={"/growth-game"}>
