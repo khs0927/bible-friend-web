@@ -129,6 +129,12 @@ async function generateCosy(uploadedPath, sample, seed) {
   return audioUrl;
 }
 
+async function fetchAudio(url) {
+  const r = await fetch(url, { headers: authHeaders(), redirect: "follow" });
+  if (!r.ok) throw new Error(`audio_fetch_http_${r.status}:${(await r.text()).slice(0, 300)}`);
+  return Buffer.from(await r.arrayBuffer());
+}
+
 async function makeOne(key, uploadedPath, index) {
   const sample = SAMPLES[key];
   const startedAt = Date.now();
@@ -153,6 +159,19 @@ export default async function handler(req, res) {
       res.setHeader("Content-Type", "audio/wav");
       res.setHeader("Content-Disposition", "inline; filename=bible-friend-sweet-reference.wav");
       return res.status(200).send(reference.wav);
+    }
+
+    const play = String(req.query?.play ?? "");
+    if (play) {
+      if (!SAMPLES[play]) return res.status(400).json({ ok: false, error: "play must be love, comfort, or joy" });
+      const uploadedPath = await cosyUpload(reference.wav);
+      const audioUrl = await generateCosy(uploadedPath, SAMPLES[play], 20260823);
+      const wav = await fetchAudio(audioUrl);
+      res.setHeader("Content-Type", "audio/wav");
+      res.setHeader("Content-Disposition", `inline; filename=bible-friend-cosy-${play}.wav`);
+      res.setHeader("X-Bible-Friend-Model", "Fun-CosyVoice3-0.5B-2512");
+      res.setHeader("X-Bible-Friend-Elapsed-Ms", String(Date.now() - startedAt));
+      return res.status(200).send(wav);
     }
 
     const requested = String(req.query?.sample ?? "all");
