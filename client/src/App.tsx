@@ -17,6 +17,7 @@ import "./growth/growth-glb-runtime.css";
 const GrowthGame = lazy(() => import("./growth/GrowthGame"));
 const GrowthAdventure3D = lazy(() => import("./growth/GrowthAdventure3D"));
 const GrowthModelViewer = lazy(() => import("./growth/GrowthModelViewer"));
+const VoiceLab = lazy(() => import("./pages/VoiceLab"));
 
 function GrowthLoading() {
   return (
@@ -29,12 +30,27 @@ function GrowthLoading() {
   );
 }
 
+function VoiceLabLoading() {
+  return (
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#fffaf3", color: "#6c4f86", padding: "24px" }}>
+      <div role="status" aria-live="polite" style={{ textAlign: "center", fontWeight: 900 }}>
+        성경친구 음성 실험실을 여는 중이에요…
+      </div>
+    </main>
+  );
+}
+
 function Router() {
   return (
     <Switch>
       <Route path={"/"}>
         <ConversationHome />
         <ConversationThemeSwitcher />
+      </Route>
+      <Route path={"/voice-lab"}>
+        <Suspense fallback={<VoiceLabLoading />}>
+          <VoiceLab />
+        </Suspense>
       </Route>
       <Route path={"/story/noah"} component={NoahStorybook} />
       <Route path={"/story"} component={StoryExperience} />
