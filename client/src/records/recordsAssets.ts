@@ -41,6 +41,16 @@ const remoteAssets: Record<string, string> = {
 };
 
 const localFigmaAssets = new Set([
+  '/assets/bible-friend/records/hq/01_app_logo.png',
+  '/assets/bible-friend/records/hq/04_settings.png',
+  '/assets/bible-friend/records/hq/05_heart.png',
+  '/assets/bible-friend/records/hq/06_praying_hands.png',
+  '/assets/bible-friend/records/hq/07_dove.png',
+  '/assets/bible-friend/records/hq/08_gift.png',
+  '/assets/bible-friend/records/nav/chat.png',
+  '/assets/bible-friend/records/nav/story.png',
+  '/assets/bible-friend/records/nav/growth.png',
+  '/assets/bible-friend/records/nav/record.png',
   '/assets/bible-friend/records/mascot/praying.png',
   '/assets/bible-friend/records/prayer/hands-alt.png',
   '/assets/bible-friend/records/prayer/family.png',
