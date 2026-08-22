@@ -1,0 +1,7 @@
+.records-composer{display:none!important}
+.records-main{bottom:74px}
+.records-toast{bottom:78px}
+@media(max-width:520px){
+  .records-main{bottom:calc(68px + env(safe-area-inset-bottom))}
+  .records-toast{bottom:calc(74px + env(safe-area-inset-bottom))}
+}
