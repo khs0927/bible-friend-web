@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ConversationThemeSwitcher from "./components/ConversationThemeSwitcher";
 import StoryNavBridge from "./components/StoryNavBridge";
@@ -12,6 +12,7 @@ import ConversationHome from "./pages/ConversationHome";
 import ComicAdventure from "./pages/ComicAdventure";
 import StoryExperience from "./pages/StoryExperience";
 import DavidGoliathReader from "./pages/DavidGoliathReader";
+import RecordHub from "./pages/RecordHub";
 import "./growth/growth-fallback.css";
 import "./growth/growth-glb-runtime.css";
 
@@ -30,9 +31,27 @@ function GrowthLoading() {
   );
 }
 
+function RecordNavBridge() {
+  useEffect(() => {
+    const handleRecordNavigation = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target.closest(".bf-bottom-nav button, .bf-bottom-nav a") : null;
+      if (!target || target.textContent?.trim() !== "기록") return;
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.assign("/record");
+    };
+
+    document.addEventListener("click", handleRecordNavigation, true);
+    return () => document.removeEventListener("click", handleRecordNavigation, true);
+  }, []);
+
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
+      <Route path={"/record"} component={RecordHub} />
       <Route path={"/"}>
         <ConversationHome />
         <ConversationThemeSwitcher />
@@ -69,6 +88,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <StoryNavBridge />
+          <RecordNavBridge />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
