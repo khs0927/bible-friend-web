@@ -2,18 +2,19 @@
 
 ## 목표
 
-`스토리` 탭의 **다윗과 골리앗** 항목에 30장의 독립 생성 원본 페이지를 연결한다. 다른 UI 작업과 충돌하지 않도록 현재 PR은 asset-only staging으로 유지하고, 런타임 리더 연결은 별도 후속 PR에서 진행한다.
+`스토리` 탭의 **다윗과 골리앗** 항목에 30장의 독립 생성 원본 페이지를 연결한다. 다른 UI 작업과 충돌하지 않도록 현재 PR은 asset/source staging으로 유지하고, 런타임 reader 연결은 별도 후속 PR에서 진행한다.
 
 ## 2026-08-22 현재 상태
 
 - 작업 브랜치: `assets/david-goliath-story-pages`
 - 기준 브랜치: `main`
-- GitHub 에셋 위치: `client/public/assets/story/david-goliath/`
-- 페이지 규칙: `page-01.png` ~ `page-30.png`
-- 30개 독립 PNG 원본을 영구 자산 라이브러리에 보관 완료
-- `source-assets.json`에 30개 원본의 durable URL, SHA-256, 원본 폭/높이를 기록
-- `manifest.json`을 30페이지 기준으로 확장
-- 원본을 GitHub 경로로 byte-for-byte 동기화하고 SHA/PNG 크기를 검증하는 Actions workflow를 추가
+- 로컬 GitHub 에셋 경로: `client/public/assets/story/david-goliath/`
+- 30개 독립 생성 PNG 원본을 영구 자산 라이브러리에 보관 완료
+- `source-assets.json`에 30개 원본의 durable URL, SHA-256, 원본 폭/높이를 기록 완료
+- `manifest.json`을 30페이지 기준으로 확장 완료
+- GitHub에는 기존 page-01 ~ page-10 원본이 materialized 되어 있음
+- page-11 ~ page-30의 GitHub binary materialization은 Actions runner가 작업 step 시작 전에 실패하여 아직 완료되지 않음
+- 실패한 임시/브랜치 sync workflow는 제거하여 main과 asset PR에 불필요한 CI 변경을 남기지 않음
 - 런타임 `client/src`, Story UI, 라우터, CSS는 아직 수정하지 않음
 
 ## 원본 품질 원칙
@@ -29,59 +30,68 @@
 - page-01 ~ page-10: 1086 × 1448, authored 3:4
 - page-11 ~ page-30: 941 × 1672, authored portrait
 
-따라서 리더는 단일 전역 aspect ratio를 강제하지 않고 `manifest.json`의 페이지별 `width` / `height`를 사용해야 한다. 서로 다른 원본 비율을 맞추기 위해 crop/resize하지 않는다.
+리더는 단일 전역 aspect ratio를 강제하지 않고 `manifest.json`의 페이지별 `width` / `height`를 사용한다. 서로 다른 원본 비율을 맞추기 위해 crop/resize하지 않는다.
 
-## 현재 Story 구조와 연결 지점
+## 다음 과정 판단
 
-현재 Story 카탈로그에는 `id: "david"`, 제목 `다윗과 골리앗` 항목이 이미 존재한다. 30개 에셋 검증 후 다음 순서로 연결한다.
+### 1. 자산 전달 방식
 
-1. asset PR을 최신 `main` 기준으로 재검증한다.
-2. 별도 reader 브랜치/PR을 만든다.
-3. `manifest.json`을 읽는 David 전용 reader를 구현한다.
-4. Story UI의 `david` 카드가 전용 reader로 이동하도록 연결한다.
-5. 현재 main의 Story 라우팅 패턴을 확인해 `/story/david` 또는 기존 상세 라우팅 체계를 사용한다.
+30개 원본은 이미 durable asset URL로 안전하게 보관되어 있으므로 GitHub Actions materialization 실패 때문에 제품 개발을 멈추지 않는다. Reader PR에서는 `source-assets.json`의 durable URL을 우선 소스로 사용할 수 있게 하고, GitHub 로컬 PNG가 존재하는 경우 로컬 경로를 우선 사용할 수 있는 asset resolver를 둔다.
 
-## 모바일 reader 요구사항
+이렇게 하면:
+- 현재 원본 화질을 그대로 유지한다.
+- page-11 ~ page-30을 크롭/재생성하지 않아도 된다.
+- GitHub Actions runner 상태와 무관하게 Story reader 개발/배포를 진행할 수 있다.
+- 나중에 runner가 정상화되면 같은 SHA 원본을 로컬 public assets로 materialize할 수 있다.
 
-- 휴대폰 세로 화면을 최우선으로 한다.
-- 페이지 원본 전체가 항상 보이도록 `object-fit: contain`.
-- 좌/우 swipe + 이전/다음 버튼.
-- 현재 페이지 `n / 30` 표시.
-- 뒤로가기 및 홈 이동.
-- 첫 페이지 우선 로딩, 앞뒤 1~2장만 prefetch, 나머지 lazy loading.
-- 이미지에 이미 들어 있는 제목/나레이션/성경친구를 HTML로 중복 표시하지 않는다.
-- 접근성 `alt`는 manifest의 장면 제목을 사용한다.
+### 2. 별도 David Story Reader PR
 
-## 성능/QA
+최신 `main`에서 새 reader 브랜치를 만들고 다음만 최소 변경한다.
 
-- 첫 진입 시 30장을 한꺼번에 다운로드하지 않는다.
-- 원본 파일은 유지하고 필요할 경우 별도의 캐시/전송 최적화만 적용한다.
-- iPhone Safari와 Android Chrome에서 이미지 잘림과 스와이프 충돌을 검사한다.
-- 최소 확인 뷰포트: 390×844, 360×800, 412×915.
-- page-01, page-10, page-11, page-20, page-21, page-30 경계 전환을 별도로 확인한다.
+1. 30페이지 manifest/source loader
+2. Story 카탈로그의 기존 `id: "david"` 카드 연결
+3. 전용 reader 화면
+4. 좌/우 swipe + 이전/다음
+5. 현재 페이지 `n / 30`
+6. 뒤로가기/홈
+7. 첫 장 우선 로딩, 앞뒤 1~2장 prefetch, 나머지 lazy loading
+8. 이미지에 이미 포함된 제목/나레이션/성경친구는 HTML로 중복 표시하지 않음
+
+### 3. 모바일 QA
+
+- iPhone: 390×844
+- Android: 360×800, 412×915
+- page 10→11, 20→21처럼 원본 비율이 바뀌는 경계 전환을 별도 확인
+- 이미지 잘림 없음
+- swipe와 하단 navigation 충돌 없음
+- 첫 진입에서 30장을 전부 다운로드하지 않음
+
+### 4. 그 다음 선택 기능
+
+Reader가 안정화된 뒤에만 TTS 자동 읽기, 이어보기, 즐겨찾기, 읽기 완료 기록을 추가한다.
 
 ## 병합 순서
 
-### PR A — Asset staging (현재)
+### PR A — 현재 Asset/Source staging
 
-- 30개 원본 source registry
-- manifest
-- 동기화/무결성 검증 workflow
+- 기존 page-01 ~ page-10 원본
+- 30개 durable source registry
+- 30페이지 manifest + SHA/원본 크기
 - 통합 계획
 - 런타임 변경 없음
 
 ### PR B — David Story Reader
 
-- 최신 main에서 시작
+- 최신 main 기준
 - Story 카드 `david` 연결
 - 30페이지 reader
+- local asset / durable source resolver
 - swipe / navigation / progress / prefetch / lazy loading
 - 모바일 QA
 
 ### PR C — 선택 기능
 
-- 페이지별 TTS 자동 읽기
-- 재생/읽기 상태
+- TTS 자동 읽기
 - 이어보기
 - 즐겨찾기/완료 기록
 
@@ -89,11 +99,11 @@
 
 - [x] 30개 독립 생성 PNG 원본 확보
 - [x] 30개 원본을 영구 자산 라이브러리에 보관
-- [x] 30페이지 source registry 및 SHA 기록
+- [x] 30페이지 durable source registry 및 SHA 기록
 - [x] manifest를 30페이지/페이지별 크기로 갱신
-- [x] GitHub 원본 동기화 workflow 추가
-- [ ] `page-01.png` ~ `page-30.png` GitHub materialization 및 SHA 최종 확인
-- [ ] 최신 main과 충돌 여부 재확인
+- [x] 기존 page-01 ~ page-10 GitHub 원본 보존
+- [ ] page-11 ~ page-30 GitHub binary materialization — runner 정상화 시 후속 처리
+- [ ] 최신 main과 Story UI 충돌 여부 재확인
 - [ ] David 전용 reader 연결
 - [ ] iPhone/Android 모바일 QA 통과
 - [ ] 선택적으로 TTS/이어보기 추가
