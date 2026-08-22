@@ -1,0 +1,66 @@
+name: Materialize Bible Friend Asset Pack v2
+
+on:
+  push:
+    branches:
+      - agent/asset-pack-v2-ui-upgrade-20260822
+    paths:
+      - 'scripts/materialize_bible_friend_asset_pack_v2.py'
+      - '.github/workflows/materialize-bible-friend-asset-pack-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/asset-pack-v2-ui-upgrade-20260822
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install crop dependencies
+        run: python -m pip install --disable-pip-version-check pillow numpy scipy
+
+      - name: Materialize lossless transparent PNG assets
+        run: python scripts/materialize_bible_friend_asset_pack_v2.py
+
+      - name: Verify asset count, transparency and dimensions
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from PIL import Image
+          root=Path('public/assets/bible-friend/v2')
+          manifest=json.loads((root/'manifest.json').read_text())
+          assert len(manifest['assets']) == 68, len(manifest['assets'])
+          for item in manifest['assets']:
+              p=Path('public') / item['file'].lstrip('/')
+              im=Image.open(p).convert('RGBA')
+              assert im.size == (item['width'], item['height'])
+              assert im.getextrema()[3][0] == 0, f'no transparent pixels: {p}'
+              assert im.width >= 150 and im.height >= 150, f'unexpectedly small: {p} {im.size}'
+          print('Verified 68/68 transparent PNG crops.')
+          PY
+
+      - name: Commit generated assets back to branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/bible-friend/v2
+          if git diff --cached --quiet; then
+            echo 'No generated asset changes.'
+          else
+            git commit -m 'assets: materialize 68 Bible Friend v2 PNGs'
+            git push origin HEAD:agent/asset-pack-v2-ui-upgrade-20260822
+          fi
