@@ -1,0 +1,16 @@
+{
+  "figmaFileKey": "cqQhO3opkgUmaEgOPAEUt3",
+  "qualityPolicy": "Use original transparent PNG source; no JPEG conversion, no lossy recompression, no sheet-crop reuse.",
+  "assets": [
+    {"name":"app_logo","file":"01_app_logo.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/f1168ec5-1dc5-4e3e-917a-49ff55c4ea71.png","figmaNode":"45:49"},
+    {"name":"mascot_wave","file":"02_mascot_wave.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/d44e983b-86e6-43f4-ac90-598c0798f42e.png","figmaNode":"45:42"},
+    {"name":"mascot_heart","file":"03_mascot_heart.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/f07cced3-af37-42d2-8871-e823d7d559ba.png","figmaNode":"45:43"},
+    {"name":"settings","file":"04_settings.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/8c4c133c-9cde-4e7c-8aa5-edd5d904c5f5.png","figmaNode":"45:45"},
+    {"name":"heart","file":"05_heart.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/60e97b46-3a6a-40c2-b545-ee2228e22af2.png","figmaNode":"45:47"},
+    {"name":"praying_hands","file":"06_praying_hands.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/c16d1ac9-fbeb-4414-aadd-466733c52b6a.png","figmaNode":"45:44"},
+    {"name":"dove","file":"07_dove.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/4cfaa18d-b15f-46cb-aa8a-5b20b5359d04.png","figmaNode":"45:48"},
+    {"name":"gift","file":"08_gift.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/09720e49-2ed2-4877-b5bb-1fd9dff9bf3e.png","figmaNode":"45:41"},
+    {"name":"chat","file":"09_chat.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/2cc4bec8-8aa7-4fce-9f54-80507c07b940.png","figmaNode":"45:40"},
+    {"name":"story","file":"10_story.png","source":"https://cdn.creativeclaw.co/u/448e94a9/images/6e667058-c6a3-4d7a-ac49-31bd30762e80.png","figmaNode":"45:46"}
+  ]
+}
