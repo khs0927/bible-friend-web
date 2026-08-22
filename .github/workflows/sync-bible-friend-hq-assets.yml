@@ -18,12 +18,16 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Download and verify lossless HQ source assets
+      - name: Prepare lossless image tooling
+        run: python -m pip install --quiet pillow
+
+      - name: Download original generated sources and create individual PNG assets
         shell: bash
         run: |
           set -euo pipefail
-          root='public/assets/bible-friend/generated/hq'
-          mkdir -p "$root"
+          root='client/public/assets/bible-friend/records'
+          mkdir -p "$root/hq" "$root/backgrounds" "$root/verse" "$root/prayer" "$root/mascot" "$root/nav" "$root/_sources"
+
           names=(01_app_logo.png 02_mascot_wave.png 03_mascot_heart.png 04_settings.png 05_heart.png 06_praying_hands.png 07_dove.png 08_gift.png 09_chat.png 10_story.png)
           srcs=(
             'https://cdn.creativeclaw.co/u/448e94a9/images/f1168ec5-1dc5-4e3e-917a-49ff55c4ea71.png'
@@ -37,54 +41,77 @@ jobs:
             'https://cdn.creativeclaw.co/u/448e94a9/images/2cc4bec8-8aa7-4fce-9f54-80507c07b940.png'
             'https://cdn.creativeclaw.co/u/448e94a9/images/6e667058-c6a3-4d7a-ac49-31bd30762e80.png'
           )
-          for i in "${!names[@]}"; do
-            path="$root/${names[$i]}"
-            curl -fsSL --retry 3 --retry-delay 2 "${srcs[$i]}" -o "$path"
-            python - "$path" <<'PY'
-import struct,sys
-p=sys.argv[1]
-data=open(p,'rb').read()
-if data[:8] != b'\x89PNG\r\n\x1a\n': raise SystemExit(f'not PNG: {p}')
-w,h=struct.unpack('>II',data[16:24])
-if w < 1000 or h < 1000: raise SystemExit(f'asset too small: {p} {w}x{h}')
-print(f'VERIFIED {p}: {w}x{h}, {len(data)} bytes')
-PY
-          done
+          for i in "${!names[@]}"; do curl -fsSL --retry 3 --retry-delay 2 "${srcs[$i]}" -o "$root/hq/${names[$i]}"; done
+
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/486f51f6-d01a-4a2d-b089-e18ea10728d5.png' -o "$root/backgrounds/favorites.png"
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/9053dc1c-b8a7-4a06-b9e2-9210f774d8df.png' -o "$root/backgrounds/verse.png"
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/d9042986-b913-480e-8493-5f692ee9761e.png' -o "$root/backgrounds/prayer.png"
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/38b8fa96-91d9-4050-ab22-0a82861a4bb1.png' -o "$root/backgrounds/prayer-answer.png"
+
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/0f1b89e5-b3ee-46bb-8b79-22551f6f4e1c.png' -o "$root/_sources/nav-sheet.png"
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/2e114953-1ff0-4f98-bec9-51155438eded.png' -o "$root/_sources/verse-sheet.png"
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/444e296c-cc9f-40c6-b55d-ed2ed7425a86.png' -o "$root/_sources/prayer-sheet.png"
+          curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/48fd31e9-a49c-4076-90e2-fa6839b55136.png' -o "$root/_sources/mascot-sheet.png"
 
           python - <<'PY'
-import hashlib,json,os,struct
-root='public/assets/bible-friend/generated/hq'
-names=['01_app_logo.png','02_mascot_wave.png','03_mascot_heart.png','04_settings.png','05_heart.png','06_praying_hands.png','07_dove.png','08_gift.png','09_chat.png','10_story.png']
-srcs=[
-'https://cdn.creativeclaw.co/u/448e94a9/images/f1168ec5-1dc5-4e3e-917a-49ff55c4ea71.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/d44e983b-86e6-43f4-ac90-598c0798f42e.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/f07cced3-af37-42d2-8871-e823d7d559ba.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/8c4c133c-9cde-4e7c-8aa5-edd5d904c5f5.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/60e97b46-3a6a-40c2-b545-ee2228e22af2.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/c16d1ac9-fbeb-4414-aadd-466733c52b6a.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/4cfaa18d-b15f-46cb-aa8a-5b20b5359d04.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/09720e49-2ed2-4877-b5bb-1fd9dff9bf3e.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/2cc4bec8-8aa7-4fce-9f54-80507c07b940.png',
-'https://cdn.creativeclaw.co/u/448e94a9/images/6e667058-c6a3-4d7a-ac49-31bd30762e80.png']
-figma=['45:49','45:42','45:43','45:45','45:47','45:44','45:48','45:41','45:40','45:46']
+from pathlib import Path
+from PIL import Image
+import hashlib, json, struct
+root=Path('client/public/assets/bible-friend/records')
+
+def split_sheet(source, outdir, names, cols, rows):
+    img=Image.open(source).convert('RGBA')
+    w,h=img.size
+    outdir.mkdir(parents=True,exist_ok=True)
+    for idx,name in enumerate(names):
+        c=idx%cols; r=idx//cols
+        x0=round(c*w/cols); x1=round((c+1)*w/cols)
+        y0=round(r*h/rows); y1=round((r+1)*h/rows)
+        tile=img.crop((x0,y0,x1,y1))
+        box=tile.getchannel('A').getbbox()
+        if box: tile=tile.crop(box)
+        tile.save(outdir/name,format='PNG',optimize=False,compress_level=6)
+
+split_sheet(root/'_sources/nav-sheet.png',root/'nav',[
+ 'app-logo.png','chat.png','story.png','growth.png','record.png','microphone.png','hearts.png','sparkles.png','stars.png','shooting-star.png'],2,5)
+split_sheet(root/'_sources/verse-sheet.png',root/'verse',[
+ 'open-bible-glow.png','open-bible-star.png','scripture-card.png','cross-hill.png','dove-branch.png','rainbow-cloud.png','courage-lion.png','scripture-lamp.png','heart-bible.png','prayer-ribbon.png'],2,5)
+split_sheet(root/'_sources/prayer-sheet.png',root/'prayer',[
+ 'family.png','child-bedside.png','study.png','friends-teacher.png','candle.png','answered-check.png','gratitude-flower.png','calendar.png','hands-alt.png','heart-cross.png'],2,5)
+split_sheet(root/'_sources/mascot-sheet.png',root/'mascot',[
+ 'wave.png','heart.png','praying.png','reading.png','pointing.png','celebrating.png','listening.png','sitting.png'],2,4)
+
 items=[]
-for name,src,node in zip(names,srcs,figma):
- p=os.path.join(root,name); data=open(p,'rb').read(); w,h=struct.unpack('>II',data[16:24])
- items.append({'file':name,'width':w,'height':h,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'source':src,'figmaNodeId':node})
-manifest={'figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3','figmaBoardNodeId':'38:2','qualityPolicy':'Original generated PNG bytes; no resize, JPEG conversion, or lossy recompression','assets':items}
-open(os.path.join(root,'manifest.json'),'w',encoding='utf-8').write(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+for p in sorted(root.rglob('*.png')):
+    if '_sources' in p.parts: continue
+    data=p.read_bytes()
+    if data[:8] != b'\x89PNG\r\n\x1a\n': raise SystemExit(f'not PNG: {p}')
+    w,h=struct.unpack('>II',data[16:24])
+    if w < 100 or h < 100: raise SystemExit(f'asset unexpectedly small: {p} {w}x{h}')
+    items.append({'file':str(p.relative_to(root)),'width':w,'height':h,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+manifest={
+ 'figmaFileKey':'cqQhO3opkgUmaEgOPAEUt3',
+ 'figmaBoardNodeId':'38:2',
+ 'qualityPolicy':'Original standalone PNGs are copied byte-for-byte. Sheet assets are cell-cropped and alpha-trimmed only; PNG encoding remains lossless and no asset is downscaled or converted to JPEG.',
+ 'count':len(items),
+ 'assets':items,
+}
+(root/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(f'VERIFIED {len(items)} runtime PNG assets')
 PY
 
-      - name: Commit original PNG assets into PR branch
+          rm -rf "$root/_sources"
+
+      - name: Commit verified runtime assets into PR branch
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/assets/bible-friend/generated/hq
+          git add client/public/assets/bible-friend/records
           if git diff --cached --quiet; then
-            echo 'Assets already present.'
+            echo 'Assets already materialized.'
           else
-            git commit -m 'assets: materialize HQ Bible Friend PNG source pack'
+            git commit -m 'assets: materialize Figma records experience PNG pack'
             git push origin HEAD:${{ github.head_ref }}
           fi
