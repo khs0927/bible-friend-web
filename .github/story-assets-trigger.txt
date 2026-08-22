@@ -1,0 +1,2 @@
+2026-08-23T04:21:00+09:00
+Import the existing generated Bible Friend story PNG assets into public/assets/story/generated without resizing or recompression.
