@@ -11,7 +11,7 @@
 
 /*
  * Asset rule: decorative page artwork and foreground icons are independent.
- * Never bake a logo/mascot/icon into a CSS background layer.  All semantic
+ * Never bake a logo/mascot/icon into a CSS background layer. All semantic
  * artwork below is a real <img>, so it can move/scale without cropping the
  * floral paper behind it.
  */
@@ -36,12 +36,33 @@
   image-rendering:auto;
 }
 
-/* Header logo is icon-only.  Its colourful rounded tile belongs to the PNG,
+/* The floral paper is its own layer. Fit to viewport width instead of cover,
+   so the header area and side flowers are never cropped on iPhone widths. */
+.records-layer .records-bg{
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  background-size:100% auto!important;
+  background-position:center top!important;
+  background-repeat:repeat-y!important;
+  pointer-events:none!important;
+  transform:none!important;
+}
+.records-layer .records-header{
+  background:transparent!important;
+  overflow:visible!important;
+}
+.records-layer .records-main{
+  background:transparent!important;
+}
+
+/* Header logo is icon-only. Its colourful rounded tile belongs to the PNG,
    not to the page background, so no flower/gradient can be clipped with it. */
 .records-layer .records-brand{
   position:relative!important;
   z-index:3!important;
   background:transparent!important;
+  overflow:visible!important;
 }
 .records-layer .records-brand-logo{
   width:44px!important;
@@ -90,7 +111,20 @@
 
 .records-main{bottom:74px}
 .records-toast{bottom:78px}
+
 @media(max-width:520px){
+  .records-layer{
+    display:block!important;
+    background:#fff8ea!important;
+  }
+  .records-layer .records-shell{
+    width:100%!important;
+    height:100dvh!important;
+    max-height:none!important;
+    margin:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
   .records-main{bottom:calc(68px + env(safe-area-inset-bottom))}
   .records-toast{bottom:calc(74px + env(safe-area-inset-bottom))}
 }
