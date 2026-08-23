@@ -37,9 +37,8 @@
 }
 
 /*
- * Floral artwork is one independent decorative layer. Scale it to viewport
- * width and never tile it: repeating a full-screen illustration can create a
- * visible seam and make the header look attached to a second background.
+ * Figma REAL_BACKGROUND is a single 393×852 decorative layer. Scale it to the
+ * shell width and never tile it; foreground icons move independently above it.
  */
 .records-layer .records-bg{
   inset:0!important;
@@ -59,38 +58,62 @@
   background:transparent!important;
 }
 
-/* Header logo is icon-only. Its colourful rounded tile belongs to the PNG,
-   not to the page background, so no flower/gradient can be clipped with it. */
+/* Figma header assets: app logo 42×42, settings 42×42. */
 .records-layer .records-brand{
   position:relative!important;
   z-index:3!important;
   background:transparent!important;
   overflow:visible!important;
 }
-.records-layer .records-brand-logo{
-  width:44px!important;
-  height:44px!important;
-  max-width:44px!important;
-}
+.records-layer .records-brand-logo,
 .records-layer .records-settings{
-  width:44px!important;
-  height:44px!important;
-  max-width:44px!important;
+  width:42px!important;
+  height:42px!important;
+  max-width:42px!important;
 }
 
-/* Foreground mascots must never inherit clipping/cropping from the background. */
+/* Figma hero mascots are independent foreground PNGs.
+   Favorites is 70×89; Verse/Prayer are square 70×70. */
 .records-layer .records-hero{
   position:relative!important;
   z-index:2!important;
   overflow:visible!important;
 }
 .records-layer .records-hero-mascot{
-  width:92px!important;
-  height:104px!important;
-  max-width:92px!important;
+  width:70px!important;
+  height:70px!important;
+  max-width:70px!important;
+}
+.records-layer .records-hero-mascot[src$="/mascot/heart.png"]{
+  width:70px!important;
+  height:89px!important;
+  max-width:70px!important;
+}
+.records-layer .records-hero-mascot[src$="/mascot/reading.png"],
+.records-layer .records-hero-mascot[src$="/mascot/praying.png"]{
+  width:70px!important;
+  height:70px!important;
+  max-width:70px!important;
 }
 
-/* 07_기도 Figma frame sizes: shortcut art 42×42, today-prayer art 66×66. */
+/* 04_성경_구절: hero art 66×66 and list art 40×40. */
+.records-layer .records-verse-feature-art{
+  width:66px!important;
+  height:66px!important;
+  max-width:66px!important;
+}
+.records-layer .records-card-icon[src$="/verse/courage-lion.png"],
+.records-layer .records-card-icon[src$="/verse/rainbow-cloud.png"],
+.records-layer .records-card-icon[src$="/verse/scripture-lamp.png"],
+.records-layer .records-card-icon[src$="/verse/dove-branch.png"],
+.records-layer .records-card-icon[src$="/verse/heart-bible.png"]{
+  width:40px!important;
+  height:40px!important;
+  max-width:40px!important;
+}
+
+/* 07_기도 Figma sizes: shortcut art 42×42, today-prayer art 66×66,
+   compact prayer rows 36×36. */
 .records-layer .records-prayer-shortcuts .records-shortcut-art{
   width:42px!important;
   height:42px!important;
@@ -103,13 +126,38 @@
   height:66px!important;
   max-width:66px!important;
 }
+.records-layer .records-card-icon[src$="/prayer/candle.png"],
+.records-layer .records-card-icon[src$="/prayer/answered-check.png"],
+.records-layer .records-card-icon[src$="/prayer/heart-cross.png"]{
+  width:36px!important;
+  height:36px!important;
+  max-width:36px!important;
+}
 
-/* Bottom nav uses the four dedicated transparent PNGs only. */
+/* 09_기도_응답_기록: summary icons are 46×46 in the Figma master. */
+.records-layer .records-prayer-stats .records-stat-icon{
+  width:46px!important;
+  height:46px!important;
+  max-width:46px!important;
+  object-fit:contain!important;
+}
+
+/* Figma bottom nav: chat/record 28px, story/growth 30px. */
 .records-layer .records-bottom-nav .records-nav-icon{
-  width:31px!important;
-  height:31px!important;
-  max-width:31px!important;
   margin:0 auto 1px!important;
+  object-fit:contain!important;
+}
+.records-layer .records-bottom-nav button:nth-child(1) .records-nav-icon,
+.records-layer .records-bottom-nav button:nth-child(4) .records-nav-icon{
+  width:28px!important;
+  height:28px!important;
+  max-width:28px!important;
+}
+.records-layer .records-bottom-nav button:nth-child(2) .records-nav-icon,
+.records-layer .records-bottom-nav button:nth-child(3) .records-nav-icon{
+  width:30px!important;
+  height:30px!important;
+  max-width:30px!important;
 }
 
 .records-main{bottom:74px}
