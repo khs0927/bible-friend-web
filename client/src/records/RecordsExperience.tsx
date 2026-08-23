@@ -54,18 +54,19 @@ const verses: Verse[] = [
 const prayerSeed: PrayerEntry[] = [
   { id: 1, title: '우리 가족의 건강과 평안을 위해', date: '오늘 09:10', status: '기도 중', image: `${PRAYER}/candle.png`, category: '가족', topic: '우리 가족이 건강하고 평안하도록 지켜주세요.' },
   { id: 2, title: '새 학기, 지혜와 용기를 주시기를', date: '어제 20:30', status: '응답됨', image: `${PRAYER}/answered-check.png`, category: '학교', topic: '새 학기에도 지혜와 용기를 주세요.' },
-  { id: 3, title: '전쟁과 아픔 속에 있는 사람들을 위해', date: '5월 18일', status: '기도 중', image: `${VERSE}/prayer-ribbon.png`, category: '감사', topic: '아픔 속에 있는 사람들에게 평안을 주세요.' },
+  { id: 3, title: '전쟁과 아픔 속에 있는 사람들을 위해', date: '5월 18일', status: '기도 중', image: `${PRAYER}/heart-cross.png`, category: '감사', topic: '아픔 속에 있는 사람들에게 평안을 주세요.' },
 ];
 
 const answerSeed = [
   { title: '동생의 건강을 위해', date: '5월 12일', status: '응답됨', image: `${PRAYER}/answered-check.png` },
-  { title: '새 학년 적응을 위해', date: '5월 8일', status: '기도 중', image: `${PRAYER}/calendar.png` },
+  { title: '새 학년 적응을 위해', date: '5월 8일', status: '기도 중', image: `${PRAYER}/study.png` },
   { title: '아빠의 직장 문제를 위해', date: '4월 28일', status: '응답됨', image: `${PRAYER}/family.png` },
   { title: '할머니의 마음에 평안을 위해', date: '4월 20일', status: '감사', image: `${PRAYER}/candle.png` },
 ] as const;
 
 function asset(path: string, alt = '', className = '') {
-  return <img src={recordAssetUrl(path)} alt={alt} className={className} draggable={false} />;
+  const src = recordAssetUrl(path);
+  return <img key={src} src={src} alt={alt} className={className} draggable={false} decoding="async" />;
 }
 
 function usePersistentState<T>(key: string, initial: T) {
@@ -249,7 +250,7 @@ export default function RecordsExperience() {
               <section className="records-card records-scripture-hero"><div><h2>{selectedVerse.ref}</h2><blockquote>{selectedVerse.text}</blockquote></div>{asset(`${MASCOT}/heart.png`, '', 'records-scripture-mascot')}</section>
               <InfoRow image={`${VERSE}/open-bible-star.png`} title="말씀 해설" text="하나님은 우리를 사랑하시고 말씀으로 우리의 길을 밝혀 주세요." />
               <InfoRow image={`${VERSE}/scripture-card.png`} title="오늘의 적용" text="오늘도 하나님의 사랑을 기억하고 그 사랑을 다른 사람에게 전해보아요." />
-              <InfoRow image={`${VERSE}/prayer-ribbon.png`} title="짧은 기도" text="사랑의 하나님, 오늘도 말씀대로 걸어가게 도와주세요. 아멘." />
+              <InfoRow image={`${PRAYER}/heart-cross.png`} title="짧은 기도" text="사랑의 하나님, 오늘도 말씀대로 걸어가게 도와주세요. 아멘." />
               <div className="records-action-grid four"><button onClick={() => setToast('말씀을 들려줄 준비를 했어요')}>♪<span>듣기</span></button><button onClick={() => copyText(`${selectedVerse.ref} ${selectedVerse.text}`)}><Copy size={18}/><span>복사</span></button><button onClick={() => shareText(`${selectedVerse.ref} ${selectedVerse.text}`)}><Share2 size={18}/><span>공유</span></button><button className="primary"><Star size={18}/><span>저장</span></button></div>
             </DetailScaffold>
           )}
@@ -289,7 +290,7 @@ export default function RecordsExperience() {
           {screen === 'prayer-answers' && (
             <DetailScaffold title="기도 응답 기록" subtitle="기도하고 기다리며, 하나님이 일하신 순간을 기록해요." onBack={() => setScreen('prayer')} action={asset(`${MASCOT}/heart.png`, '', 'records-search-mascot')}>
               <section className="records-card records-calendar"><div className="records-calendar-head"><span>‹</span><b>2025년 5월</b><span>›</span></div><div className="records-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div><div className="records-week dates"><span>11</span><span>12</span><span className="selected">13</span><span>14</span><span>15</span><span>16</span><span>17</span></div></section>
-              <section className="records-card records-prayer-stats"><div>{asset(`${PRAYER}/hands-alt.png`, '', 'records-stat-icon')}<span>이번 달<b>{savedPrayers.length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/answered-check.png`, '', 'records-stat-icon')}<span>응답됨<b>{savedPrayers.filter(item => item.status==='응답됨').length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/gratitude-flower.png`, '', 'records-stat-icon')}<span>감사할 제목<b>{savedPrayers.filter(item => item.gratitude).length}</b></span></div></section>
+              <section className="records-card records-prayer-stats"><div>{asset(`${PRAYER}/hands-alt.png`, '', 'records-stat-icon')}<span>이번 달<b>{savedPrayers.length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/answered-check.png`, '', 'records-stat-icon')}<span>응답됨<b>{savedPrayers.filter(item => item.status==='응답됨').length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/heart-cross.png`, '', 'records-stat-icon')}<span>감사할 제목<b>{savedPrayers.filter(item => item.gratitude).length}</b></span></div></section>
               <div className="records-section-head"><b>기도 기록</b><span>전체 보기 ›</span></div>
               <div className="records-stack">{answerSeed.map(item => <div className="records-card records-row-card compact" key={item.title}>{asset(item.image, '', 'records-card-icon')}<span className="records-card-copy"><strong>{item.title}</strong><small>{item.date}</small></span><span className={`records-status ${item.status==='응답됨'?'answered':item.status==='감사'?'thanks':''}`}>{item.status}</span></div>)}</div>
               <h3 className="records-subtitle">내가 남긴 기도</h3>
@@ -306,11 +307,11 @@ export default function RecordsExperience() {
 }
 
 function Header({ onClose, onSettings }: { onClose: () => void; onSettings: () => void }) {
-  return <header className="records-header"><div className="records-brand">{asset(`${HQ}/01_app_logo.png`, '', 'records-brand-logo')}<strong>성경 친구</strong></div><div className="records-header-actions"><button onClick={onSettings} aria-label="설정">{asset(`${HQ}/04_settings.png`, '', 'records-settings')}</button><button className="records-close" onClick={onClose} aria-label="기록 화면 닫기"><X size={19}/></button></div></header>;
+  return <header className="records-header"><div className="records-brand">{asset(`${HQ}/01_app_logo.png`, '성경 친구', 'records-brand-logo')}<strong>성경 친구</strong></div><div className="records-header-actions"><button onClick={onSettings} aria-label="설정">{asset(`${HQ}/04_settings.png`, '', 'records-settings')}</button><button className="records-close" onClick={onClose} aria-label="기록 화면 닫기"><X size={19}/></button></div></header>;
 }
 
 function Hero({ section }: { section: RecordsSection }) {
-  const data = section === 'favorites' ? { title:'즐겨찾기', sub:'마음에 저장한 내용을 다시 만나보세요', image:`${HQ}/02_mascot_wave.png` } : section === 'verses' ? { title:'성경 구절', sub:'주제별 말씀을 쉽고 따뜻하게 만나보세요', image:`${MASCOT}/reading.png` } : { title:'기도', sub:'오늘의 기도와 기도 기록을 따뜻하게 남겨보세요', image:`${HQ}/03_mascot_heart.png` };
+  const data = section === 'favorites' ? { title:'즐겨찾기', sub:'마음에 저장한 내용을 다시 만나보세요', image:`${MASCOT}/heart.png` } : section === 'verses' ? { title:'성경 구절', sub:'주제별 말씀을 쉽고 따뜻하게 만나보세요', image:`${MASCOT}/reading.png` } : { title:'기도', sub:'오늘의 기도와 기도 기록을 따뜻하게 남겨보세요', image:`${MASCOT}/praying.png` };
   return <section className="records-hero"><div><h1>{data.title}</h1><p>{data.sub}</p></div>{asset(data.image, '', 'records-hero-mascot')}</section>;
 }
 
