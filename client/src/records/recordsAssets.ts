@@ -59,7 +59,6 @@ const localFigmaAssets = new Set([
   '/assets/bible-friend/records/verse/scripture-card.png',
   '/assets/bible-friend/records/verse/dove-branch.png',
   '/assets/bible-friend/records/verse/rainbow-cloud.png',
-  '/assets/bible-friend/records/verse/courage-lion.png',
   '/assets/bible-friend/records/verse/scripture-lamp.png',
   '/assets/bible-friend/records/prayer/hands-alt.png',
   '/assets/bible-friend/records/prayer/family.png',
@@ -71,15 +70,20 @@ const localFigmaAssets = new Set([
 ]);
 
 /*
- * Legacy HQ mascot paths used to point at composite CDN artwork.  Keep their
- * public API stable, but resolve them to the local transparent foreground PNGs.
- * This prevents a character/background composite from ever being coupled to
- * the records page background again.
+ * Keep only verified local transparent PNGs in the runtime manifest.
+ * Any unverified/composite/remote-only art below is intentionally aliased to a
+ * known-good local icon so the UI never shows a broken or baked-background
+ * thumbnail while the remaining Figma assets are being re-exported.
  */
 const localFigmaAliases: Record<string, string> = {
   '/assets/bible-friend/records/hq/02_mascot_wave.png': '/assets/bible-friend/records/mascot/heart.png',
   '/assets/bible-friend/records/hq/03_mascot_heart.png': '/assets/bible-friend/records/mascot/praying.png',
+  '/assets/bible-friend/records/mascot/wave.png': '/assets/bible-friend/records/mascot/heart.png',
+  '/assets/bible-friend/records/verse/courage-lion.png': '/assets/bible-friend/records/verse/open-bible-star.png',
+  '/assets/bible-friend/records/verse/heart-bible.png': '/assets/bible-friend/records/verse/open-bible-star.png',
   '/assets/bible-friend/records/verse/prayer-ribbon.png': '/assets/bible-friend/records/prayer/heart-cross.png',
+  '/assets/bible-friend/records/prayer/gratitude-flower.png': '/assets/bible-friend/records/prayer/heart-cross.png',
+  '/assets/bible-friend/records/prayer/calendar.png': '/assets/bible-friend/records/prayer/study.png',
 };
 
 export function recordAssetUrl(path: string) {
