@@ -9,15 +9,61 @@
   pointer-events:none!important;
 }
 
-/* Preserve the exact transparent Figma PNGs without cropping or stretching. */
+/*
+ * Asset rule: decorative page artwork and foreground icons are independent.
+ * Never bake a logo/mascot/icon into a CSS background layer.  All semantic
+ * artwork below is a real <img>, so it can move/scale without cropping the
+ * floral paper behind it.
+ */
 .records-layer .records-brand-logo,
 .records-layer .records-settings,
 .records-layer .records-nav-icon,
 .records-layer .records-card-icon,
 .records-layer .records-prayer-feature-art,
-.records-layer .records-shortcut-art{
+.records-layer .records-shortcut-art,
+.records-layer .records-hero-mascot,
+.records-layer .records-detail-mascot,
+.records-layer .records-summary-mascot,
+.records-layer .records-scripture-mascot,
+.records-layer .records-writing-mascot,
+.records-layer .records-search-mascot{
+  display:block!important;
   object-fit:contain!important;
   object-position:center!important;
+  background:none!important;
+  border:0!important;
+  flex-shrink:0!important;
+  image-rendering:auto;
+}
+
+/* Header logo is icon-only.  Its colourful rounded tile belongs to the PNG,
+   not to the page background, so no flower/gradient can be clipped with it. */
+.records-layer .records-brand{
+  position:relative!important;
+  z-index:3!important;
+  background:transparent!important;
+}
+.records-layer .records-brand-logo{
+  width:44px!important;
+  height:44px!important;
+  max-width:44px!important;
+}
+.records-layer .records-settings{
+  width:44px!important;
+  height:44px!important;
+  max-width:44px!important;
+}
+
+/* Foreground mascots must never inherit clipping/cropping from the background. */
+.records-layer .records-hero{
+  position:relative!important;
+  z-index:2!important;
+  overflow:visible!important;
+}
+.records-layer .records-hero-mascot{
+  width:92px!important;
+  height:104px!important;
+  max-width:92px!important;
 }
 
 /* 07_기도 Figma frame sizes: shortcut art 42×42, today-prayer art 66×66. */
@@ -32,6 +78,14 @@
   width:66px!important;
   height:66px!important;
   max-width:66px!important;
+}
+
+/* Bottom nav uses the four dedicated transparent PNGs only. */
+.records-layer .records-bottom-nav .records-nav-icon{
+  width:31px!important;
+  height:31px!important;
+  max-width:31px!important;
+  margin:0 auto 1px!important;
 }
 
 .records-main{bottom:74px}
