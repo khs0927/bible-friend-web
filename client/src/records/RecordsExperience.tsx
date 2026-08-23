@@ -59,7 +59,7 @@ const prayerSeed: PrayerEntry[] = [
 
 const answerSeed = [
   { title: '동생의 건강을 위해', date: '5월 12일', status: '응답됨', image: `${PRAYER}/answered-check.png` },
-  { title: '새 학년 적응을 위해', date: '5월 8일', status: '기도 중', image: `${PRAYER}/study.png` },
+  { title: '새 학년 적응을 위해', date: '5월 8일', status: '기도 중', image: `${PRAYER}/calendar.png` },
   { title: '아빠의 직장 문제를 위해', date: '4월 28일', status: '응답됨', image: `${PRAYER}/family.png` },
   { title: '할머니의 마음에 평안을 위해', date: '4월 20일', status: '감사', image: `${PRAYER}/candle.png` },
 ] as const;
@@ -288,9 +288,9 @@ export default function RecordsExperience() {
           )}
 
           {screen === 'prayer-answers' && (
-            <DetailScaffold title="기도 응답 기록" subtitle="기도하고 기다리며, 하나님이 일하신 순간을 기록해요." onBack={() => setScreen('prayer')} action={asset(`${MASCOT}/heart.png`, '', 'records-search-mascot')}>
+            <DetailScaffold title="기도 응답 기록" subtitle="기도하고 기다리며, 하나님이 일하신 순간을 기록해요." onBack={() => setScreen('prayer')} action={asset(`${MASCOT}/celebrate.png`, '', 'records-search-mascot records-celebrate-mascot')}>
               <section className="records-card records-calendar"><div className="records-calendar-head"><span>‹</span><b>2025년 5월</b><span>›</span></div><div className="records-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div><div className="records-week dates"><span>11</span><span>12</span><span className="selected">13</span><span>14</span><span>15</span><span>16</span><span>17</span></div></section>
-              <section className="records-card records-prayer-stats"><div>{asset(`${PRAYER}/hands-alt.png`, '', 'records-stat-icon')}<span>이번 달<b>{savedPrayers.length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/answered-check.png`, '', 'records-stat-icon')}<span>응답됨<b>{savedPrayers.filter(item => item.status==='응답됨').length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/heart-cross.png`, '', 'records-stat-icon')}<span>감사할 제목<b>{savedPrayers.filter(item => item.gratitude).length}</b></span></div></section>
+              <section className="records-card records-prayer-stats"><div>{asset(`${PRAYER}/hands-alt.png`, '', 'records-stat-icon')}<span>이번 달<b>{savedPrayers.length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/answered-check.png`, '', 'records-stat-icon')}<span>응답됨<b>{savedPrayers.filter(item => item.status==='응답됨').length}</b><small>기도</small></span></div><div>{asset(`${PRAYER}/gratitude-flower.png`, '', 'records-stat-icon')}<span>감사할 제목<b>{savedPrayers.filter(item => item.gratitude).length}</b></span></div></section>
               <div className="records-section-head"><b>기도 기록</b><span>전체 보기 ›</span></div>
               <div className="records-stack">{answerSeed.map(item => <div className="records-card records-row-card compact" key={item.title}>{asset(item.image, '', 'records-card-icon')}<span className="records-card-copy"><strong>{item.title}</strong><small>{item.date}</small></span><span className={`records-status ${item.status==='응답됨'?'answered':item.status==='감사'?'thanks':''}`}>{item.status}</span></div>)}</div>
               <h3 className="records-subtitle">내가 남긴 기도</h3>
@@ -311,7 +311,7 @@ function Header({ onClose, onSettings }: { onClose: () => void; onSettings: () =
 }
 
 function Hero({ section }: { section: RecordsSection }) {
-  const data = section === 'favorites' ? { title:'즐겨찾기', sub:'마음에 저장한 내용을 다시 만나보세요', image:`${MASCOT}/heart.png` } : section === 'verses' ? { title:'성경 구절', sub:'주제별 말씀을 쉽고 따뜻하게 만나보세요', image:`${MASCOT}/reading.png` } : { title:'기도', sub:'오늘의 기도와 기도 기록을 따뜻하게 남겨보세요', image:`${MASCOT}/praying.png` };
+  const data = section === 'favorites' ? { title:'즐겨찾기', sub:'마음에 저장한 내용을 다시 만나보세요', image:`${MASCOT}/wave.png` } : section === 'verses' ? { title:'성경 구절', sub:'주제별 말씀을 쉽고 따뜻하게 만나보세요', image:`${MASCOT}/reading.png` } : { title:'기도', sub:'오늘의 기도와 기도 기록을 따뜻하게 남겨보세요', image:`${MASCOT}/praying.png` };
   return <section className="records-hero"><div><h1>{data.title}</h1><p>{data.sub}</p></div>{asset(data.image, '', 'records-hero-mascot')}</section>;
 }
 
