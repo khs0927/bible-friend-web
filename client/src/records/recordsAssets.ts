@@ -70,7 +70,14 @@ const localFigmaAssets = new Set([
   '/assets/bible-friend/records/prayer/heart-cross.png',
 ]);
 
+/*
+ * Legacy HQ mascot paths used to point at composite CDN artwork.  Keep their
+ * public API stable, but resolve them to the local transparent foreground PNGs.
+ * This prevents a character/background composite from ever being coupled to
+ * the records page background again.
+ */
 const localFigmaAliases: Record<string, string> = {
+  '/assets/bible-friend/records/hq/02_mascot_wave.png': '/assets/bible-friend/records/mascot/heart.png',
   '/assets/bible-friend/records/hq/03_mascot_heart.png': '/assets/bible-friend/records/mascot/praying.png',
   '/assets/bible-friend/records/verse/prayer-ribbon.png': '/assets/bible-friend/records/prayer/heart-cross.png',
 };
