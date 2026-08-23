@@ -1,194 +1,201 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
-import {
-  BookOpen,
-  ChevronRight,
-  MessageCircleMore,
-  NotebookText,
-  Sprout,
-  Star,
-} from "lucide-react";
 import "./story-experience.css";
 
-const STORY_SCREENS = 4;
+type Category = "all" | "old" | "new" | "people" | "miracle";
 
-type StoryKey =
-  | "jesus"
-  | "david"
-  | "jonah"
-  | "thanks"
-  | "resurrection"
-  | "stars"
-  | "solomon"
-  | "creation";
-
-type StoryInfo = {
-  id: StoryKey;
-  number: string;
+type Story = {
+  id: string;
   title: string;
-  description: string;
+  image: string;
+  categories: Category[];
 };
 
-const STORIES: StoryInfo[] = [
-  { id: "jesus", number: "01", title: "예수님의 사랑", description: "예수님이 우리를 얼마나 사랑하시는지 이야기로 만나봐요." },
-  { id: "david", number: "02", title: "다윗과 골리앗", description: "작은 다윗이 하나님만 믿고 거인을 이겼어요." },
-  { id: "jonah", number: "03", title: "요나", description: "하나님의 말씀을 따라 바다로 간 요나." },
-  { id: "thanks", number: "04", title: "감사와 나눔", description: "받은 은혜를 기쁨으로 나누어요." },
-  { id: "resurrection", number: "05", title: "부활의 아침", description: "예수님이 다시 살아나신 기쁜 소식." },
-  { id: "stars", number: "06", title: "별의 약속", description: "밤하늘의 별처럼 하나님의 약속을 믿어요." },
-  { id: "solomon", number: "07", title: "솔로몬의 지혜", description: "하나님께 지혜를 구한 솔로몬 왕의 이야기." },
-  { id: "creation", number: "08", title: "천지창조", description: "하나님이 아름다운 세상을 만드셨어요." },
+const STORY_ASSET = "/assets/story/generated";
+
+const STORIES: Story[] = [
+  { id: "david", title: "다윗과 골리앗", image: `${STORY_ASSET}/01-david-goliath.png`, categories: ["old", "people"] },
+  { id: "noah", title: "노아의 방주", image: `${STORY_ASSET}/02-noah-ark.png`, categories: ["old", "people", "miracle"] },
+  { id: "jonah", title: "요나와 큰 물고기", image: `${STORY_ASSET}/03-jonah-whale.png`, categories: ["old", "people", "miracle"] },
+  { id: "birth", title: "예수님의 탄생", image: `${STORY_ASSET}/04-jesus-birth.png`, categories: ["new", "people", "miracle"] },
+  { id: "samaritan", title: "선한 사마리아인", image: `${STORY_ASSET}/05-good-samaritan.png`, categories: ["new", "people"] },
+  { id: "lost-sheep", title: "잃어버린 양", image: `${STORY_ASSET}/06-lost-sheep.png`, categories: ["new"] },
+  { id: "resurrection", title: "부활하신 예수님", image: `${STORY_ASSET}/07-resurrection.png`, categories: ["new", "miracle"] },
+  { id: "jesus-love", title: "예수님의 사랑", image: `${STORY_ASSET}/08-jesus-love.png`, categories: ["new", "people"] },
+  { id: "creation", title: "천지창조", image: `${STORY_ASSET}/09-creation.png`, categories: ["old", "miracle"] },
+  { id: "solomon", title: "솔로몬의 지혜", image: `${STORY_ASSET}/10-solomon-wisdom.png`, categories: ["old", "people"] },
 ];
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
+const FILTERS: Array<{ id: Category; label: string }> = [
+  { id: "all", label: "전체" },
+  { id: "old", label: "구약" },
+  { id: "new", label: "신약" },
+  { id: "people", label: "인물" },
+  { id: "miracle", label: "기적" },
+];
 
-function initialStoryScreen() {
-  if (typeof window === "undefined") return 0;
-  const raw = Number(new URLSearchParams(window.location.search).get("screen") ?? "1");
-  return clamp(Number.isFinite(raw) ? raw - 1 : 0, 0, STORY_SCREENS - 1);
-}
+const MAIN_CARD_IDS = ["noah", "jonah", "birth", "samaritan", "lost-sheep", "resurrection"];
+const RECOMMENDED_IDS = ["david", "noah", "jonah", "birth"];
+const MASCOT = "/assets/story-ui/v1/mascot/mascot-wave.png";
 
-function useHorizontalSwipe(onPrevious: () => void, onNext: () => void) {
-  const startX = useRef<number | null>(null);
-  return {
-    onPointerDown: (event: React.PointerEvent) => { startX.current = event.clientX; },
-    onPointerUp: (event: React.PointerEvent) => {
-      if (startX.current == null) return;
-      const delta = event.clientX - startX.current;
-      startX.current = null;
-      if (Math.abs(delta) < 44) return;
-      if (delta > 0) onPrevious(); else onNext();
-    },
-    onPointerCancel: () => { startX.current = null; },
-  };
-}
-
-function Brand() {
+function Header({ allView = false }: { allView?: boolean }) {
   return (
-    <div className="bf-story-brand">
-      <span className="bf-story-brand-logo"><img src="/assets/bible-friend-mascot.svg" alt="" width="34" height="34" /></span>
-      <strong>성경 친구</strong>
+    <header className={`bf-story-head ${allView ? "is-all" : ""}`}>
+      <div className="bf-story-topline">
+        <div className="bf-story-brand" aria-label="성경 친구">
+          <span className="bf-story-brand-logo"><img src={MASCOT} alt="" /></span>
+          <strong>성경 친구</strong>
+        </div>
+        <button
+          type="button"
+          className="bf-story-settings"
+          aria-label="설정"
+          onClick={() => window.dispatchEvent(new Event("bible-friend:open-settings"))}
+        >
+          <SlidersHorizontal aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="bf-story-title-row">
+        <div>
+          <h1>{allView ? "스토리 전체보기" : "스토리"}</h1>
+          <p>{allView ? <>하나님의 사랑이 담긴<br />멋진 이야기들을 만나보아요!</> : <>하나님의 사랑이 담긴<br />이야기를 만나봐요!</>}</p>
+        </div>
+        <img className="bf-story-header-mascot" src={MASCOT} alt="" />
+        {!allView && <><span className="bf-story-star star-one">★</span><span className="bf-story-star star-two">★</span></>}
+      </div>
+    </header>
+  );
+}
+
+function Filters({ active, onChange, allView = false }: { active: Category; onChange: (category: Category) => void; allView?: boolean }) {
+  return (
+    <div className={`bf-story-filters ${allView ? "is-all-view" : ""}`} role="tablist" aria-label="스토리 분류">
+      {FILTERS.map(filter => (
+        <button
+          key={filter.id}
+          type="button"
+          role="tab"
+          aria-selected={active === filter.id}
+          className={active === filter.id ? "is-active" : ""}
+          onClick={() => onChange(filter.id)}
+        >
+          {filter.label}
+        </button>
+      ))}
     </div>
   );
 }
 
-function PagePill({ page }: { page: number }) {
-  return <span className="bf-story-page-pill">{page} / {STORY_SCREENS}</span>;
+function StoryImage({ story, className = "" }: { story: Story; className?: string }) {
+  return <img className={className} src={story.image} alt={story.title} loading="lazy" decoding="async" />;
 }
 
-function StoryArt({ id, className = "" }: { id: StoryKey; className?: string }) {
-  return <div className={`bf-story-art bf-art-${id} ${className}`.trim()} aria-hidden="true" />;
-}
-
-function StoryBottomNav({ onStoryHome }: { onStoryHome: () => void }) {
-  const [, navigate] = useLocation();
-  const items: Array<{ label: string; icon: ReactNode; active?: boolean; action: () => void }> = [
-    { label: "대화", icon: <MessageCircleMore />, action: () => navigate("/") },
-    { label: "스토리", icon: <BookOpen />, active: true, action: onStoryHome },
-    { label: "성장", icon: <Sprout />, action: () => navigate("/growth-game") },
-    { label: "기록", icon: <NotebookText />, action: () => navigate("/") },
-  ];
+function MainCard({ story, onOpen }: { story: Story; onOpen: (story: Story) => void }) {
   return (
-    <nav className="bf-story-bottom-nav" aria-label="주요 메뉴">
-      {items.map(item => (
-        <button type="button" key={item.label} className={item.active ? "is-active" : ""} aria-current={item.active ? "page" : undefined} onClick={item.action}>
-          <span className={`bf-story-nav-icon bf-story-nav-${item.label}`}>{item.icon}</span><span>{item.label}</span>
-        </button>
-      ))}
-    </nav>
-  );
-}
-
-function StoryCard({ story, variant = "compact", onClick }: { story: StoryInfo; variant?: "compact" | "poster" | "catalog"; onClick?: () => void }) {
-  return (
-    <button type="button" className={`bf-story-card is-${variant}`} onClick={onClick}>
-      <StoryArt id={story.id} />
-      {variant !== "catalog" ? (
-        <div className="bf-story-card-copy"><strong>{story.title}</strong><p>{story.description}</p></div>
-      ) : (
-        <span className="bf-story-catalog-label"><b>{story.number}</b> {story.title}</span>
-      )}
+    <button type="button" className="bf-story-main-card" onClick={() => onOpen(story)}>
+      <StoryImage story={story} />
+      <strong>{story.title}</strong>
     </button>
   );
 }
 
-function StoryHomeScreen({ goTo, onOpenStory }: { goTo: (screen: number) => void; onOpenStory: (story: StoryKey) => void }) {
-  return <>
-    <header className="bf-story-head"><Brand /><PagePill page={1} /><h1>스토리</h1><p>말씀 속 모험을 시작해요</p></header>
-    <section className="bf-story-hero">
-      <StoryArt id="jesus" />
-      <div className="bf-story-hero-copy"><span className="bf-story-kicker">오늘의 이야기</span><h2>예수님의 사랑</h2><p>예수님이 우리를<br />얼마나 사랑하시는지<br />이야기로 만나봐요.</p><button type="button" onClick={() => goTo(2)}>읽기 시작하기 <ChevronRight /></button></div>
+function MainView({ filter, onFilter, onAll, onOpen }: { filter: Category; onFilter: (category: Category) => void; onAll: () => void; onOpen: (story: Story) => void }) {
+  const david = STORIES[0];
+  const cards = useMemo(() => {
+    const base = filter === "all" ? MAIN_CARD_IDS.map(id => STORIES.find(story => story.id === id)!).filter(Boolean) : STORIES.filter(story => story.categories.includes(filter));
+    return base.slice(0, 6);
+  }, [filter]);
+
+  return (
+    <>
+      <Header />
+      <section className="bf-story-hero-card">
+        <StoryImage story={david} className="bf-story-hero-image" />
+        <div className="bf-story-hero-fade" aria-hidden="true" />
+        <div className="bf-story-hero-copy">
+          <span className="bf-story-today">★&nbsp;&nbsp;오늘의 이야기</span>
+          <h2>다윗과 골리앗</h2>
+          <p>용감한 소년 다윗이 하나님을 믿고<br />거인 골리앗을 이겨요!</p>
+          <button type="button" onClick={() => onOpen(david)}>▶&nbsp;&nbsp;이야기 보기</button>
+        </div>
+      </section>
+
+      <div className="bf-story-carousel-dots" aria-hidden="true"><i /><i /><i /></div>
+      <Filters active={filter} onChange={onFilter} />
+
+      <div className="bf-story-section-head">
+        <h2>★&nbsp;&nbsp;모든 이야기</h2>
+        <button type="button" onClick={onAll}>전체보기&nbsp;&nbsp;›</button>
+      </div>
+      <section className="bf-story-main-grid">
+        {cards.map(story => <MainCard key={story.id} story={story} onOpen={onOpen} />)}
+      </section>
+    </>
+  );
+}
+
+function Recommended({ onOpen }: { onOpen: (story: Story) => void }) {
+  const stories = RECOMMENDED_IDS.map(id => STORIES.find(story => story.id === id)!).filter(Boolean);
+  return (
+    <section className="bf-story-recommended">
+      <div className="bf-story-recommended-head"><h2>★&nbsp;&nbsp;추천 이야기</h2><span>모두 보기&nbsp;&nbsp;›</span></div>
+      <div className="bf-story-recommended-grid">
+        {stories.map(story => (
+          <button type="button" key={story.id} onClick={() => onOpen(story)}>
+            <StoryImage story={story} />
+            <strong>{story.title}</strong>
+          </button>
+        ))}
+      </div>
     </section>
-    <section className="bf-story-home-grid">
-      <StoryCard story={STORIES[1]} onClick={() => onOpenStory("david")} />
-      <StoryCard story={STORIES[2]} onClick={() => goTo(2)} />
-      <StoryCard story={STORIES[3]} onClick={() => goTo(2)} />
-      <StoryCard story={STORIES[4]} onClick={() => goTo(2)} />
-    </section>
-  </>;
+  );
 }
 
-function FaithScreen({ goTo }: { goTo: (screen: number) => void }) {
-  return <>
-    <header className="bf-story-head is-compact"><Brand /><PagePill page={2} /><h1>스토리</h1><p>다음 이야기들도 만나보세요</p></header>
-    <section className="bf-story-section-copy"><h2>믿음과 소망의 이야기</h2><p>하나님의 약속과 사랑을 따라가요</p></section>
-    <section className="bf-story-faith-grid">{STORIES.slice(4).map(story => <StoryCard key={story.id} story={story} variant="poster" onClick={() => goTo(2)} />)}</section>
-    <button type="button" className="bf-story-record-banner" onClick={() => goTo(2)}><span className="bf-story-record-badge"><NotebookText /></span><span><strong>8개의 말씀 속 모험을 모두 만나보세요</strong><small>좋아하는 이야기는 기록에 담아둘 수 있어요.</small></span><ChevronRight /></button>
-  </>;
-}
-
-function CatalogScreen({ onOpenStory }: { onOpenStory: (story: StoryKey) => void }) {
-  return <>
-    <header className="bf-story-head is-compact"><Brand /><PagePill page={3} /><h1>스토리</h1><p>한눈에 보는 전체 이야기</p></header>
-    <div className="bf-story-filters" role="tablist" aria-label="스토리 필터"><button className="is-active">전체 8</button><button>구약</button><button>예수님</button><button>완료</button></div>
-    <section className="bf-story-catalog">{STORIES.map(story => <StoryCard key={story.id} story={story} variant="catalog" onClick={story.id === "david" ? () => onOpenStory(story.id) : undefined} />)}</section>
-  </>;
-}
-
-function JourneyScreen({ goHome }: { goHome: () => void }) {
-  return <>
-    <header className="bf-story-head is-compact"><Brand /><PagePill page={4} /><h1>스토리</h1><p>읽은 이야기가 별처럼 쌓여요</p></header>
-    <section className="bf-story-progress-card"><div><Star fill="currentColor" /><span><strong>나의 스토리 여정</strong><small>이번 주 6개의 이야기를 만났어요</small></span></div><div className="bf-story-progress-row"><span><i /></span><b>6 / 8</b></div></section>
-    <section className="bf-story-journey-grid">{STORIES.map((story,index) => <div className="bf-story-journey-item" key={story.id}><StoryArt id={story.id} /><span className={index < 6 ? "is-done" : "is-open"}>{index < 6 ? <Star fill="currentColor" /> : null}</span><strong>{story.title}</strong></div>)}</section>
-    <button type="button" className="bf-story-continue-adventure" onClick={goHome}>계속 모험하기 <ChevronRight /></button>
-  </>;
+function AllView({ filter, onFilter, onOpen }: { filter: Category; onFilter: (category: Category) => void; onOpen: (story: Story) => void }) {
+  const visible = filter === "all" ? STORIES : STORIES.filter(story => story.categories.includes(filter));
+  return (
+    <>
+      <Header allView />
+      <Recommended onOpen={onOpen} />
+      <Filters active={filter} onChange={onFilter} allView />
+      <section className="bf-story-all-grid">
+        {visible.map((story, index) => (
+          <button type="button" className="bf-story-grid-card" key={story.id} onClick={() => onOpen(story)}>
+            <span className="bf-story-grid-number">{index + 1}</span>
+            <StoryImage story={story} />
+            <strong>{story.title}</strong>
+          </button>
+        ))}
+      </section>
+    </>
+  );
 }
 
 export default function StoryExperience() {
-  const [, navigate] = useLocation();
-  const [screen, setScreenState] = useState(initialStoryScreen);
-  const setScreen = useCallback((next: number) => {
-    const value = clamp(next, 0, STORY_SCREENS - 1);
-    setScreenState(value);
-    if (typeof window !== "undefined") window.history.replaceState(window.history.state, "", `/story?screen=${value + 1}`);
-  }, []);
-  const openStory = useCallback((story: StoryKey) => {
-    if (story === "david") navigate("/story/david");
-  }, [navigate]);
-  const previous = useCallback(() => setScreen(screen - 1), [screen, setScreen]);
-  const next = useCallback(() => setScreen(screen + 1), [screen, setScreen]);
-  const swipeHandlers = useHorizontalSwipe(previous, next);
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft") previous();
-      if (event.key === "ArrowRight") next();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [next, previous]);
+  const [location, navigate] = useLocation();
+  const [filter, setFilter] = useState<Category>("all");
+  const allView = location.includes("view=all") || (typeof window !== "undefined" && window.location.search.includes("view=all"));
+
+  const openStory = (story: Story) => {
+    if (story.id === "david") {
+      navigate("/story/david");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("bible-friend:story-selected", { detail: { id: story.id, title: story.title } }));
+  };
 
   return (
-    <main className="bf-story-route" data-design-source="figma:HHXt8qYYdgUwyaIbmO9US1">
-      <section className="bf-story-app" {...swipeHandlers}>
+    <main className="bf-story-route" data-design-source="figma:HHXt8qYYdgUwyaIbmO9US1" data-design-node={allView ? "168:75" : "168:3"}>
+      <section className={`bf-story-app ${allView ? "is-all-view" : "is-main-view"}`}>
         <div className="bf-story-content">
-          {screen === 0 && <StoryHomeScreen goTo={setScreen} onOpenStory={openStory} />}
-          {screen === 1 && <FaithScreen goTo={setScreen} />}
-          {screen === 2 && <CatalogScreen onOpenStory={openStory} />}
-          {screen === 3 && <JourneyScreen goHome={() => setScreen(0)} />}
+          {allView ? (
+            <AllView filter={filter} onFilter={setFilter} onOpen={openStory} />
+          ) : (
+            <MainView filter={filter} onFilter={setFilter} onAll={() => navigate("/story?view=all")} onOpen={openStory} />
+          )}
         </div>
-        <StoryBottomNav onStoryHome={() => setScreen(0)} />
       </section>
     </main>
   );
