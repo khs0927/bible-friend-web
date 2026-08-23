@@ -8,6 +8,7 @@ import App from "./App";
 import ConversationAutoTts from "./components/ConversationAutoTts";
 import GlobalBottomNav from "./components/GlobalBottomNav";
 import RecordsExperience from "./records/RecordsExperience";
+import RecordsViewportGuard from "./records/RecordsViewportGuard";
 import { startLogin } from "./const";
 import "./index.css";
 import "./bible-friend-polish.css";
@@ -84,6 +85,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ConversationAutoTts />
       <RecordsExperience />
+      <RecordsViewportGuard />
       <GlobalBottomNav />
       <App />
     </QueryClientProvider>
