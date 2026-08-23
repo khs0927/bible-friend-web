@@ -12,19 +12,17 @@ type Story = {
   categories: Category[];
 };
 
-const STORY_ASSET = "/assets/story/generated";
-
 const STORIES: Story[] = [
-  { id: "david", title: "다윗과 골리앗", image: `${STORY_ASSET}/01-david-goliath.png`, categories: ["old", "people"] },
-  { id: "noah", title: "노아의 방주", image: `${STORY_ASSET}/02-noah-ark.png`, categories: ["old", "people", "miracle"] },
-  { id: "jonah", title: "요나와 큰 물고기", image: `${STORY_ASSET}/03-jonah-whale.png`, categories: ["old", "people", "miracle"] },
-  { id: "birth", title: "예수님의 탄생", image: `${STORY_ASSET}/04-jesus-birth.png`, categories: ["new", "people", "miracle"] },
-  { id: "samaritan", title: "선한 사마리아인", image: `${STORY_ASSET}/05-good-samaritan.png`, categories: ["new", "people"] },
-  { id: "lost-sheep", title: "잃어버린 양", image: `${STORY_ASSET}/06-lost-sheep.png`, categories: ["new"] },
-  { id: "resurrection", title: "부활하신 예수님", image: `${STORY_ASSET}/07-resurrection.png`, categories: ["new", "miracle"] },
-  { id: "jesus-love", title: "예수님의 사랑", image: `${STORY_ASSET}/08-jesus-love.png`, categories: ["new", "people"] },
-  { id: "creation", title: "천지창조", image: `${STORY_ASSET}/09-creation.png`, categories: ["old", "miracle"] },
-  { id: "solomon", title: "솔로몬의 지혜", image: `${STORY_ASSET}/10-solomon-wisdom.png`, categories: ["old", "people"] },
+  { id: "david", title: "다윗과 골리앗", image: "https://cdn.creativeclaw.co/u/448e94a9/images/2f145564-6a43-4bdb-a560-86e81cb098fe.png", categories: ["old", "people"] },
+  { id: "noah", title: "노아의 방주", image: "https://cdn.creativeclaw.co/u/448e94a9/images/85af64f7-68b6-4b1c-a2d0-17ab93cf52b6.png", categories: ["old", "people", "miracle"] },
+  { id: "jonah", title: "요나와 큰 물고기", image: "https://cdn.creativeclaw.co/u/448e94a9/images/864ec02d-6191-4f3a-921b-95ae39031dab.png", categories: ["old", "people", "miracle"] },
+  { id: "birth", title: "예수님의 탄생", image: "https://cdn.creativeclaw.co/u/448e94a9/images/422da108-c85c-46f0-a805-281262cda3b1.png", categories: ["new", "people", "miracle"] },
+  { id: "samaritan", title: "선한 사마리아인", image: "https://cdn.creativeclaw.co/u/448e94a9/images/fcac6d0e-d944-4626-90bf-27530d78e535.png", categories: ["new", "people"] },
+  { id: "lost-sheep", title: "잃어버린 양", image: "https://cdn.creativeclaw.co/u/448e94a9/images/04df2ae2-5e4e-48d8-bf2a-1c1e1e639037.png", categories: ["new"] },
+  { id: "resurrection", title: "부활하신 예수님", image: "https://cdn.creativeclaw.co/u/448e94a9/images/2e085265-a88c-46ff-a382-655bb203f35f.png", categories: ["new", "miracle"] },
+  { id: "jesus-love", title: "예수님의 사랑", image: "https://cdn.creativeclaw.co/u/448e94a9/images/ca857cf2-3acd-41af-99fb-daf9e7a803c4.png", categories: ["new", "people"] },
+  { id: "creation", title: "천지창조", image: "https://cdn.creativeclaw.co/u/448e94a9/images/292b4248-226d-4a74-b62f-d9f86f606ee7.png", categories: ["old", "miracle"] },
+  { id: "solomon", title: "솔로몬의 지혜", image: "https://cdn.creativeclaw.co/u/448e94a9/images/b5a233c9-5700-463f-984b-095785d0b2d5.png", categories: ["old", "people"] },
 ];
 
 const FILTERS: Array<{ id: Category; label: string }> = [
@@ -89,7 +87,7 @@ function Filters({ active, onChange, allView = false }: { active: Category; onCh
 }
 
 function StoryImage({ story, className = "" }: { story: Story; className?: string }) {
-  return <img className={className} src={story.image} alt={story.title} loading="lazy" decoding="async" />;
+  return <img className={className} src={story.image} alt={story.title} loading="lazy" decoding="async" referrerPolicy="no-referrer" />;
 }
 
 function MainCard({ story, onOpen }: { story: Story; onOpen: (story: Story) => void }) {
