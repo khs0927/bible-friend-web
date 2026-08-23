@@ -355,7 +355,9 @@
 }
 
 .bfs-main-card {
-  height: 136px;
+  min-height: 178px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--bfs-line);
@@ -368,15 +370,18 @@
 
 .bfs-main-card-image {
   width: 100%;
-  height: 98px;
+  aspect-ratio: 4 / 3;
+  height: auto;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
+  background: #fff7eb;
 }
 
 .bfs-main-card strong {
-  height: 38px;
+  min-height: 38px;
   display: grid;
   place-items: center;
+  flex: 1;
   padding: 0 8px;
   font-size: 16px;
   line-height: 1.1;
@@ -389,7 +394,7 @@
 .bfs-all-page .bfs-header { min-height: 196px; }
 
 .bfs-recommended {
-  padding: 13px 13px 18px;
+  padding: 13px 13px 14px;
   border: 1px solid var(--bfs-line);
   border-radius: 24px;
   background: #fff;
@@ -417,10 +422,11 @@
 
 .bfs-rec-image {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 14px;
+  background: #fff7eb;
 }
 
 .bfs-rec-card strong {
@@ -432,7 +438,7 @@
   line-height: 1.18;
 }
 
-.bfs-all-page > .bfs-filters { margin-top: 20px; }
+.bfs-all-page > .bfs-filters { margin-top: 18px; }
 
 .bfs-catalog {
   display: grid;
@@ -443,7 +449,9 @@
 
 .bfs-grid-card {
   position: relative;
-  height: 98px;
+  min-height: 176px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--bfs-line);
@@ -455,9 +463,11 @@
 
 .bfs-grid-image {
   width: 100%;
-  height: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
+  background: #fff7eb;
 }
 
 .bfs-story-number {
@@ -475,29 +485,20 @@
   font-size: 16px;
 }
 
-.bfs-grid-scrim {
-  position: absolute;
-  z-index: 1;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 25px;
-  background: rgba(255,255,255,.82);
-}
+.bfs-grid-scrim { display: none; }
 
 .bfs-grid-card strong {
-  position: absolute;
-  z-index: 2;
-  left: 9px;
-  right: 8px;
-  bottom: 3px;
+  min-height: 30px;
+  display: grid;
+  place-items: center start;
+  flex: 1;
   overflow: hidden;
+  padding: 0 10px;
   color: var(--bfs-ink);
   font-size: 15px;
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 0 2px rgba(255,255,255,.75);
 }
 
 .bfs-back-to-main {
