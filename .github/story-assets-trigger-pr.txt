@@ -1,3 +1,0 @@
-figma_file=HHXt8qYYdgUwyaIbmO9US1
-nodes=168:3,168:75
-requested_at=2026-08-23
