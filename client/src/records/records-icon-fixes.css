@@ -36,15 +36,18 @@
   image-rendering:auto;
 }
 
-/* The floral paper is its own layer. Fit to viewport width instead of cover,
-   so the header area and side flowers are never cropped on iPhone widths. */
+/*
+ * Floral artwork is one independent decorative layer. Scale it to viewport
+ * width and never tile it: repeating a full-screen illustration can create a
+ * visible seam and make the header look attached to a second background.
+ */
 .records-layer .records-bg{
   inset:0!important;
   width:100%!important;
   height:100%!important;
   background-size:100% auto!important;
   background-position:center top!important;
-  background-repeat:repeat-y!important;
+  background-repeat:no-repeat!important;
   pointer-events:none!important;
   transform:none!important;
 }
