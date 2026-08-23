@@ -13,14 +13,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - name: Download existing generated story images
+      - name: Download approved Figma story artwork
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p public/assets/story/generated
+          ASSET_DIR='client/public/assets/story/generated'
+          mkdir -p "$ASSET_DIR"
           download() {
             out="$1"; url="$2"
-            curl -fL --retry 3 --retry-delay 2 "$url" -o "public/assets/story/generated/$out"
+            curl -fL --retry 3 --retry-delay 2 "$url" -o "$ASSET_DIR/$out"
           }
           download '01-david-goliath.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/2f145564-6a43-4bdb-a560-86e81cb098fe.png'
           download '02-noah-ark.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/85af64f7-68b6-4b1c-a2d0-17ab93cf52b6.png'
@@ -29,15 +30,15 @@ jobs:
           download '05-good-samaritan.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/fcac6d0e-d944-4626-90bf-27530d78e535.png'
           download '06-lost-sheep.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/04df2ae2-5e4e-48d8-bf2a-1c1e1e639037.png'
           download '07-resurrection.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/2e085265-a88c-46ff-a382-655bb203f35f.png'
-          download '08-creation.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/292b4248-226d-4a74-b62f-d9f86f606ee7.png'
-          download '09-jesus-love.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/ca857cf2-3acd-41af-99fb-daf9e7a803c4.png'
+          download '08-jesus-love.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/ca857cf2-3acd-41af-99fb-daf9e7a803c4.png'
+          download '09-creation.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/292b4248-226d-4a74-b62f-d9f86f606ee7.png'
           download '10-solomon-wisdom.png' 'https://cdn.creativeclaw.co/u/448e94a9/images/b5a233c9-5700-463f-984b-095785d0b2d5.png'
       - name: Write asset manifest
         shell: bash
         run: |
-          cat > public/assets/story/generated/manifest.json <<'JSON'
+          cat > client/public/assets/story/generated/manifest.json <<'JSON'
           {
-            "source": "existing ChatGPT-generated Bible Friend story artwork",
+            "source": "Figma HHXt8qYYdgUwyaIbmO9US1 / Story Assets · GitHub Master",
             "policy": "original PNG bytes downloaded without resize or recompression",
             "assets": [
               "01-david-goliath.png",
@@ -47,8 +48,8 @@ jobs:
               "05-good-samaritan.png",
               "06-lost-sheep.png",
               "07-resurrection.png",
-              "08-creation.png",
-              "09-jesus-love.png",
+              "08-jesus-love.png",
+              "09-creation.png",
               "10-solomon-wisdom.png"
             ]
           }
@@ -58,10 +59,10 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/assets/story/generated
+          git add client/public/assets/story/generated
           if git diff --cached --quiet; then
             echo 'No asset changes to commit.'
             exit 0
           fi
-          git commit -m 'assets: add generated Bible Friend story artwork'
+          git commit -m 'assets(story): import approved Figma artwork'
           git push origin HEAD:${{ github.head_ref }}
