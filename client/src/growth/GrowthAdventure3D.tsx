@@ -201,8 +201,11 @@ export default function GrowthAdventure3D() {
       }
       const targetCamera = new THREE.Vector3(player.position.x, 5.2, player.position.z + 7.2); camera.position.lerp(targetCamera, .075); camera.lookAt(player.position.x, 1.1, player.position.z - 1.1);
       let closest: Hotspot | null = null; let distance = Infinity;
-      hotspots.forEach(h => { const d = Math.hypot(player.position.x - h.position[0], player.position.z - h.position[2]); if (d < distance) { distance = d; closest = h; } });
-      const candidate = distance < 2 ? closest : null;
+      for (const h of hotspots) {
+        const d = Math.hypot(player.position.x - h.position[0], player.position.z - h.position[2]);
+        if (d < distance) { distance = d; closest = h; }
+      }
+      const candidate: Hotspot | null = distance < 2 ? closest : null;
       if ((candidate?.id ?? null) !== lastHotspot.current) { lastHotspot.current = candidate?.id ?? null; setNearby(candidate); }
       renderer.render(scene, camera); raf = requestAnimationFrame(tick);
     };
@@ -231,7 +234,7 @@ export default function GrowthAdventure3D() {
     if (!nearby) { setMessage("반짝이는 장소 가까이 가면 상호작용할 수 있어요."); return; }
     setMissionCount(count => Math.min(3, count + 1));
     if (user) {
-      claim.mutate({ type: nearby.type, sourceId: `rpg:${dateKey()}:${zone}:${nearby.id}`, title: nearby.title });
+      claim.mutate({ type: nearby.type as "scripture_read" | "prayer" | "service_mission" | "wilderness_victory", sourceId: `rpg:${dateKey()}:${zone}:${nearby.id}`, title: nearby.title });
       return;
     }
     const result = localGrowth.claim({ type: nearby.type, sourceId: `rpg:${dateKey()}:${zone}:${nearby.id}`, title: nearby.title });

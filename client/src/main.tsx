@@ -5,6 +5,7 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
+import "./analytics";
 import ConversationAutoTts from "./components/ConversationAutoTts";
 import GlobalBottomNav from "./components/GlobalBottomNav";
 import RecordsExperience from "./records/RecordsExperience";

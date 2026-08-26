@@ -373,7 +373,7 @@ export class AudioPlaybackQueue {
 
       const scheduleDelta = (delta: StreamAudioDelta) => {
         if (run !== this.generation) return;
-        let bytes = base64ToBytes(delta.data);
+        let bytes: Uint8Array = base64ToBytes(delta.data);
         if (!firstAudioSeen) bytes = stripWaveHeader(bytes);
         if (bytes.byteLength === 0) return;
 
@@ -528,7 +528,7 @@ export class AudioPlaybackQueue {
 
   private async playWithMediaElement(request: VoiceRequest, bytes: Uint8Array, mimeType: string, provider: string, run: number, serverResponseAt?: number) {
     if (typeof Audio === "undefined" || typeof URL === "undefined") return false;
-    const url = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
+    const url = URL.createObjectURL(new Blob([bytes.slice()], { type: mimeType }));
     const audio = this.currentAudio ?? new Audio();
     this.currentAudio = audio;
     audio.preload = "auto";
