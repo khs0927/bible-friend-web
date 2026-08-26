@@ -97,7 +97,7 @@ export default function GrowthGame() {
     try {
       setNotice("말씀을 잘 들었어요. 암송 내용을 확인하고 있어요…");
       const transcription = await transcribe.mutateAsync({ audioDataUrl: await blobToDataUrl(blob), language: "ko" });
-      const text = transcription.text?.trim() ?? "";
+      const text = ("text" in transcription ? transcription.text : undefined)?.trim() ?? "";
       setRecitedText(text);
       if (!text) { setNotice("목소리를 글로 옮기지 못했어요. 조금 더 또박또박 다시 말해 봐요."); return; }
       if (user) {
