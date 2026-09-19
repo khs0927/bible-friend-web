@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "server/**"
-      - "api/[...path].ts"
+      - 'api/[[]...path[]].ts'
       - "api/voice-tts.js"
       - "package.json"
       - "pnpm-lock.yaml"
