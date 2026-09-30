@@ -1,6 +1,6 @@
 .records-layer{position:fixed;inset:0;z-index:16000;background:#ecebed;display:grid;place-items:center;font-family:Inter,"Pretendard","Noto Sans KR",system-ui,sans-serif;color:#24215f}
 .records-shell{--records-purple:#7a43f3;--records-navy:#252260;--records-orange:#ff7145;position:relative;width:min(100%,430px);height:min(100dvh,900px);overflow:hidden;background:#fff8ea;border-radius:30px;box-shadow:0 24px 70px rgba(42,35,89,.2);isolation:isolate}
-.records-bg{position:absolute;inset:0;z-index:-3;background-image:linear-gradient(rgba(255,255,255,.12),rgba(255,255,255,.12)),var(--records-bg);background-size:cover;background-position:center;opacity:.98}
+.records-bg{position:absolute;inset:0;z-index:-3;background-image:linear-gradient(rgba(255,255,255,.12),rgba(255,255,255,.12)),var(--records-bg,radial-gradient(circle at 85% 8%,rgba(255,214,170,.55),transparent 42%),radial-gradient(circle at 10% 60%,rgba(214,196,255,.45),transparent 45%),linear-gradient(180deg,#fff8ee,#fdf3ff));background-size:cover;background-position:center;opacity:.98}
 .records-shell button,.records-shell input,.records-shell textarea{font:inherit}.records-shell button{cursor:pointer}
 .records-header{height:76px;display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;position:relative;z-index:4}.records-brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;color:var(--records-navy)}.records-brand-logo{width:44px;height:44px;object-fit:contain}.records-header-actions{display:flex;align-items:center;gap:7px}.records-header-actions button{border:0;background:transparent;padding:0;display:grid;place-items:center}.records-settings{width:44px;height:44px;object-fit:contain}.records-close{width:36px;height:36px!important;border-radius:13px!important;background:rgba(255,255,255,.84)!important;color:#716b8c!important;box-shadow:0 4px 12px rgba(79,63,122,.08)}
 .records-main{position:absolute;inset:76px 0 112px;overflow-y:auto;overscroll-behavior:contain;padding:0 18px 32px;scrollbar-width:none}.records-main::-webkit-scrollbar{display:none}.records-hero{min-height:116px;display:flex;align-items:flex-start;justify-content:space-between;padding:10px 4px 4px}.records-hero h1{font-size:34px;line-height:1.1;margin:6px 0 5px;font-weight:900;color:var(--records-navy);letter-spacing:-1.4px}.records-hero p{font-size:14px;margin:0;color:#75718f;max-width:250px;line-height:1.5;font-weight:600}.records-hero-mascot{width:92px;height:104px;object-fit:contain;margin-top:-7px}
@@ -20,7 +20,10 @@
 @media(min-width:521px){.records-shell{border:1px solid rgba(120,91,160,.08)}}
 
 /* Local-first records (2026-09-30): empty states, prayer row actions. */
-.records-empty > div{display:flex;flex-direction:column;gap:4px}
+.records-layer .records-empty{display:block;padding:16px}
+.records-empty > div{display:flex;flex-direction:column;gap:6px}
+.records-empty b{font-size:13px;color:#2b2560}
+.records-empty span{font-size:11px;line-height:1.5;color:#7a7390}
 .records-empty-action{align-self:flex-start;margin-top:8px;border:0;border-radius:14px;padding:7px 12px;background:#7f48ed;color:#fff;font-size:11px;font-weight:800}
 button.records-info-row{width:100%;border:0;text-align:left;color:inherit;font:inherit}
 .records-prayer-row{grid-template-columns:44px minmax(0,1fr) auto}

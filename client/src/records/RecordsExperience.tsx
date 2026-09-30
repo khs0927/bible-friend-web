@@ -14,7 +14,7 @@ import {
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { getVerse, searchVerses, VERSE_THEMES, verseOfTheDay, type LibraryVerse, type VerseTheme } from '@shared/verseLibrary';
 import { sectionForScreen, screenForSection, type RecordsScreen, type RecordsSection } from './recordExperienceState';
-import { recordAssetUrl } from './recordsAssets';
+import { RECORD_FALLBACK_ART, recordAssetUrl, recordBackgroundUrl } from './recordsAssets';
 import {
   addPrayer,
   clearRecents,
@@ -85,7 +85,18 @@ function sameDay(a: Date, b: Date) {
 }
 
 function asset(path: string, alt = '', className = '') {
-  return <img src={recordAssetUrl(path)} alt={alt} className={className} draggable={false} />;
+  return (
+    <img
+      src={recordAssetUrl(path)}
+      alt={alt}
+      className={className}
+      draggable={false}
+      onError={event => {
+        const img = event.currentTarget;
+        if (!img.src.endsWith(RECORD_FALLBACK_ART)) img.src = RECORD_FALLBACK_ART;
+      }}
+    />
+  );
 }
 
 /** Opens the conversation and asks `question` there (see ConversationHome's ?ask=). */
@@ -205,14 +216,14 @@ export default function RecordsExperience() {
   };
 
   const bgPath = section === 'verses' ? `${BG}/verse.png` : section === 'prayer' ? (screen === 'prayer-answers' ? `${BG}/prayer-answer.png` : `${BG}/prayer.png`) : `${BG}/favorites.png`;
-  const bg = recordAssetUrl(bgPath);
+  const bg = recordBackgroundUrl(bgPath);
   const isDetail = !['recent', 'favorites', 'verses', 'prayer'].includes(screen);
   const answered = records.prayers.filter(p => p.status === '응답됨');
   const prayerDays = records.prayers.map(p => new Date(p.at));
 
   return (
     <div className="records-layer" role="dialog" aria-modal="true" aria-label="성경 친구 기록">
-      <div className="records-shell" style={{ '--records-bg': `url(${bg})` } as CSSProperties}>
+      <div className="records-shell" style={bg ? ({ '--records-bg': `url(${bg})` } as CSSProperties) : undefined}>
         <div className="records-bg" aria-hidden="true" />
         <Header onClose={() => setOpen(false)} />
         <main className="records-main">
