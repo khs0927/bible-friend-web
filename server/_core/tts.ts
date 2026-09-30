@@ -181,6 +181,21 @@ export function resolveVoice(request: TTSRequest): ResolvedVoice {
   return { ...profile, speaker, speed, prompt };
 }
 
+function resolveSpeechStyle(request: TTSRequest, resolved: ResolvedVoice) {
+  const pace = resolved.speed <= 0.92 ? "slightly slow and calm" : resolved.speed >= 1.08 ? "slightly brisk and lively" : "natural conversational pace";
+  return [
+    resolved.instruction,
+    "Speak natural Korean for a child aged 6 to 12. Keep pronunciation clear and emotionally believable.",
+    "Avoid exaggerated baby talk or theatrical overacting.",
+    pace,
+    request.emotion?.trim() ? `Emotion: ${request.emotion.trim()}.` : "Emotion: warm, friendly, and reassuring.",
+    request.style?.trim() || "Use short natural breaths and gently emphasize the important words.",
+    request.context?.trim() ? `Scene context: ${request.context.trim()}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function makeWavFromPcm(pcm: Buffer, sampleRate = 24_000, channels = 1, bitsPerSample = 16) {
   if (pcm.subarray(0, 4).toString("ascii") === "RIFF") return pcm;
   const blockAlign = channels * (bitsPerSample / 8);
@@ -259,14 +274,41 @@ class GeminiTTSProvider implements TTSProvider {
           "content-type": "application/json",
           "x-goog-api-key": this.apiKey,
         },
-        body: JSON.stringify({
-          model: this.model,
-          input: resolved.prompt,
-          response_format: { type: "audio" },
-          generation_config: {
-            speech_config: [{ voice: resolved.voice }],
-          },
-        }),
+        body: JSON.stringify(
+          this.model.startsWith("gemini-3.8-")
+            ? {
+                model: this.model,
+                input: [
+                  {
+                    type: "user_input",
+                    content: [
+                      {
+                        type: "text",
+                        text: request.text.trim(),
+                        annotations: [
+                          {
+                            type: "speech_metadata",
+                            style: resolveSpeechStyle(request, resolved),
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+                response_format: { type: "audio" },
+                generation_config: {
+                  speech_config: [{ voice: resolved.voice }],
+                },
+              }
+            : {
+                model: this.model,
+                input: resolved.prompt,
+                response_format: { type: "audio" },
+                generation_config: {
+                  speech_config: [{ voice: resolved.voice }],
+                },
+              },
+        ),
         signal: controller.signal,
       });
       const bodyText = await response.text();
