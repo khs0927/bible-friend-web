@@ -1,0 +1,65 @@
+name: bible-friend-tts
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - tts-redis:/data
+    networks: [tts-internal]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+  gateway:
+    build:
+      context: ../../services/tts-gateway
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8787:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [tts-internal]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  # Optional: run this only on a Hostinger GPU instance (or another NVIDIA host).
+  # Normal KVM VPS deployments should NOT enable this profile.
+  qwen3-tts:
+    profiles: ["gpu"]
+    build:
+      context: ../../services/qwen3-tts
+    restart: unless-stopped
+    environment:
+      QWEN3_TTS_MODEL: ${QWEN3_TTS_MODEL:-Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice}
+      QWEN3_TTS_SPEAKER: ${QWEN3_TTS_SPEAKER:-Sohee}
+      QWEN3_TTS_API_TOKEN: ${QWEN3_TTS_API_TOKEN:-}
+      QWEN3_TTS_DEVICE: cuda:0
+      QWEN3_TTS_FLASH_ATTENTION: ${QWEN3_TTS_FLASH_ATTENTION:-1}
+      HF_HOME: /models/huggingface
+    volumes:
+      - qwen-models:/models
+    networks: [tts-internal]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  tts-redis:
+  qwen-models:
+
+networks:
+  tts-internal:
+    driver: bridge
