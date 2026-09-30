@@ -2,6 +2,8 @@ import { AudioPlaybackQueue, type TTSMutation, type VoiceRequest } from "@/lib/a
 import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
 import { transcribeAndSend } from "@/lib/voiceConversationFlow";
 import { trpc } from "@/lib/trpc";
+import { addRecent, isFavorite, nowIso, toggleFavorite, updateRecords, useRecords } from "@/records/recordsStore";
+import { getVerse, pickVerseFor, VERSE_LIBRARY } from "@shared/verseLibrary";
 import {
   BookOpen,
   ChevronRight,
@@ -22,9 +24,16 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  /** Verse picked for this answer (assistant turns only). */
+  verseId?: string;
+  /** The question this answer replies to, used as the favorite's title. */
+  question?: string;
 };
 
-type ConversationView = "home" | "chat" | "voice" | "answer" | "history";
+type ConversationView = "home" | "chat" | "voice";
+
+// Turns sent with each question so follow-ups keep their context.
+const HISTORY_TURNS = 6;
 
 type IconTileProps = {
   tone: "heart" | "pray" | "question" | "candle" | "chat" | "story" | "record";
@@ -38,32 +47,6 @@ const QUICK_QUESTIONS = [
   { tone: "candle" as const, label: "용서하는 것이 왜 중요할까요?" },
 ];
 
-const HISTORY_ITEMS = [
-  {
-    tone: "heart" as const,
-    title: "하나님은 나를 사랑하시나요?",
-    summary: "하나님은 당신을 지금 이 순간에도 변함없이 사랑하십니다.",
-    date: "오늘 10:30",
-  },
-  {
-    tone: "pray" as const,
-    title: "기도는 왜 필요할까요?",
-    summary: "기도는 하나님과 대화하는 시간이에요. 우리의 마음을 하나님께 전하고…",
-    date: "어제 20:15",
-  },
-  {
-    tone: "record" as const,
-    title: "용서에 대해 배웠어요",
-    summary: "용서는 다른 사람을 위한 선물이자 나 자신을 위한 자유예요.",
-    date: "5월 18일",
-  },
-  {
-    tone: "story" as const,
-    title: "예수님은 왜 오셨나요?",
-    summary: "예수님은 우리를 구원하고 하나님의 사랑을 보여주셨어요.",
-    date: "5월 15일",
-  },
-];
 
 function IconTile({ tone, size = "md" }: IconTileProps) {
   const icons: Record<IconTileProps["tone"], ReactNode> = {
@@ -121,6 +104,14 @@ export default function ConversationHome() {
   const [micError, setMicError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const records = useRecords();
+
+  // The voice note is informational; don't let it linger over the chat actions.
+  useEffect(() => {
+    if (!voiceError) return;
+    const id = window.setTimeout(() => setVoiceError(null), 4000);
+    return () => window.clearTimeout(id);
+  }, [voiceError]);
 
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -151,10 +142,27 @@ export default function ConversationHome() {
     });
   }
 
-  const lastAssistantMessage = useMemo(
-    () => messages.slice().reverse().find(message => message.role === "assistant")?.content ?? "",
+  const lastAnswer = useMemo(
+    () => messages.slice(1).reverse().find(message => message.role === "assistant"),
     [messages],
   );
+  const answerVerse = (lastAnswer?.verseId && getVerse(lastAnswer.verseId)) || VERSE_LIBRARY[0];
+  const verseSaved = isFavorite(records, { kind: "verse", body: answerVerse.text, verseId: answerVerse.id });
+
+  const toggleAnswerFavorite = (message: ChatMessage) =>
+    updateRecords(state =>
+      toggleFavorite(state, {
+        kind: "answer",
+        title: message.question ?? "성경 친구의 답변",
+        body: message.content,
+        verseId: message.verseId,
+        at: nowIso(),
+      }),
+    );
+  const toggleVerseFavorite = () =>
+    updateRecords(state =>
+      toggleFavorite(state, { kind: "verse", title: answerVerse.ref, body: answerVerse.text, verseId: answerVerse.id, at: nowIso() }),
+    );
 
   const speakText = (request: VoiceRequest) => {
     const text = request.text.trim();
@@ -180,11 +188,23 @@ export default function ConversationHome() {
     setDraft("");
     setMicError(null);
     setIsListening(false);
+    const history = messages
+      .slice(1)
+      .slice(-HISTORY_TURNS)
+      .map(({ role, content }) => ({ role, content }));
     setMessages(current => [...current, { role: "user", content: question }]);
 
     try {
-      const result = await askMutation.mutateAsync({ question });
-      setMessages(current => [...current, { role: "assistant", content: result.answer }]);
+      const result = await askMutation.mutateAsync({ question, history });
+      // Older servers don't send a verse; pick one locally from the same library.
+      const verseId = result.verse?.id ?? pickVerseFor(question, result.answer).id;
+      setMessages(current => [...current, { role: "assistant", content: result.answer, verseId, question }]);
+      if (result.safety !== "self_harm" && result.safety !== "abuse" && result.safety !== "personal_info") {
+        // Safety replies are not kept; everything else becomes a recent record.
+        updateRecords(state =>
+          addRecent(state, { question, answer: result.answer, verseId, at: nowIso() }),
+        );
+      }
       speakText({
         text: result.answer,
         speaker: "CHILD_FRIEND",
@@ -198,6 +218,17 @@ export default function ConversationHome() {
     }
   };
   sendMessageRef.current = sendMessage;
+
+  // Records links here with ?ask=<question> ("다시 묻기", "말씀 설명"); ask it once.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ask = params.get("ask")?.trim();
+    if (!ask) return;
+    params.delete("ask");
+    const rest = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}`);
+    void sendMessageRef.current(ask.slice(0, 600));
+  }, []);
 
   const stopMediaRecording = () => {
     const recorder = mediaRecorderRef.current;
@@ -431,18 +462,38 @@ export default function ConversationHome() {
                           <Volume2 aria-hidden="true" />
                         </button>
                       )}
+                      {message.role === "assistant" && index > 0 && (
+                        <button
+                          type="button"
+                          className="bf-chat-inline-voice bf-chat-inline-save"
+                          onClick={() => toggleAnswerFavorite(message)}
+                          aria-label={isFavorite(records, { kind: "answer", body: message.content }) ? "즐겨찾기에서 빼기" : "즐겨찾기에 저장"}
+                          aria-pressed={isFavorite(records, { kind: "answer", body: message.content })}
+                        >
+                          <Star aria-hidden="true" fill={isFavorite(records, { kind: "answer", body: message.content }) ? "currentColor" : "none"} />
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))}
                 {askMutation.isPending && <div className="bf-chat-thinking">성경 친구가 답을 준비하고 있어요…</div>}
               </div>
 
-              {lastAssistantMessage && messages.length > 1 && (
-                <section className="bf-verse-card" aria-label="오늘의 말씀 카드">
+              {lastAnswer && (
+                <section className="bf-verse-card" aria-label="함께 읽는 말씀 카드">
                   <span className="bf-verse-bookmark" aria-hidden="true" />
-                  <strong className="bf-verse-kicker">오늘의 말씀</strong>
-                  <h2>요한복음 3:16</h2>
-                  <p>하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라</p>
+                  <strong className="bf-verse-kicker">함께 읽는 말씀</strong>
+                  <h2>{answerVerse.ref}</h2>
+                  <p>{answerVerse.text}</p>
+                  <button
+                    type="button"
+                    className="bf-verse-save"
+                    onClick={toggleVerseFavorite}
+                    aria-pressed={verseSaved}
+                  >
+                    <Star aria-hidden="true" fill={verseSaved ? "currentColor" : "none"} />
+                    {verseSaved ? "저장됨" : "말씀 저장"}
+                  </button>
                 </section>
               )}
 
@@ -493,85 +544,6 @@ export default function ConversationHome() {
             </section>
           )}
 
-          {view === "answer" && (
-            <section className="bf-answer-detail" aria-labelledby="answer-detail-title">
-              <div className="bf-answer-hero">
-                <div>
-                  <h1 id="answer-detail-title">질문에 대한 답변이에요.</h1>
-                  <p>하나님의 말씀을 함께<br />살펴볼까요?</p>
-                </div>
-                <Mascot className="bf-answer-mascot" />
-              </div>
-
-              <section className="bf-answer-verse-card">
-                <strong>오늘의 말씀</strong>
-                <h2>빌립보서 4:6</h2>
-                <p>“아무 것도 염려하지 말고, 다만 모든 일에 기도와 간구로, 너희 구할 것을 감사함으로 하나님께 아뢰라”</p>
-                <IconTile tone="record" size="lg" />
-              </section>
-
-              <section className="bf-answer-explanation-card">
-                <h2><Star aria-hidden="true" fill="currentColor" /> 친구의 설명</h2>
-                <p>{lastAssistantMessage || "이 말씀은 우리가 걱정될 때 어떻게 해야 하는지 알려줘요. 마음이 불안하거나 고민이 생기면, 하나님께 솔직하게 이야기하고 기도하라고 해요. 그리고 이미 주신 것들에 감사하는 마음을 가질 때, 우리의 마음이 평안해진답니다."}</p>
-              </section>
-
-              <div className="bf-answer-actions">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isSpeaking) {
-                      audioQueueRef.current?.cancel();
-                      setIsSpeaking(false);
-                      return;
-                    }
-                    speakText({
-                      text: lastAssistantMessage,
-                      speaker: "CHILD_FRIEND",
-                      emotion: "따뜻하고 또렷한 다시 듣기",
-                    });
-                  }}
-                  disabled={!lastAssistantMessage}
-                >
-                  <Volume2 aria-hidden="true" />{isSpeaking ? "음성 멈추기" : "음성으로 듣기"}
-                </button>
-                <button type="button" onClick={() => void sendMessage("이 답변 내용으로 짧게 기도해줘")}>짧은 기도</button>
-                <button type="button" onClick={() => window.dispatchEvent(new Event("bible-friend:open-records"))}>기록에 저장</button>
-              </div>
-            </section>
-          )}
-
-          {view === "history" && (
-            <section className="bf-conversation-history" aria-labelledby="history-title">
-              <div className="bf-history-heading">
-                <div>
-                  <h1 id="history-title">나의 대화</h1>
-                  <p>저장된 대화를 다시 만나보세요</p>
-                </div>
-                <Mascot className="bf-history-mascot" />
-              </div>
-
-              <div className="bf-history-filters" role="tablist" aria-label="대화 기록 필터">
-                <button type="button" role="tab" aria-selected="true">최근</button>
-                <button type="button" role="tab">즐겨찾기</button>
-                <button type="button" role="tab">성경 구절</button>
-                <button type="button" role="tab">기도</button>
-              </div>
-
-              <div className="bf-history-list">
-                {HISTORY_ITEMS.map(item => (
-                  <article key={item.title} className="bf-history-card">
-                    <IconTile tone={item.tone} size="lg" />
-                    <div className="bf-history-copy">
-                      <h2>{item.title}</h2>
-                      <p>{item.summary}</p>
-                    </div>
-                    <time>{item.date}</time>
-                    <Star className="bf-history-star" aria-label="즐겨찾기" />
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
         </main>
 
         {voiceError && (

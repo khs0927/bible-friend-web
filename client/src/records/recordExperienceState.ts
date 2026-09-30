@@ -1,4 +1,6 @@
 export type RecordsScreen =
+  | 'recent'
+  | 'recent-detail'
   | 'favorites'
   | 'favorite-detail'
   | 'favorites-manage'
@@ -9,20 +11,21 @@ export type RecordsScreen =
   | 'prayer-write'
   | 'prayer-answers';
 
-export type RecordsSection = 'favorites' | 'verses' | 'prayer';
+export type RecordsSection = 'recent' | 'favorites' | 'verses' | 'prayer';
+
+const MAIN_SCREENS: RecordsScreen[] = ['recent', 'favorites', 'verses', 'prayer'];
 
 export function sectionForScreen(screen: RecordsScreen): RecordsSection {
+  if (screen.startsWith('recent')) return 'recent';
   if (screen.startsWith('verse')) return 'verses';
   if (screen.startsWith('prayer')) return 'prayer';
   return 'favorites';
 }
 
 export function screenForSection(section: RecordsSection): RecordsScreen {
-  if (section === 'verses') return 'verses';
-  if (section === 'prayer') return 'prayer';
-  return 'favorites';
+  return section;
 }
 
 export function isDetailScreen(screen: RecordsScreen) {
-  return screen !== 'favorites' && screen !== 'verses' && screen !== 'prayer';
+  return !MAIN_SCREENS.includes(screen);
 }

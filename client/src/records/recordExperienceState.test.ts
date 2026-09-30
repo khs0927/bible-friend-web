@@ -6,6 +6,7 @@ describe('record experience screen graph', () => {
     expect(screenForSection('favorites')).toBe('favorites');
     expect(screenForSection('verses')).toBe('verses');
     expect(screenForSection('prayer')).toBe('prayer');
+    expect(screenForSection('recent')).toBe('recent');
   });
 
   it('keeps detail screens in the correct section', () => {
@@ -15,12 +16,15 @@ describe('record experience screen graph', () => {
     expect(sectionForScreen('verse-search')).toBe('verses');
     expect(sectionForScreen('prayer-write')).toBe('prayer');
     expect(sectionForScreen('prayer-answers')).toBe('prayer');
+    expect(sectionForScreen('recent-detail')).toBe('recent');
   });
 
   it('distinguishes main and detail screens', () => {
     expect(isDetailScreen('favorites')).toBe(false);
     expect(isDetailScreen('verses')).toBe(false);
     expect(isDetailScreen('prayer')).toBe(false);
+    expect(isDetailScreen('recent')).toBe(false);
     expect(isDetailScreen('verse-search')).toBe(true);
+    expect(isDetailScreen('recent-detail')).toBe(true);
   });
 });
