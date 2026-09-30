@@ -139,3 +139,30 @@ node scripts/prewarm.mjs scripts/prewarm.example.json
 ```
 
 Each successful request is written into Workers KV by the gateway, so later requests with the same normalized voice/style/speed can skip GPU inference.
+
+
+## One-command Cloudflare bootstrap
+
+The repository includes `scripts/bootstrap.mjs`. With Cloudflare credentials in the environment it will:
+
+1. list existing KV namespaces,
+2. reuse or create `bible-friend-tts-audio`,
+3. reuse or create `bible-friend-tts-circuit`,
+4. generate `wrangler.toml` with the resolved namespace IDs.
+
+```bash
+cd workers/tts-gateway
+export CLOUDFLARE_API_TOKEN=...
+export CLOUDFLARE_ACCOUNT_ID=...
+npm install
+node scripts/bootstrap.mjs
+```
+
+For GitHub Actions deployment, configure these repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `TTS_WORKER_API_TOKEN`
+- `GPU_ENDPOINTS_JSON`
+
+Then run the **Deploy TTS Worker** workflow manually. The workflow creates/reuses KV namespaces, uploads Worker secrets alongside the code, and deploys the Worker.
