@@ -1,3 +1,4 @@
+import { AudioPlaybackQueue, type TTSMutation, type VoiceRequest } from "@/lib/audioPlaybackQueue";
 import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
 import { transcribeAndSend } from "@/lib/voiceConversationFlow";
 import { trpc } from "@/lib/trpc";
@@ -117,6 +118,7 @@ function Mascot({ className = "", compact = false }: { className?: string; compa
 
 export default function ConversationHome() {
   const askMutation = trpc.ai.ask.useMutation();
+  const ttsMutation = trpc.tts.synthesize.useMutation();
   const transcribeMutation = trpc.voice.transcribe.useMutation();
   const [view, setView] = useState<ConversationView>("home");
   const [draft, setDraft] = useState("");
@@ -126,22 +128,53 @@ export default function ConversationHome() {
   const [isListening, setIsListening] = useState(false);
   const [recognizedText, setRecognizedText] = useState("");
   const [micError, setMicError] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
   const sendMessageRef = useRef<(content: string) => Promise<void> | void>(() => undefined);
+  const audioQueueRef = useRef<AudioPlaybackQueue | null>(null);
+
+  if (!audioQueueRef.current) {
+    audioQueueRef.current = new AudioPlaybackQueue(ttsMutation as TTSMutation, {
+      onPlaybackStarted: () => {
+        setIsSpeaking(true);
+        setVoiceError(null);
+      },
+      onPlaybackFinished: () => setIsSpeaking(false),
+      onPlaybackError: info => {
+        setIsSpeaking(false);
+        setVoiceError(
+          info.code === "rate_limit" || info.code === "quota"
+            ? "고품질 음성 사용량이 잠시 제한되어 기기 음성으로 이어서 재생해요."
+            : "음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.",
+        );
+      },
+      allowBrowserFallback: true,
+      fastFallbackMs: 7_000,
+    });
+  }
 
   const lastAssistantMessage = useMemo(
     () => messages.slice().reverse().find(message => message.role === "assistant")?.content ?? "",
     [messages],
   );
 
+  const speakText = (request: VoiceRequest) => {
+    const text = request.text.trim();
+    if (!text) return;
+    audioQueueRef.current?.prime();
+    audioQueueRef.current?.enqueue({ ...request, text });
+  };
+
   const sendMessage = async (rawQuestion: string) => {
     const question = rawQuestion.trim();
     if (!question || askMutation.isPending) return;
 
+    audioQueueRef.current?.prime();
     setView("chat");
     setDraft("");
     setMicError(null);
@@ -151,14 +184,16 @@ export default function ConversationHome() {
     try {
       const result = await askMutation.mutateAsync({ question });
       setMessages(current => [...current, { role: "assistant", content: result.answer }]);
+      speakText({
+        text: result.answer,
+        speaker: "CHILD_FRIEND",
+        emotion: "따뜻하고 다정한 격려",
+        style: "아이와 자연스럽게 대화하듯 또렷하고 생동감 있게",
+      });
     } catch {
-      setMessages(current => [
-        ...current,
-        {
-          role: "assistant",
-          content: "잠시 연결이 원활하지 않아요. 조금 뒤에 다시 질문해 주세요.",
-        },
-      ]);
+      const fallback = "잠시 연결이 원활하지 않아요. 조금 뒤에 다시 질문해 주세요.";
+      setMessages(current => [...current, { role: "assistant", content: fallback }]);
+      speakText({ text: fallback, speaker: "CHILD_FRIEND", emotion: "안심시키는 따뜻함" });
     }
   };
   sendMessageRef.current = sendMessage;
@@ -285,6 +320,7 @@ export default function ConversationHome() {
     return () => {
       recognitionRef.current?.stop?.();
       stopMediaRecording();
+      audioQueueRef.current?.cancel();
     };
   }, []);
 
@@ -324,6 +360,8 @@ export default function ConversationHome() {
   const goHome = () => {
     recognitionRef.current?.stop?.();
     stopMediaRecording();
+    audioQueueRef.current?.cancel();
+    setIsSpeaking(false);
     setIsListening(false);
     setMicError(null);
     setView("home");
@@ -368,7 +406,31 @@ export default function ConversationHome() {
                 {messages.map((message, index) => (
                   <article key={`${message.role}-${index}`} className={`bf-chat-bubble-row ${message.role}`}>
                     {message.role === "assistant" && <Mascot compact className="bf-chat-avatar" />}
-                    <div className="bf-chat-bubble">{message.content}</div>
+                    <div className="bf-chat-bubble">
+                      <span>{message.content}</span>
+                      {message.role === "assistant" && index > 0 && (
+                        <button
+                          type="button"
+                          className="bf-chat-inline-voice"
+                          onClick={() => {
+                            if (isSpeaking) {
+                              audioQueueRef.current?.cancel();
+                              setIsSpeaking(false);
+                              return;
+                            }
+                            speakText({
+                              text: message.content,
+                              speaker: "CHILD_FRIEND",
+                              emotion: "따뜻하고 또렷한 다시 듣기",
+                            });
+                          }}
+                          aria-label={isSpeaking ? "음성 재생 멈추기" : "이 답변 음성으로 듣기"}
+                          aria-pressed={isSpeaking}
+                        >
+                          <Volume2 aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
                   </article>
                 ))}
                 {askMutation.isPending && <div className="bf-chat-thinking">성경 친구가 답을 준비하고 있어요…</div>}
@@ -386,7 +448,7 @@ export default function ConversationHome() {
               <div className="bf-followup-actions" aria-label="후속 질문">
                 <button type="button" onClick={() => void sendMessage("더 쉽게 설명해줘")}>더 쉽게 설명해줘</button>
                 <button type="button" onClick={() => void sendMessage("이 내용으로 짧게 기도해줘")}>기도해줘</button>
-                <button type="button">관련 이야기 보기</button>
+                <button type="button" onClick={() => { window.location.href = "/story"; }}>관련 이야기 보기</button>
               </div>
             </section>
           )}
@@ -453,7 +515,24 @@ export default function ConversationHome() {
               </section>
 
               <div className="bf-answer-actions">
-                <button type="button"><Volume2 aria-hidden="true" />음성으로 듣기</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isSpeaking) {
+                      audioQueueRef.current?.cancel();
+                      setIsSpeaking(false);
+                      return;
+                    }
+                    speakText({
+                      text: lastAssistantMessage,
+                      speaker: "CHILD_FRIEND",
+                      emotion: "따뜻하고 또렷한 다시 듣기",
+                    });
+                  }}
+                  disabled={!lastAssistantMessage}
+                >
+                  <Volume2 aria-hidden="true" />{isSpeaking ? "음성 멈추기" : "음성으로 듣기"}
+                </button>
                 <button type="button" onClick={() => void sendMessage("이 답변 내용으로 짧게 기도해줘")}>짧은 기도</button>
                 <button type="button" onClick={() => setView("history")}>기록에 저장</button>
               </div>
@@ -493,6 +572,12 @@ export default function ConversationHome() {
             </section>
           )}
         </main>
+
+        {voiceError && (
+          <div className="bf-conversation-voice-note" role="status" aria-live="polite">
+            {voiceError}
+          </div>
+        )}
 
         <div className="bf-conversation-composer" aria-label="대화 입력">
           <textarea
@@ -544,6 +629,7 @@ export default function ConversationHome() {
                 className={active ? "active" : ""}
                 onClick={() => {
                   if (item.id === "conversation") goHome();
+                  if (item.id === "story") window.location.href = "/story";
                   if (item.id === "record") setView("history");
                 }}
               >

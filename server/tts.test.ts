@@ -26,6 +26,8 @@ describe("Gemini TTS provider", () => {
     process.env.GEMINI_TTS_DAILY_CHARS = "100";
     process.env.GEMINI_TTS_MAX_CHARS = "900";
     delete process.env.COSYVOICE_API_URL;
+    delete process.env.QWEN3_TTS_API_URL;
+    delete process.env.QWEN3_TTS_API_TOKEN;
   });
 
   afterEach(() => {
@@ -33,6 +35,30 @@ describe("Gemini TTS provider", () => {
     delete process.env.GEMINI_TTS_DAILY_REQUESTS;
     delete process.env.GEMINI_TTS_DAILY_CHARS;
     delete process.env.GEMINI_TTS_MAX_CHARS;
+  });
+
+  it("uses Gemini 3.8 structured speech metadata without reading directions aloud", async () => {
+    const wav = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(64)]);
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ output_audio: { data: wav.toString("base64") } }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new GeminiTTSProvider({ apiKey: "test-key", model: "gemini-3.8-flash-tts", timeoutMs: 500 });
+    const request = {
+      text: "오늘도 하나님이 너와 함께 계셔.",
+      speaker: "CHILD_FRIEND" as const,
+      emotion: "밝고 따뜻한 격려",
+    };
+    const result = await provider.synthesize(request, resolveVoice(request));
+
+    expect(result.audio.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(init.body));
+    expect(body.input[0].content[0].text).toBe(request.text);
+    expect(body.input[0].content[0].annotations[0].type).toBe("speech_metadata");
+    expect(body.input[0].content[0].annotations[0].style).toContain("밝고 따뜻한 격려");
+    expect(body.input).not.toContain("다음 문장을 뜻을 바꾸지 말고");
   });
 
   it("wraps Gemini PCM output as a playable 24kHz WAV", async () => {

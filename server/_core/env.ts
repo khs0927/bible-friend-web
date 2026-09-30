@@ -1,4 +1,4 @@
-const BIBLE_FRIEND_GEMINI_TTS_MODEL = "gemini-3.1-flash-tts-preview";
+const BIBLE_FRIEND_GEMINI_TTS_MODEL = "gemini-3.8-flash-tts";
 const GEMINI_TTS_REQUEST_TIMEOUT_MS = 8_000;
 
 function boundedVoiceTimeout(value: string | undefined) {
@@ -17,11 +17,9 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-  // Gemini 3.1 is the current preferred expressive TTS model and supports
-  // low-latency streaming. The direct fallback gets enough time to complete on
-  // browsers where streaming audio is unavailable; the client still starts its
-  // browser fallback race earlier if Gemini is unusually slow.
-  geminiTtsModel: BIBLE_FRIEND_GEMINI_TTS_MODEL,
+  // Gemini 3.8 Flash TTS is the current flagship expressive TTS model.
+  // It uses structured speech_metadata and returns WAV audio on unary requests.
+  geminiTtsModel: process.env.GEMINI_TTS_MODEL?.trim() || BIBLE_FRIEND_GEMINI_TTS_MODEL,
   geminiTtsTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_TIMEOUT_MS),
   geminiTtsHardTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_HARD_TIMEOUT_MS),
 };

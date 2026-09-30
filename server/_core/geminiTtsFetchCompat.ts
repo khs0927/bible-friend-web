@@ -34,7 +34,10 @@ function parseLegacyTtsBody(body: BodyInit | null | undefined): LegacyTtsBody | 
     const audioRequested = Array.isArray(format)
       ? format.some(item => item?.type === "audio")
       : format?.type === "audio";
-    return audioRequested ? parsed : null;
+    // Only translate the legacy string-input request. Gemini 3.8 TTS uses
+    // structured Interactions input with speech_metadata annotations and must
+    // pass through untouched to the official Interactions endpoint.
+    return audioRequested && typeof parsed.input === "string" ? parsed : null;
   } catch {
     return null;
   }

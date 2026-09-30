@@ -14,6 +14,8 @@ describe("tts router", () => {
   it("returns a safe structured response when Gemini is rate limited and CosyVoice is unavailable", async () => {
     const originalUrl = process.env.COSYVOICE_API_URL;
     delete process.env.COSYVOICE_API_URL;
+    delete process.env.QWEN3_TTS_API_URL;
+    delete process.env.QWEN3_TTS_API_TOKEN;
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
