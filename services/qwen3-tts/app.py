@@ -14,7 +14,7 @@ API_TOKEN = os.getenv("QWEN3_TTS_API_TOKEN", "").strip()
 load_kwargs = {"device_map": DEVICE}
 if DEVICE.startswith("cuda"):
     load_kwargs["dtype"] = torch.bfloat16
-    if os.getenv("QWEN3_TTS_FLASH_ATTENTION", "1") == "1":
+    if os.getenv("QWEN3_TTS_FLASH_ATTENTION", "0") == "1":
         load_kwargs["attn_implementation"] = "flash_attention_2"
 else:
     load_kwargs["dtype"] = torch.float32
