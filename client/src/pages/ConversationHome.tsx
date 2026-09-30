@@ -156,6 +156,7 @@ export default function ConversationHome() {
       // Test phase: play exactly one TTS engine. Do not race or fall back to
       // device/browser speech, which can make two different voices audible.
       allowBrowserFallback: false,
+      allowStreaming: false,
     });
   }
 
@@ -167,6 +168,11 @@ export default function ConversationHome() {
   const speakText = (request: VoiceRequest) => {
     const text = request.text.trim();
     if (!text) return;
+
+    // Conversation owns exactly one playback lane. Stop any previous clip or
+    // pending request before starting the latest assistant answer.
+    audioQueueRef.current?.cancel();
+    setIsSpeaking(false);
     audioQueueRef.current?.prime();
     audioQueueRef.current?.enqueue({ ...request, text });
   };
