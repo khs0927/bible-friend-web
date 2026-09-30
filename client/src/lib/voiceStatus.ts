@@ -9,7 +9,7 @@ export function getVoiceStateFromPlaybackError(code: string, message: string): {
     return { status: "fallback", error: "기기 음성으로 이어서 재생해요." };
   }
   if (code === "rate_limit" || code === "quota") {
-    return { status: "error", error: "Gemini 음성 사용량이 잠시 제한되어 있어요. 글로는 계속 이야기할 수 있어요." };
+    return { status: "error", error: "고품질 음성 사용량이 잠시 제한되어 있어요. 다른 음성 엔진으로 이어서 재생을 시도해요." };
   }
   if (code === "browser_speech_unavailable" || code === "synthesis-failed" || code === "browser_speech_error") {
     return { status: "error", error: "이 기기에서 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요." };
@@ -43,5 +43,5 @@ export function getVoiceStatusText(enabled: boolean, status: VoiceStatus, error:
   if (status === "speaking") return "성경 친구가 말하고 있어요…";
   if (status === "fallback") return "기기 음성으로 이어서 재생해요";
   if (status === "error") return error ?? "음성을 재생하지 못했어요";
-  return "Gemini 한국어 음성 준비됨";
+  return "고품질 한국어 음성 준비됨";
 }
