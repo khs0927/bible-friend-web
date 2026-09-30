@@ -127,6 +127,44 @@ describe("AudioPlaybackQueue", () => {
     expect(playbackFinished).not.toHaveBeenCalled();
   });
 
+  it("falls back to browser speech once when Gemini server TTS fails", async () => {
+    const playbackStarted = vi.fn();
+    const utterances: any[] = [];
+
+    class MockUtterance {
+      lang = "";
+      rate = 1;
+      pitch = 1;
+      onstart?: () => void;
+      onend?: () => void;
+      onerror?: (event: { error: string }) => void;
+      constructor(public readonly text: string) { utterances.push(this); }
+    }
+
+    vi.stubGlobal("window", {
+      speechSynthesis: {
+        cancel: vi.fn(),
+        getVoices: () => [{ lang: "ko-KR", name: "Korean" }],
+        speak: (utterance: MockUtterance) => {
+          utterance.onstart?.();
+          setTimeout(() => utterance.onend?.(), 0);
+        },
+      },
+    });
+    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+
+    const queue = new AudioPlaybackQueue(
+      { mutateAsync: async () => ({ success: false, errorCode: "rate_limit", error: "Gemini unavailable" }) },
+      { allowBrowserFallback: true, onPlaybackStarted: playbackStarted },
+    );
+
+    queue.enqueue({ text: "구글 음성이 안 되면 한 번만 대신 읽어줘.", speaker: "CHILD_FRIEND" });
+    await new Promise(resolve => setTimeout(resolve, 25));
+
+    expect(utterances).toHaveLength(1);
+    expect(playbackStarted).toHaveBeenCalledWith(expect.objectContaining({ provider: "browser" }));
+  });
+
   it("starts browser speech immediately from a speaker tap even when voices are initially empty", async () => {
     const playbackStarted = vi.fn();
     const utterances: any[] = [];
