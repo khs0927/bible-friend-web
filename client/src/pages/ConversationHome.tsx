@@ -14,7 +14,6 @@ import {
   RefreshCcw,
   Send,
   Sparkles,
-  Sprout,
   Star,
   Volume2,
 } from "lucide-react";
