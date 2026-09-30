@@ -21,7 +21,7 @@ export const ENV = {
   // low-latency streaming. The direct fallback gets enough time to complete on
   // browsers where streaming audio is unavailable; the client still starts its
   // browser fallback race earlier if Gemini is unusually slow.
-  geminiTtsModel: BIBLE_FRIEND_GEMINI_TTS_MODEL,
+  geminiTtsModel: process.env.GEMINI_TTS_MODEL?.trim() || BIBLE_FRIEND_GEMINI_TTS_MODEL,
   geminiTtsTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_TIMEOUT_MS),
   geminiTtsHardTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_HARD_TIMEOUT_MS),
 };
