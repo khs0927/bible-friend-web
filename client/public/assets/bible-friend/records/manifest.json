@@ -34,73 +34,73 @@
     },
     {
       "file": "hq/01_app_logo.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 1260182,
-      "sha256": "2f5aaa29faf3e6ee7fbcaacbf80e99eff0cdaf74f9e477d4f3dedcb810330eb4"
+      "width": 512,
+      "height": 512,
+      "bytes": 235762,
+      "sha256": "f4fb430dfb967126eb7599f11b7255f615ddd19b444deb46be4bf6b7cdb9bdbe"
     },
     {
       "file": "hq/02_mascot_wave.png",
-      "width": 1122,
-      "height": 1402,
-      "bytes": 1037354,
-      "sha256": "8e62b6c4be7fa50b499faf7c74a8ce1ab0d468303b6aa255f11e05e1d0aefac4"
+      "width": 410,
+      "height": 512,
+      "bytes": 157413,
+      "sha256": "7bb6affca8e1fd2de0b74fbdc7d1b2a08bbe89f2a894a92597851e46921c02eb"
     },
     {
       "file": "hq/03_mascot_heart.png",
-      "width": 1122,
-      "height": 1402,
-      "bytes": 1028143,
-      "sha256": "8347b9b6bda1232e0976a0765e4ecb166a002d4e71a971dec6b20237c0a8070c"
+      "width": 410,
+      "height": 512,
+      "bytes": 159253,
+      "sha256": "b596ddc6175dad900fe02b3bb1dc640c5a9e8cc02a12a558f9860bba14c4970b"
     },
     {
       "file": "hq/04_settings.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 1018609,
-      "sha256": "a25729c98df4e3262cfd7c3fdff3b4191d50aece1e36f30f2c87f88680fadfd6"
+      "width": 512,
+      "height": 512,
+      "bytes": 179041,
+      "sha256": "5df80e5a10242bff47fe0c55fde317a9679fedb8406357d38b41e704f18176bf"
     },
     {
       "file": "hq/05_heart.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 981035,
-      "sha256": "7d7ad7d436420433b2f7cd6c663bfbd2739d7d9e1387bd5de54a19bf9fae3e1b"
+      "width": 512,
+      "height": 512,
+      "bytes": 169730,
+      "sha256": "84590235abb259ae569aca54c8cd9b843767cc622b0b12886407fa0161667024"
     },
     {
       "file": "hq/06_praying_hands.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 1311856,
-      "sha256": "d1a99e848ccd954f64ce08238f7b9b1e99eff7e2fb7a8d0394a0fb5d8c77d0b5"
+      "width": 512,
+      "height": 512,
+      "bytes": 226532,
+      "sha256": "5aff5ef69b3bd69ab4409b0a37a02c9899de024750f6227540bfb4c1992da39e"
     },
     {
       "file": "hq/07_dove.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 1322157,
-      "sha256": "9418ac4e6c8af9078bc0736c9ee3a4c4647879ecf1887f9fc3cda1e1300a3292"
+      "width": 512,
+      "height": 512,
+      "bytes": 230073,
+      "sha256": "4c8feb65eae6af739bcb9c2dcfdd191b78fc9fd9b8bfe177407ee7539f80c0b6"
     },
     {
       "file": "hq/08_gift.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 1281652,
-      "sha256": "5b93eeef19b9b4d81efd8a4ee293944a9734c0cb7b5f8375af32b03e38cb16de"
+      "width": 512,
+      "height": 512,
+      "bytes": 226027,
+      "sha256": "dbf58312effdd34efca1e52280a5b69e3a7b270b456a1b74449a5c9432c0a8cd"
     },
     {
       "file": "hq/09_chat.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 624255,
-      "sha256": "bea6be5cff3fa347e03ebf2308f61120a089183cabf9cb6a2c90e126bab6048e"
+      "width": 512,
+      "height": 512,
+      "bytes": 115150,
+      "sha256": "b822432e6305d62e153ad111054e5851d8c46eaf4dedce87f8f4700f5e4305a0"
     },
     {
       "file": "hq/10_story.png",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 783983,
-      "sha256": "c1fad5d4b99e9910857c41483b08fe1b6feb10dc4404492950a4ce680cbc3274"
+      "width": 512,
+      "height": 512,
+      "bytes": 141221,
+      "sha256": "89d7f6e2f4bcf6b3ea1bfd43fbff20eb007311a3b6b7df853134f653b8a2c926"
     },
     {
       "file": "mascot/celebrating.png",
