@@ -1,0 +1,46 @@
+name: Deploy TTS Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/tts-gateway
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Bootstrap KV namespaces and Wrangler config
+        run: node scripts/bootstrap.mjs
+      - name: Build secrets file
+        env:
+          API_TOKEN: ${{ secrets.TTS_WORKER_API_TOKEN }}
+          GPU_ENDPOINTS_JSON: ${{ secrets.GPU_ENDPOINTS_JSON }}
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
+          const required = ["API_TOKEN", "GPU_ENDPOINTS_JSON"];
+          for (const key of required) {
+            if (!process.env[key]) throw new Error(`Missing required GitHub secret: ${key}`);
+          }
+          fs.writeFileSync(".secrets.json", JSON.stringify({
+            API_TOKEN: process.env.API_TOKEN,
+            GPU_ENDPOINTS_JSON: process.env.GPU_ENDPOINTS_JSON,
+          }));
+          NODE
+      - name: Deploy Worker
+        run: npx wrangler deploy --config wrangler.toml --secrets-file .secrets.json
+      - name: Remove temporary secrets file
+        if: always()
+        run: rm -f .secrets.json wrangler.toml
