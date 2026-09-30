@@ -1,25 +1,23 @@
 import {
-  BookOpen,
+  Globe2,
   MessageCircleMore,
   NotebookText,
-  Sprout,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 
-type MainTab = "conversation" | "story" | "growth" | "record";
+type MainTab = "conversation" | "map" | "record";
 
 type NavItem = {
   id: MainTab;
   label: string;
-  tone: "chat" | "story" | "growth" | "record";
+  tone: "chat" | "map" | "record";
   icon: ReactNode;
 };
 
 const ITEMS: NavItem[] = [
   { id: "conversation", label: "대화", tone: "chat", icon: <MessageCircleMore aria-hidden="true" fill="currentColor" /> },
-  { id: "story", label: "스토리", tone: "story", icon: <BookOpen aria-hidden="true" /> },
-  { id: "growth", label: "성장", tone: "growth", icon: <Sprout aria-hidden="true" /> },
+  { id: "map", label: "지도", tone: "map", icon: <Globe2 aria-hidden="true" /> },
   { id: "record", label: "기록", tone: "record", icon: <NotebookText aria-hidden="true" /> },
 ];
 
@@ -42,8 +40,7 @@ export default function GlobalBottomNav() {
 
   const active = useMemo<MainTab>(() => {
     if (recordsOpen) return "record";
-    if (location.startsWith("/story") || location.startsWith("/comic-adventure")) return "story";
-    if (location.startsWith("/growth")) return "growth";
+    if (location.startsWith("/map")) return "map";
     return "conversation";
   }, [location, recordsOpen]);
 
@@ -59,10 +56,7 @@ export default function GlobalBottomNav() {
     }
 
     if (recordsOpen) closeRecords();
-
-    if (tab === "conversation") navigate("/");
-    if (tab === "story") navigate("/story");
-    if (tab === "growth") navigate("/growth-game");
+    navigate(tab === "map" ? "/map" : "/");
   };
 
   return (
