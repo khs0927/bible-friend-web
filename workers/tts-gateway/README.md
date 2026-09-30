@@ -126,3 +126,16 @@ The app then uses:
 ```text
 Gemini 3.1 -> Worker/Qwen3 -> Gemini 2.5 -> device speech
 ```
+
+
+## Prewarm fixed Bible verses
+
+After the Worker and at least one GPU endpoint are live:
+
+```bash
+TTS_GATEWAY_URL=https://<worker>.workers.dev \
+TTS_GATEWAY_TOKEN=<API_TOKEN> \
+node scripts/prewarm.mjs scripts/prewarm.example.json
+```
+
+Each successful request is written into Workers KV by the gateway, so later requests with the same normalized voice/style/speed can skip GPU inference.
