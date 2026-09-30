@@ -6,7 +6,6 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import "./analytics";
-import ConversationAutoTts from "./components/ConversationAutoTts";
 import GlobalBottomNav from "./components/GlobalBottomNav";
 import RecordsExperience from "./records/RecordsExperience";
 import { startLogin } from "./const";
@@ -83,7 +82,6 @@ const trpcClient = trpc.createClient({
 createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
-      <ConversationAutoTts />
       <RecordsExperience />
       <GlobalBottomNav />
       <App />
