@@ -23,6 +23,9 @@ app.get("/api/voice-health", (_req: Request, res: Response) => {
   res.status(200).json({
     ok: true,
     geminiConfigured: Boolean(ENV.geminiApiKey),
+    qwen3Configured: Boolean(process.env.QWEN3_TTS_API_URL),
+    cosyVoiceConfigured: Boolean(process.env.COSYVOICE_API_URL),
+    providerChain: ["gemini", "qwen3", "cosyvoice"],
     model: ENV.geminiTtsModel,
     timeoutMs: ENV.geminiTtsTimeoutMs,
     hardTimeoutMs: ENV.geminiTtsHardTimeoutMs,
