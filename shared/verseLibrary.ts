@@ -42,27 +42,25 @@ export function getVerse(id: string): LibraryVerse | undefined {
   return VERSE_LIBRARY.find(verse => verse.id === id);
 }
 
-/**
- * Verse whose keywords best match the text; stable fallback is John 3:16.
- * Ties go to the earlier entry, so story-specific verses (names) sit first
- * within a theme.
- */
-export function pickVerseFor(...texts: string[]): LibraryVerse {
-  const haystack = texts.join(" ");
-  let best = VERSE_LIBRARY[0];
-  let bestScore = 0;
+function bestMatch(text: string): { verse: LibraryVerse; score: number } {
+  let best = { verse: VERSE_LIBRARY[0], score: 0 };
   for (const verse of VERSE_LIBRARY) {
-    // The question (first text) counts double so the child's topic wins.
-    const score = verse.keywords.reduce(
-      (sum, keyword) => sum + (texts[0]?.includes(keyword) ? 2 : 0) + (haystack.includes(keyword) ? 1 : 0),
-      0,
-    );
-    if (score > bestScore) {
-      best = verse;
-      bestScore = score;
-    }
+    const score = verse.keywords.filter(keyword => text.includes(keyword)).length;
+    if (score > best.score) best = { verse, score };
   }
   return best;
+}
+
+/**
+ * Verse that fits the child's question; the answer is only consulted when the
+ * question itself names no topic ("더 쉽게 설명해줘"). Stable fallback is
+ * John 3:16. Ties go to the earlier entry, so story-specific verses (names)
+ * sit first within a theme.
+ */
+export function pickVerseFor(question: string, answer = ""): LibraryVerse {
+  const fromQuestion = bestMatch(question);
+  if (fromQuestion.score > 0) return fromQuestion.verse;
+  return bestMatch(answer).verse;
 }
 
 export function searchVerses(query: string, theme?: VerseTheme): LibraryVerse[] {
