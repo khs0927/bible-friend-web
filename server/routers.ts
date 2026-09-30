@@ -7,6 +7,8 @@ import { invokeLLM } from "./_core/llm";
 import { publicProcedure, router } from "./_core/trpc";
 import { getVoiceProfiles, synthesizeSpeech } from "./_core/tts";
 import { transcribeAudio } from "./_core/voiceTranscription";
+import { sanitizeReply, screenChildInput } from "@shared/childSafety";
+import { pickVerseFor } from "@shared/verseLibrary";
 import { growthRouter } from "./growthRouter";
 import { claimAutomaticGrowthActivity } from "./growthStore";
 import {
@@ -132,10 +134,28 @@ export const appRouter = router({
   growth: growthRouter,
   ai: router({
     ask: publicProcedure
-      .input(z.object({ question: z.string().min(1).max(600), storyId: z.string().optional() }))
+      .input(
+        z.object({
+          question: z.string().min(1).max(600),
+          storyId: z.string().optional(),
+          // Recent turns so follow-ups like "더 쉽게 설명해줘" keep their context.
+          history: z
+            .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(1200) }))
+            .max(8)
+            .optional(),
+        }),
+      )
       .mutation(async ({ ctx, input }) => {
         const story = input.storyId ? getStoryById(input.storyId) : undefined;
         const context = story ? `${story.title}: ${story.body}\n핵심: ${story.lesson}\n구절: ${story.verse}` : undefined;
+        const screen = screenChildInput(input.question);
+        // Follow-ups ("더 쉽게 설명해줘") carry no topic; use the child's earlier questions too.
+        const topic = [input.question, ...(input.history ?? []).filter(t => t.role === "user").map(t => t.content)].join(" ");
+        const verse = pickVerseFor(topic);
+        if (screen.cannedReply) {
+          // Pre-approved reply; never send this input to the model or store it.
+          return { answer: screen.cannedReply, model: "safety", saved: false, growth: null, verse, safety: screen.category };
+        }
         let answer = "";
         try {
           const response = await invokeLLM({
@@ -143,10 +163,11 @@ export const appRouter = router({
             thinking: { budget_tokens: 512 },
             messages: [
               { role: "system", content: buildBibleSystemPrompt(context) },
+              ...(input.history ?? []).map(turn => ({ role: turn.role, content: turn.content })),
               { role: "user", content: input.question },
             ],
           });
-          answer = readLLMText(response.choices?.[0]?.message?.content);
+          answer = sanitizeReply(readLLMText(response.choices?.[0]?.message?.content));
         } catch (error) {
           console.warn("[Bible Agent] Gemini request failed; using safe fallback", error);
         }
@@ -162,7 +183,7 @@ export const appRouter = router({
             3,
           );
         }
-        return { answer, model, saved: Boolean(ctx.user), growth };
+        return { answer, model, saved: Boolean(ctx.user), growth, verse: pickVerseFor(topic, answer), safety: screen.category };
       }),
     suggestPrayerVerse: publicProcedure
       .input(z.object({ prayerText: z.string().min(1).max(300) }))
