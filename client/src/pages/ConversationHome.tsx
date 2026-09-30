@@ -149,12 +149,13 @@ export default function ConversationHome() {
         setIsSpeaking(false);
         setVoiceError(
           info.code === "rate_limit" || info.code === "quota"
-            ? "고품질 음성 사용량이 잠시 제한되어 기기 음성으로 이어서 재생해요."
-            : "음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.",
+            ? "Google 음성 사용량이 잠시 제한되어 있어요. 지금은 글로만 답변할게요."
+            : "Google 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.",
         );
       },
-      allowBrowserFallback: true,
-      fastFallbackMs: 7_000,
+      // Test phase: play exactly one TTS engine. Do not race or fall back to
+      // device/browser speech, which can make two different voices audible.
+      allowBrowserFallback: false,
     });
   }
 

@@ -25,12 +25,16 @@ app.get("/api/voice-health", (_req: Request, res: Response) => {
     geminiConfigured: Boolean(ENV.geminiApiKey),
     qwen3Configured: Boolean(process.env.QWEN3_TTS_API_URL),
     cosyVoiceConfigured: Boolean(process.env.COSYVOICE_API_URL),
-    providerChain: ["gemini", "qwen3", "cosyvoice"],
+    ttsMode: process.env.BIBLE_FRIEND_TTS_MODE?.trim() || "gemini_only",
+    providerChain:
+      (process.env.BIBLE_FRIEND_TTS_MODE?.trim() || "gemini_only") === "fallback_chain"
+        ? ["gemini", "qwen3", "cosyvoice"]
+        : ["gemini"],
     model: ENV.geminiTtsModel,
     timeoutMs: ENV.geminiTtsTimeoutMs,
     hardTimeoutMs: ENV.geminiTtsHardTimeoutMs,
     serverAudioPreferred: true,
-    browserFallbackAvailable: true,
+    browserFallbackAvailable: false,
   });
 });
 
