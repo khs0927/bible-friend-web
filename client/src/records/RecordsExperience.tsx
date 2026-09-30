@@ -4,6 +4,7 @@ import {
   Check,
   ChevronRight,
   Copy,
+  Globe2,
   Search,
   Share2,
   Star,
