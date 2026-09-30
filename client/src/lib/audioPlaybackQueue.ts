@@ -20,6 +20,8 @@ export type AudioPlaybackQueueOptions = {
   lateServerRecoveryMs?: number;
   /** Browser speech is opt-in only; Gemini server audio is the default and preferred path. */
   allowBrowserFallback?: boolean;
+  /** Disable the legacy streaming probe when a caller needs exactly one TTS request/playback path. */
+  allowStreaming?: boolean;
 };
 
 const IOS_UNLOCK_SILENCE_WAV = "data:audio/wav;base64,UklGRgQCAABXQVZFZm10IBAAAAABAAEAwF0AAIC7AAACABAAZGF0YeABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
@@ -251,7 +253,10 @@ export class AudioPlaybackQueue {
       // Gemini 3.1 can emit PCM while synthesis is still running. Prefer that
       // path so the child hears the answer as soon as the first audio delta is
       // available instead of waiting for a complete WAV/base64 response.
-      const streamed = await this.playStreamingServerAudio(next, run);
+      const streamed =
+        this.options.allowStreaming === false
+          ? false
+          : await this.playStreamingServerAudio(next, run);
       if (streamed || run !== this.generation) return;
 
       const serverPromise = this.ttsMutation.mutateAsync(next);
