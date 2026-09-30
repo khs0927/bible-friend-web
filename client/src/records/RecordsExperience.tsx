@@ -143,14 +143,9 @@ export default function RecordsExperience() {
   if (!open) return null;
 
   const goSection = (next: RecordsSection) => setScreen(screenForSection(next));
-  const handoff = (label: '대화' | '스토리' | '성장') => {
+  const handoff = (path: '/' | '/map') => {
     setOpen(false);
-    window.setTimeout(() => {
-      const targets = Array.from(document.querySelectorAll<HTMLButtonElement | HTMLAnchorElement>('nav.bf-bottom-nav button, nav.bf-bottom-nav a'));
-      const target = targets.find(node => node.textContent?.includes(label));
-      if (target) target.click();
-      else if (label === '성장') window.location.assign('/growth-game');
-    }, 0);
+    window.setTimeout(() => window.location.assign(path), 0);
   };
 
   const shareText = async (text: string) => {
@@ -298,7 +293,7 @@ export default function RecordsExperience() {
           )}
         </main>
 
-        <nav className="records-bottom-nav" aria-label="기록 화면 메뉴"><button onClick={() => handoff('대화')}>{asset(`${NAV}/chat.png`, '', 'records-nav-icon')}<span>대화</span></button><button onClick={() => handoff('스토리')}>{asset(`${NAV}/story.png`, '', 'records-nav-icon')}<span>스토리</span></button><button onClick={() => handoff('성장')}>{asset(`${NAV}/growth.png`, '', 'records-nav-icon')}<span>성장</span></button><button className="active" onClick={() => setScreen('favorites')}>{asset(`${NAV}/record.png`, '', 'records-nav-icon')}<span>기록</span></button></nav>
+        <nav className="records-bottom-nav" aria-label="기록 화면 메뉴"><button onClick={() => handoff('/')}>{asset(`${NAV}/chat.png`, '', 'records-nav-icon')}<span>대화</span></button><button onClick={() => handoff('/map')}><Globe2 className="records-nav-icon" aria-hidden="true" /><span>지도</span></button><button className="active" onClick={() => setScreen('favorites')}>{asset(`${NAV}/record.png`, '', 'records-nav-icon')}<span>기록</span></button></nav>
         {toast && <div className="records-toast" role="status">{toast}</div>}
       </div>
     </div>
