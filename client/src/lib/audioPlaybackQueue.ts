@@ -211,7 +211,8 @@ export class AudioPlaybackQueue {
     });
   }
 
-  cancel() {
+  cancel(options: { preserveMediaPrime?: boolean } = {}) {
+    const preserveMediaPrime = options.preserveMediaPrime === true;
     this.generation += 1;
     this.queue = [];
     this.streamAbortController?.abort();
@@ -233,8 +234,10 @@ export class AudioPlaybackQueue {
     }
     this.currentSource = undefined;
     this.currentUtterance = undefined;
-    this.mediaPrimed = false;
-    this.mediaPrimePending = false;
+    if (!preserveMediaPrime) {
+      this.mediaPrimed = false;
+      this.mediaPrimePending = false;
+    }
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     this.playing = false;
   }
