@@ -244,17 +244,13 @@ async function synthesizeUncached(input) {
     const status = Number(error?.status ?? 0);
     const reason = error instanceof Error ? error.message : String(error);
     console.warn("[VOICE31_DIRECT] primary failed", { reason, status, attempts });
+
+    // A 3.1 free-tier 429 must not make the app silent. The 2.5 TTS model has
+    // its own request path, so try it before asking the client to use device
+    // speech. Only one provider is returned to the client, so playback cannot
+    // overlap.
     if (status === 429 || reason === "gemini31_http_429") {
-      return {
-        success: false,
-        provider: "device",
-        errorCode: "gemini_free_quota",
-        error: "Gemini 3.1 무료 음성 한도에 도달해 기기 음성으로 바로 이어서 들려줘요.",
-        fallbackSuggested: true,
-        costMode: "zero-external-cost-fallback",
-        serverResponseAt: Date.now(),
-        attempts,
-      };
+      console.info("[VOICE31_DIRECT] primary quota reached; trying Gemini 2.5 fallback");
     }
   }
 
@@ -280,11 +276,16 @@ async function synthesizeUncached(input) {
     console.warn("[VOICE31_DIRECT] all Gemini attempts failed", { reason: error instanceof Error ? error.message : String(error), attempts });
   }
 
+  const quotaLimited = attempts.some(attempt =>
+    typeof attempt?.reason === "string" && attempt.reason.includes("429"),
+  );
   return {
     success: false,
     provider: "device",
-    errorCode: "device_fallback",
-    error: "Gemini 무료 음성이 잠시 바빠 기기 음성으로 이어서 들려줘요.",
+    errorCode: quotaLimited ? "gemini_free_quota" : "device_fallback",
+    error: quotaLimited
+      ? "Google 무료 음성 한도가 잠시 제한되어 기기 음성으로 이어서 들려줘요."
+      : "Google 음성이 잠시 바빠 기기 음성으로 이어서 들려줘요.",
     fallbackSuggested: true,
     costMode: "zero-external-cost-fallback",
     serverResponseAt: Date.now(),
