@@ -597,7 +597,11 @@ async function synthesizeSpeechInternal(request: TTSRequest): Promise<TTSRespons
     };
   }
 
-  const providers: TTSProvider[] = [geminiProvider, new Qwen3TTSProvider(), new CosyVoiceProvider()];
+  const ttsMode = process.env.BIBLE_FRIEND_TTS_MODE?.trim() || "gemini_only";
+  const providers: TTSProvider[] =
+    ttsMode === "fallback_chain"
+      ? [geminiProvider, new Qwen3TTSProvider(), new CosyVoiceProvider()]
+      : [geminiProvider];
   let lastFailure: TTSProviderError | undefined;
   let skipGemini = Date.now() < geminiRateLimitUntil;
   if (skipGemini) {
