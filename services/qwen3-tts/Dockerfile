@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY requirements.txt /app/requirements.txt
-RUN python3 -m pip install --break-system-packages --no-cache-dir -r /app/requirements.txt
+RUN python3 -m pip install --break-system-packages --no-cache-dir torch --index-url https://download.pytorch.org/whl/cu128 \\
+    && python3 -m pip install --break-system-packages --no-cache-dir -r /app/requirements.txt
 
 COPY app.py /app/app.py
 EXPOSE 8000
