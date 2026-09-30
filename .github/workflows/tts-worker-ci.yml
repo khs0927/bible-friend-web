@@ -1,0 +1,28 @@
+name: TTS Worker CI
+
+on:
+  pull_request:
+    paths:
+      - "workers/tts-gateway/**"
+      - ".github/workflows/tts-worker-ci.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "workers/tts-gateway/**"
+      - ".github/workflows/tts-worker-ci.yml"
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/tts-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: workers/tts-gateway/package.json
+      - run: npm install
+      - run: npm run typecheck
