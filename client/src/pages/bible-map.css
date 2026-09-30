@@ -1,0 +1,130 @@
+.bible-map-page {
+  min-height: 100dvh;
+  width: min(100%, 430px);
+  margin: 0 auto;
+  padding: 28px 20px calc(104px + env(safe-area-inset-bottom, 0px));
+  color: #19164a;
+  background:
+    radial-gradient(circle at 88% 9%, rgba(231,218,255,.82), transparent 30%),
+    radial-gradient(circle at 3% 40%, rgba(255,232,210,.74), transparent 34%),
+    #fffaf5;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  overflow-x: clip;
+}
+
+.bible-map-header { padding: 4px 4px 14px; }
+.bible-map-kicker { display: inline-flex; align-items: center; gap: 6px; color: #7b55cf; font-size: 10px; font-weight: 900; letter-spacing: .08em; }
+.bible-map-header h1 { margin: 8px 0 4px; font-size: 42px; line-height: 1.05; letter-spacing: -.07em; }
+.bible-map-header p { margin: 0; color: #7f788e; font-size: 14px; line-height: 1.55; letter-spacing: -.025em; }
+.bible-map-header p strong { color: #4f3b95; }
+
+.bible-map-search {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 10px;
+  padding: 0 15px;
+  border: 1px solid rgba(111,81,187,.1);
+  border-radius: 18px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 7px 20px rgba(58,43,98,.07);
+}
+.bible-map-search svg { color: #8565ce; }
+.bible-map-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: #27204f; font: inherit; font-size: 13px; }
+.bible-map-search input::placeholder { color: #aaa4b6; }
+
+.bible-map-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 16px; }
+.bible-map-filters button { height: 34px; border: 0; border-radius: 17px; color: #777083; background: rgba(255,255,255,.76); font-size: 12px; font-weight: 800; }
+.bible-map-filters button.active { color: #fff; background: #7043d8; box-shadow: 0 5px 13px rgba(112,67,216,.24); }
+
+.bible-map-stage { position: relative; display: grid; justify-items: center; }
+.bible-globe {
+  position: relative;
+  width: min(82vw, 342px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(124,92,190,.16);
+  border-radius: 50%;
+  touch-action: none;
+  user-select: none;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255,255,255,.92) 0 3%, rgba(255,255,255,.18) 18%, transparent 37%),
+    radial-gradient(circle at 50% 52%, #eee7ff 0 35%, #d9caf7 63%, #8c6bc9 100%);
+  box-shadow:
+    inset -24px -20px 45px rgba(61,38,111,.28),
+    inset 18px 18px 35px rgba(255,255,255,.74),
+    0 26px 54px rgba(67,48,111,.18);
+  cursor: grab;
+}
+.bible-globe:active { cursor: grabbing; }
+.bible-globe::after {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.bible-globe-shine { position: absolute; left: 17%; top: 12%; width: 26%; height: 16%; border-radius: 50%; background: rgba(255,255,255,.35); filter: blur(9px); pointer-events: none; }
+.bible-globe-equator { position: absolute; left: 5%; right: 5%; top: 50%; height: 18%; translate: 0 -50%; border: 1px solid rgba(105,77,166,.18); border-left-color: transparent; border-right-color: transparent; border-radius: 50%; pointer-events: none; }
+.bible-globe-meridian { position: absolute; top: 5%; bottom: 5%; left: 50%; width: 43%; translate: -50% 0; border: 1px solid rgba(105,77,166,.17); border-top-color: transparent; border-bottom-color: transparent; border-radius: 50%; pointer-events: none; }
+.bible-globe-meridian.meridian-two { width: 76%; }
+
+.bible-map-node {
+  position: absolute;
+  min-width: 0;
+  max-width: 112px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 999px;
+  color: #312659;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 4px 10px rgba(48,31,91,.13);
+  transition: opacity .12s linear, box-shadow .15s ease, background .15s ease;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 900;
+}
+.bible-map-node i { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #7250d3; box-shadow: 0 0 0 3px rgba(114,80,211,.12); }
+.bible-map-node.kind-person i { background: #ed8b5f; box-shadow: 0 0 0 3px rgba(237,139,95,.14); }
+.bible-map-node.kind-verse i { background: #3ba899; box-shadow: 0 0 0 3px rgba(59,168,153,.14); }
+.bible-map-node.selected { color: #fff; background: #49377f; box-shadow: 0 5px 15px rgba(53,36,97,.3); }
+.bible-map-node.selected i { background: #fff; box-shadow: none; }
+.bible-map-drag-hint { margin: 10px 0 14px; color: #9991a5; font-size: 11px; font-weight: 700; }
+
+.bible-map-repositories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 0 0 10px; }
+.bible-map-repositories > div { min-height: 62px; display: grid; place-items: center; align-content: center; gap: 3px; padding: 7px 4px; border-radius: 18px; background: rgba(255,255,255,.82); box-shadow: 0 5px 14px rgba(57,42,91,.07); color: #6d5b93; text-align: center; }
+.bible-map-repositories svg { width: 17px; height: 17px; }
+.bible-map-repositories span { font-size: 9.5px; font-weight: 750; }
+.bible-map-repositories b { color: #423271; font-size: 13px; }
+
+.bible-map-detail { padding: 17px 18px 16px; border-radius: 22px; background: rgba(255,255,255,.94); box-shadow: 0 9px 24px rgba(55,39,93,.09); }
+.bible-map-detail-top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.bible-map-detail-top span { padding: 5px 8px; border-radius: 99px; color: #6244b0; background: #eee6ff; font-size: 10px; font-weight: 900; }
+.bible-map-detail.detail-person .bible-map-detail-top span { color: #b26444; background: #fff0e9; }
+.bible-map-detail.detail-verse .bible-map-detail-top span { color: #2c8378; background: #e7f8f4; }
+.bible-map-detail-top small { color: #9a93a5; font-size: 10px; }
+.bible-map-detail h2 { margin: 10px 0 1px; font-size: 24px; letter-spacing: -.05em; }
+.bible-map-detail-subtitle { margin: 0 0 9px !important; color: #7357af !important; font-size: 12px !important; font-weight: 850; }
+.bible-map-detail > p { margin: 0; color: #686174; font-size: 12.5px; line-height: 1.65; }
+.bible-map-related { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.bible-map-related span { padding: 6px 9px; border-radius: 99px; color: #5f5670; background: #f5f2f8; font-size: 10px; font-weight: 750; }
+.bible-map-footnote { margin: 11px 6px 0; color: #9a92a5; font-size: 10.5px; line-height: 1.6; text-align: center; }
+
+@media (max-width: 380px) {
+  .bible-map-page { padding-inline: 16px; }
+  .bible-map-header h1 { font-size: 38px; }
+  .bible-map-node { max-width: 92px; padding-inline: 6px; font-size: 8px; }
+}
+
+@media (min-width: 600px) {
+  .bible-map-page { min-height: 860px; margin-top: 16px; margin-bottom: 16px; border-radius: 34px; box-shadow: 0 8px 24px rgba(46,31,82,.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bible-map-node { transition: none; }
+}
