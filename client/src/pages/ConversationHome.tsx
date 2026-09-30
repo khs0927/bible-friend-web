@@ -28,7 +28,7 @@ type ChatMessage = {
 type ConversationView = "home" | "chat" | "voice" | "answer" | "history";
 
 type IconTileProps = {
-  tone: "heart" | "pray" | "question" | "candle" | "chat" | "story" | "growth" | "record";
+  tone: "heart" | "pray" | "question" | "candle" | "chat" | "story" | "record";
   size?: "sm" | "md" | "lg";
 };
 
@@ -66,13 +66,6 @@ const HISTORY_ITEMS = [
   },
 ];
 
-const NAV_ITEMS = [
-  { id: "conversation" as const, label: "대화", tone: "chat" as const },
-  { id: "story" as const, label: "스토리", tone: "story" as const },
-  { id: "growth" as const, label: "성장", tone: "growth" as const },
-  { id: "record" as const, label: "기록", tone: "record" as const },
-];
-
 function IconTile({ tone, size = "md" }: IconTileProps) {
   const icons: Record<IconTileProps["tone"], ReactNode> = {
     heart: <Heart aria-hidden="true" fill="currentColor" />,
@@ -81,7 +74,6 @@ function IconTile({ tone, size = "md" }: IconTileProps) {
     candle: <Flame aria-hidden="true" fill="currentColor" />,
     chat: <MessageCircleMore aria-hidden="true" fill="currentColor" />,
     story: <BookOpen aria-hidden="true" />,
-    growth: <Sprout aria-hidden="true" />,
     record: <NotebookText aria-hidden="true" />,
   };
 
@@ -455,7 +447,7 @@ export default function ConversationHome() {
               <div className="bf-followup-actions" aria-label="후속 질문">
                 <button type="button" onClick={() => void sendMessage("더 쉽게 설명해줘")}>더 쉽게 설명해줘</button>
                 <button type="button" onClick={() => void sendMessage("이 내용으로 짧게 기도해줘")}>기도해줘</button>
-                <button type="button" onClick={() => { window.location.href = "/story"; }}>관련 이야기 보기</button>
+                <button type="button" onClick={() => { window.location.href = "/map"; }}>지도에서 보기</button>
               </div>
             </section>
           )}
@@ -541,7 +533,7 @@ export default function ConversationHome() {
                   <Volume2 aria-hidden="true" />{isSpeaking ? "음성 멈추기" : "음성으로 듣기"}
                 </button>
                 <button type="button" onClick={() => void sendMessage("이 답변 내용으로 짧게 기도해줘")}>짧은 기도</button>
-                <button type="button" onClick={() => setView("history")}>기록에 저장</button>
+                <button type="button" onClick={() => window.dispatchEvent(new Event("bible-friend:open-records"))}>기록에 저장</button>
               </div>
             </section>
           )}
@@ -618,35 +610,7 @@ export default function ConversationHome() {
           )}
         </div>
 
-        <nav className="bf-bottom-nav" aria-label="주요 메뉴">
-          {NAV_ITEMS.map(item => {
-            const active = item.id === "conversation" ? view !== "history" : item.id === "record" && view === "history";
-            if (item.id === "growth") {
-              return (
-                <a key={item.id} href="/growth-game" className={active ? "active" : ""}>
-                  <IconTile tone={item.tone} size="sm" />
-                  <span>{item.label}</span>
-                </a>
-              );
-            }
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={active ? "active" : ""}
-                onClick={() => {
-                  if (item.id === "conversation") goHome();
-                  if (item.id === "story") window.location.href = "/story";
-                  if (item.id === "record") setView("history");
-                }}
-              >
-                <IconTile tone={item.tone} size="sm" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+     </div>
     </div>
   );
 }
