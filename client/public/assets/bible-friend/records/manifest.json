@@ -104,269 +104,269 @@
     },
     {
       "file": "mascot/celebrating.png",
-      "width": 408,
-      "height": 461,
-      "bytes": 168540,
-      "sha256": "cd4f5a5f421e7cb56c713460f1b6ac329df2e59f8e916b7bfd58385c430a2abd"
+      "width": 381,
+      "height": 422,
+      "bytes": 171263,
+      "sha256": "5f3c2f0c685a5a38fcf4ee578a2a4a3ea1e13daf4449c29913a005ac16a30a6a"
     },
     {
       "file": "mascot/heart.png",
       "width": 391,
-      "height": 399,
-      "bytes": 151990,
-      "sha256": "b1a2e992512ba127dc1f4463fda94b0f225b3b28016b89fbde60326c334a648c"
+      "height": 382,
+      "bytes": 151830,
+      "sha256": "fe33c7f17309e2113d5fd8d38a414c572108d0f5cf4592c61816b477c3d48e18"
     },
     {
       "file": "mascot/listening.png",
       "width": 384,
-      "height": 462,
-      "bytes": 170699,
-      "sha256": "c781292535c77155111f14b496bdb1170684dcb9662bab357509094d8aa58961"
+      "height": 427,
+      "bytes": 182505,
+      "sha256": "314cdaf5a353266c2684d8715b4d9a6563c842ad9871054eae87ceb0e637dd38"
     },
     {
       "file": "mascot/pointing.png",
-      "width": 396,
-      "height": 461,
-      "bytes": 161428,
-      "sha256": "49cf92505032d8ced806f688372451732c87cdf2de8eb9123950721dcc9de880"
+      "width": 403,
+      "height": 411,
+      "bytes": 159942,
+      "sha256": "2443d6342d2194ba3bbaa2531aed9b2ec21ed41028f5e34ada140f2dc57dca71"
     },
     {
       "file": "mascot/praying.png",
       "width": 369,
-      "height": 449,
-      "bytes": 160614,
-      "sha256": "da165b5deb1c3b2e9e5c3e2b6ae523a79b4a082035f68fa93bb20ba2050e2e77"
+      "height": 412,
+      "bytes": 160352,
+      "sha256": "8bd291ecf7e2162274b7b7b82b34244b6df3bf79d3f17382852af3040f6fd35d"
     },
     {
       "file": "mascot/reading.png",
       "width": 340,
-      "height": 447,
-      "bytes": 161144,
-      "sha256": "a66aa064faa252b51133ad4ca7654bd6ab9731766aea42d83c60e0d49a7d2138"
+      "height": 409,
+      "bytes": 160558,
+      "sha256": "12e25b7c34d50a371eaebbb952a74997c55ce83713e27de7ddd831bb2e10d624"
     },
     {
       "file": "mascot/sitting.png",
       "width": 327,
-      "height": 398,
-      "bytes": 152424,
-      "sha256": "81f0313dd62fb8a5a5b0be44030716aac387138684731d72fdbe1f557009660d"
+      "height": 400,
+      "bytes": 152579,
+      "sha256": "7ad3d1371a54a904c117bb36f19be1f4103b733ea10c915d9e7de8231ee57eeb"
     },
     {
       "file": "mascot/wave.png",
       "width": 386,
-      "height": 430,
-      "bytes": 169809,
-      "sha256": "40ec19940720e6a7c7db142b54879faa39abbae4d6efc91a5bc519364ac68f0a"
+      "height": 428,
+      "bytes": 169788,
+      "sha256": "9d3b17a2961e416c497d876f84622083f4d2c3bfb0cadd2dfb44b129c9e462fe"
     },
     {
       "file": "nav/app-logo.png",
-      "width": 426,
-      "height": 365,
-      "bytes": 103111,
-      "sha256": "b71fe01f00ec914355594cb4f7777c3af92c0c234a77a44f50871171688d7fee"
+      "width": 255,
+      "height": 254,
+      "bytes": 90163,
+      "sha256": "6d8311313aba73906f5f41ec7b18b51963ec0fc16160b1b81ad87f4809c3fb14"
     },
     {
       "file": "nav/chat.png",
-      "width": 409,
-      "height": 271,
-      "bytes": 84540,
-      "sha256": "3536ad18a3a46dbe395745130f93ab1833e2734855a66207aba5ed66a1b584cd"
+      "width": 198,
+      "height": 167,
+      "bytes": 40068,
+      "sha256": "483eb8c20b3284c087de716ec382895407320b582a944ba3fe3445c361ea357f"
     },
     {
       "file": "nav/growth.png",
-      "width": 410,
-      "height": 370,
-      "bytes": 125452,
-      "sha256": "b6757594167c6e50f7ceeb1be4f0216c520d247c0b375415841542172e7a3c3e"
+      "width": 156,
+      "height": 185,
+      "bytes": 40214,
+      "sha256": "859f81b4792816254b6adef9f1b2846fb922e4adeef90f9a7c26e5325cdc8ed8"
     },
     {
       "file": "nav/hearts.png",
-      "width": 413,
-      "height": 370,
-      "bytes": 111879,
-      "sha256": "c518f7017f05399b312624c5eacc141325584cf476539afffe1888bc7625744f"
+      "width": 188,
+      "height": 181,
+      "bytes": 37170,
+      "sha256": "a01c746735b7ae1c8831eaae5b75859c4b9e6c0f45bcd5c40a990915f0b6f62d"
     },
     {
       "file": "nav/microphone.png",
-      "width": 425,
-      "height": 369,
-      "bytes": 104208,
-      "sha256": "f2df60e5a73b13646e92443b9e03a56531f319b9339b3463704341886bc4f0d4"
+      "width": 213,
+      "height": 211,
+      "bytes": 56936,
+      "sha256": "c9d06a519c4ffce4708fbb5048c15656b5c5cbca0ab27243b445e9af94bd9c7c"
     },
     {
       "file": "nav/record.png",
-      "width": 415,
-      "height": 369,
-      "bytes": 114754,
-      "sha256": "192965d87489599f1e44f38580d51b686c6178afd4867820a52163a10f9f0771"
+      "width": 192,
+      "height": 214,
+      "bytes": 57727,
+      "sha256": "982121c6cc61c22b0452da805c0a20376bb4849ff44b62529d46b313da51d135"
     },
     {
       "file": "nav/shooting-star.png",
-      "width": 426,
-      "height": 311,
-      "bytes": 99186,
-      "sha256": "df13fa5ca99e153aea6cbe4ab9a8480332db215a7376652797503ee8167de9c6"
+      "width": 352,
+      "height": 178,
+      "bytes": 65625,
+      "sha256": "db070553babf61c7829bdae98165cb0178e02b5f08929cac1a8746da5dbb9266"
     },
     {
       "file": "nav/sparkles.png",
-      "width": 425,
-      "height": 370,
-      "bytes": 104885,
-      "sha256": "4ff2d7f7c65fcd34c7b792b04abb9ee0a1b9033c2021a494e5957580d3b918ca"
+      "width": 140,
+      "height": 169,
+      "bytes": 25675,
+      "sha256": "bd96432ce95f2d01b103677dede9003bab66f20b2c0baa93b58a3d207a0a3ab5"
     },
     {
       "file": "nav/stars.png",
-      "width": 415,
-      "height": 369,
-      "bytes": 95177,
-      "sha256": "d2c1eb1803347a8797116185a6343e12f3d27815d15accd744bf119ace0cb856"
+      "width": 232,
+      "height": 182,
+      "bytes": 35997,
+      "sha256": "8bc6edf41da1583fe819ba899568db56f234452a43c9c7d8453c20e3382ce49d"
     },
     {
       "file": "nav/story.png",
-      "width": 409,
-      "height": 370,
-      "bytes": 84869,
-      "sha256": "25221f8afe32ac6c349338a4f1ad867a9ce8f13cccc8f9aeea674c1f589972d3"
+      "width": 191,
+      "height": 163,
+      "bytes": 40128,
+      "sha256": "fda9e200b6bee0950e6a186a8e442c9c5625d57d34e0ff45b5e75306ead557b2"
     },
     {
       "file": "prayer/answered-check.png",
-      "width": 381,
-      "height": 369,
-      "bytes": 93930,
-      "sha256": "0ba01ad8390cc509b7f4281cf6b0235f818da7b61424f3afb5404c4d5cb95552"
+      "width": 275,
+      "height": 285,
+      "bytes": 88358,
+      "sha256": "74839bb1502942541e487661007bfa56a5b3933792d491c088e1d54a2378c88f"
     },
     {
       "file": "prayer/calendar.png",
-      "width": 365,
-      "height": 368,
-      "bytes": 115079,
-      "sha256": "8dba006e602a30b13ce36ee23cb680cbc9c2f70fd54ca944d5a14850b26d3644"
+      "width": 335,
+      "height": 270,
+      "bytes": 111409,
+      "sha256": "bbabc77781464fa66a4cf009c7249af14c719776caf58f07789042d705b6d10c"
     },
     {
       "file": "prayer/candle.png",
-      "width": 395,
-      "height": 369,
-      "bytes": 94897,
-      "sha256": "678202a78eec90f7764b9686389d1a468ca04ef234b511e3d8d2de89315bed5a"
+      "width": 290,
+      "height": 326,
+      "bytes": 91901,
+      "sha256": "69fd82f66873d5f73ce9cce96269da4f505d853be3d383320d70c7ea536abe98"
     },
     {
       "file": "prayer/child-bedside.png",
-      "width": 398,
-      "height": 336,
-      "bytes": 140113,
-      "sha256": "928178e967d7b1449a2c710948bc1f9743a880674da657b68059f3365aac7d00"
+      "width": 363,
+      "height": 320,
+      "bytes": 153706,
+      "sha256": "037b0d810962cdaf724eba2ea69d749bdef8ab03e4b1ef204208a6ba20a04162"
     },
     {
       "file": "prayer/family.png",
-      "width": 426,
-      "height": 334,
-      "bytes": 179472,
-      "sha256": "3de5360e6a71141c0573a457e4e1fe4ec7d157d1a66db08fc9a63feaa2434492"
+      "width": 398,
+      "height": 374,
+      "bytes": 197973,
+      "sha256": "10e8b94e671918584aa69f09a2929aa5227a16053dc5bee8271835f953897db7"
     },
     {
       "file": "prayer/friends-teacher.png",
-      "width": 410,
-      "height": 370,
-      "bytes": 164929,
-      "sha256": "b5d9d137756e777c256304763dfcb16f44d4fbb0d8cb0d3b1ee4a9bea021d780"
+      "width": 419,
+      "height": 337,
+      "bytes": 184188,
+      "sha256": "89a15305df36ae3dd45da3d66628cf75faeb1b67e0b6b73c9b25fc15bfa2b7a0"
     },
     {
       "file": "prayer/gratitude-flower.png",
-      "width": 341,
-      "height": 370,
-      "bytes": 94577,
-      "sha256": "15076f368acbe39bf4b6b838748130d89382dfaddab097ccc9b416b333fc4d5e"
+      "width": 288,
+      "height": 310,
+      "bytes": 89791,
+      "sha256": "4abca8240b862d19d43dbfd03bcba0e0ae0510583d599c56318e1d8bb3688df3"
     },
     {
       "file": "prayer/hands-alt.png",
-      "width": 395,
-      "height": 345,
-      "bytes": 89606,
-      "sha256": "658b2a48ee213f1ee44fe82c03336dabd521857bb905f23110686fc6b9d1e320"
+      "width": 280,
+      "height": 309,
+      "bytes": 82991,
+      "sha256": "6618c316a7eecdb4821dc2e2614b74c2f0968028d53e0da667257de379afcd97"
     },
     {
       "file": "prayer/heart-cross.png",
-      "width": 363,
-      "height": 368,
-      "bytes": 94197,
-      "sha256": "c27354a7491bdb35df74f6d346b2c510f4bf9ac7464cd9b7138d5337ba4cc629"
+      "width": 320,
+      "height": 274,
+      "bytes": 92806,
+      "sha256": "c70eef5f04c21032077064c92453e8dc32b2384d2d9837d36aed15e6dc62e0b4"
     },
     {
       "file": "prayer/study.png",
-      "width": 395,
-      "height": 370,
-      "bytes": 136305,
-      "sha256": "f93ac7ac0f684c8f8a4f503f16dbc0a2dcdac2985e94ff89d0d3eb0c3d65c35d"
+      "width": 357,
+      "height": 313,
+      "bytes": 139016,
+      "sha256": "0d52a06d650311001b0c1ca616c72a3fb4ac51755bf08c573752fc5be30e462e"
     },
     {
       "file": "verse/courage-lion.png",
-      "width": 426,
+      "width": 282,
       "height": 370,
-      "bytes": 113848,
-      "sha256": "76f29f83f241d456734cbff1df7086099379182157c1e48428eb8946589bbf9e"
+      "bytes": 140280,
+      "sha256": "08df2249d64a8f0185c427f7f402c918bba878716ea4322810949fcb6a379bf7"
     },
     {
       "file": "verse/cross-hill.png",
-      "width": 399,
-      "height": 370,
-      "bytes": 87258,
-      "sha256": "f8a727507a7559db8057af7b2d8b5078fe4156dcd492bb923cda1164a31aefa0"
+      "width": 349,
+      "height": 319,
+      "bytes": 154764,
+      "sha256": "025f2c054e61984e675885c74949fee5e02aed878fe9012d40794da936a66376"
     },
     {
       "file": "verse/dove-branch.png",
-      "width": 413,
-      "height": 369,
-      "bytes": 129204,
-      "sha256": "1fcf3a8ae0cedc80ed5e3cd04baddfb4e45557c6e2da3691c7c76bb9f01ae4ea"
+      "width": 344,
+      "height": 265,
+      "bytes": 93869,
+      "sha256": "e4456382042765a6785457df73509773fd8dabe05c8b488dd4b05a3f9d3c5ffc"
     },
     {
       "file": "verse/heart-bible.png",
-      "width": 426,
-      "height": 369,
-      "bytes": 133204,
-      "sha256": "904c11c8f23b85a0bfad7af70026ce4b4744750d1a09dd97e162beaa154c42ff"
+      "width": 360,
+      "height": 406,
+      "bytes": 162637,
+      "sha256": "860325377fd6b03ad4dea9456b7f11eb6a5f5373029596c20ed73689c6a0ec3c"
     },
     {
       "file": "verse/open-bible-glow.png",
-      "width": 412,
-      "height": 344,
-      "bytes": 145670,
-      "sha256": "ebdc9d1550b8f9ac40abf5408f7018e3603f44c5bb448215d5e521345e9543d2"
+      "width": 410,
+      "height": 355,
+      "bytes": 182672,
+      "sha256": "5e6ef1e6877ce690f661e5d7392f56f60e6021b0a5b76aa519af56f43544b4d3"
     },
     {
       "file": "verse/open-bible-star.png",
-      "width": 387,
-      "height": 350,
-      "bytes": 128985,
-      "sha256": "8330b700e54d1c1b8520e897a61cc7a847151e69bbf9205d5cd293c4dd36a81c"
+      "width": 353,
+      "height": 259,
+      "bytes": 105283,
+      "sha256": "6e94f7627087a843053fb64391f905e51af23f8363fe55b9f0a5365cdd745bdd"
     },
     {
       "file": "verse/prayer-ribbon.png",
-      "width": 412,
-      "height": 336,
-      "bytes": 100674,
-      "sha256": "65ffc2704d474de8441d082426637d02e64bf8adc3ee93724a56d1353cb0829b"
+      "width": 241,
+      "height": 315,
+      "bytes": 95801,
+      "sha256": "b05c7d478846f0134c09f3cf11ec6b376763b8765d36bb910570579685df5f42"
     },
     {
       "file": "verse/rainbow-cloud.png",
-      "width": 398,
-      "height": 369,
-      "bytes": 142390,
-      "sha256": "4fdaf81d5e24d0828e286d620fe751144b1e98346290e886267fa6cb68910389"
+      "width": 352,
+      "height": 227,
+      "bytes": 90576,
+      "sha256": "1cd813ad873bb123d5f8a18f6217ebf053c3be730df9886a394bef66ce5a7e71"
     },
     {
       "file": "verse/scripture-card.png",
-      "width": 426,
-      "height": 370,
-      "bytes": 152792,
-      "sha256": "34d31c77c1df97a44fa22685f443c5bed0a96fa2e6e4723a1fd14e9cae90f27a"
+      "width": 454,
+      "height": 292,
+      "bytes": 140383,
+      "sha256": "180e5976342f7a4bf6f23206c114871b6c04b1a8309832c524e223136212c643"
     },
     {
       "file": "verse/scripture-lamp.png",
-      "width": 410,
-      "height": 370,
-      "bytes": 101945,
-      "sha256": "49c91b6d6d7ee1de2bd10d31e1545660d532d29710311f53a82a17e7535a0556"
+      "width": 274,
+      "height": 344,
+      "bytes": 129760,
+      "sha256": "11148ef453cdfa0a4798f5728037874b5db7536ca6113cdbce9f534c9c258127"
     }
   ]
 }
