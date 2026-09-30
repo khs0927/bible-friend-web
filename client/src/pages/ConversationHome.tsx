@@ -140,13 +140,13 @@ export default function ConversationHome() {
         setIsSpeaking(false);
         setVoiceError(
           info.code === "rate_limit" || info.code === "quota"
-            ? "Google 음성 사용량이 잠시 제한되어 있어요. 지금은 글로만 답변할게요."
-            : "Google 음성을 준비하지 못했어요. 잠시 후 다시 눌러 주세요.",
+            ? "Google 음성이 잠시 제한되어 기기 음성으로 들려드릴게요."
+            : "Google 음성을 재생하지 못해 기기 음성으로 다시 시도할게요.",
         );
       },
-      // Test phase: play exactly one TTS engine. Do not race or fall back to
-      // device/browser speech, which can make two different voices audible.
-      allowBrowserFallback: false,
+      // Keep exactly one audible lane. Gemini is always tried first; browser
+      // speech is used only after server TTS/playback fails, never in a race.
+      allowBrowserFallback: true,
       allowStreaming: false,
     });
   }
@@ -162,7 +162,10 @@ export default function ConversationHome() {
 
     // Conversation owns exactly one playback lane. Stop any previous clip or
     // pending request before starting the latest assistant answer.
-    audioQueueRef.current?.cancel();
+    // The initial tap already unlocked the iOS media element. Preserve that
+    // permission while stopping an older clip; otherwise the async AI response
+    // arrives outside the user gesture and iOS may block playback completely.
+    audioQueueRef.current?.cancel({ preserveMediaPrime: true });
     setIsSpeaking(false);
     audioQueueRef.current?.prime();
     audioQueueRef.current?.enqueue({ ...request, text });
