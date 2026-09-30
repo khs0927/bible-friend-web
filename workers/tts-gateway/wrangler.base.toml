@@ -1,0 +1,12 @@
+name = "bible-friend-tts-gateway"
+main = "src/index.ts"
+compatibility_date = "2026-09-30"
+workers_dev = true
+
+[vars]
+CACHE_VERSION = "qwen3-v1"
+CACHE_TTL_SECONDS = "2592000"
+MAX_TEXT_CHARS = "1200"
+MAX_CACHE_BYTES = "8388608"
+DEFAULT_ENDPOINT_TIMEOUT_MS = "25000"
+DEFAULT_CIRCUIT_COOLDOWN_SECONDS = "90"
