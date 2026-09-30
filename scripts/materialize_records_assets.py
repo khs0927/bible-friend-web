@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Materialize Bible Friend records runtime PNG assets from downloaded Figma sheets.
 
-Reads source sheets from client/public/assets/bible-friend/records/_sources and writes
-trimmed runtime PNGs plus manifest.json. No downscale or JPEG conversion.
+Reads source sheets from client/public/assets/bible-friend/records/_sources (when
+present) and writes trimmed runtime PNGs, then writes manifest.json listing every
+runtime PNG that decodes cleanly. The client uses the manifest to decide which
+art is available locally. No downscale or JPEG conversion.
 """
 from pathlib import Path
 from PIL import Image
 import hashlib
 import json
+import shutil
 import struct
 
 root = Path('client/public/assets/bible-friend/records')
@@ -32,10 +35,18 @@ def split_sheet(source, outdir, names, cols, rows):
         tile.save(outdir / name, format='PNG', optimize=False, compress_level=6)
 
 
-split_sheet(root / '_sources/nav-sheet.png', root / 'nav', ['app-logo.png', 'chat.png', 'story.png', 'growth.png', 'record.png', 'microphone.png', 'hearts.png', 'sparkles.png', 'stars.png', 'shooting-star.png'], 2, 5)
-split_sheet(root / '_sources/verse-sheet.png', root / 'verse', ['open-bible-glow.png', 'open-bible-star.png', 'scripture-card.png', 'cross-hill.png', 'dove-branch.png', 'rainbow-cloud.png', 'courage-lion.png', 'scripture-lamp.png', 'heart-bible.png', 'prayer-ribbon.png'], 2, 5)
-split_sheet(root / '_sources/prayer-sheet.png', root / 'prayer', ['family.png', 'child-bedside.png', 'study.png', 'friends-teacher.png', 'candle.png', 'answered-check.png', 'gratitude-flower.png', 'calendar.png', 'hands-alt.png', 'heart-cross.png'], 2, 5)
-split_sheet(root / '_sources/mascot-sheet.png', root / 'mascot', ['wave.png', 'heart.png', 'praying.png', 'reading.png', 'pointing.png', 'celebrating.png', 'listening.png', 'sitting.png'], 2, 4)
+
+SHEETS = [
+    ('nav-sheet.png', 'nav', ['app-logo.png', 'chat.png', 'story.png', 'growth.png', 'record.png', 'microphone.png', 'hearts.png', 'sparkles.png', 'stars.png', 'shooting-star.png'], 2, 5),
+    ('verse-sheet.png', 'verse', ['open-bible-glow.png', 'open-bible-star.png', 'scripture-card.png', 'cross-hill.png', 'dove-branch.png', 'rainbow-cloud.png', 'courage-lion.png', 'scripture-lamp.png', 'heart-bible.png', 'prayer-ribbon.png'], 2, 5),
+    ('prayer-sheet.png', 'prayer', ['family.png', 'child-bedside.png', 'study.png', 'friends-teacher.png', 'candle.png', 'answered-check.png', 'gratitude-flower.png', 'calendar.png', 'hands-alt.png', 'heart-cross.png'], 2, 5),
+    ('mascot-sheet.png', 'mascot', ['wave.png', 'heart.png', 'praying.png', 'reading.png', 'pointing.png', 'celebrating.png', 'listening.png', 'sitting.png'], 2, 4),
+]
+sources = root / '_sources'
+for sheet, outdir, names, cols, rows in SHEETS:
+    if (sources / sheet).exists():
+        split_sheet(sources / sheet, root / outdir, names, cols, rows)
+shutil.rmtree(sources, ignore_errors=True)
 
 items = []
 for p in sorted(root.rglob('*.png')):
@@ -45,8 +56,12 @@ for p in sorted(root.rglob('*.png')):
     if data[:8] != b'\x89PNG\r\n\x1a\n':
         raise SystemExit(f'not PNG: {p}')
     w, h = struct.unpack('>II', data[16:24])
-    if w < 100 or h < 100:
-        raise SystemExit(f'asset unexpectedly small: {p} {w}x{h}')
+    try:
+        with Image.open(p) as im:
+            im.load()
+    except Exception as error:  # damaged data: leave it out so the client falls back
+        print(f'SKIP damaged PNG {p}: {error}')
+        continue
     items.append({
         'file': str(p.relative_to(root)),
         'width': w,

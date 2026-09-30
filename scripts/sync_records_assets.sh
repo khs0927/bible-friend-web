@@ -29,5 +29,4 @@ curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/0f1b89e5-b3e
 curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/2e114953-1ff0-4f98-bec9-51155438eded.png' -o "$root/_sources/verse-sheet.png"
 curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/444e296c-cc9f-40c6-b55d-ed2ed7425a86.png' -o "$root/_sources/prayer-sheet.png"
 curl -fsSL --retry 3 'https://cdn.creativeclaw.co/u/448e94a9/images/48fd31e9-a49c-4076-90e2-fa6839b55136.png' -o "$root/_sources/mascot-sheet.png"
-
-rm -rf "$root/_sources"
+# _sources is removed by materialize_records_assets.py after the sheets are split.

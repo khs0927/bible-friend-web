@@ -1,8 +1,14 @@
 import './records-icon-fixes.css';
+import manifest from '../../public/assets/bible-friend/records/manifest.json';
 
 // Records art is served only from client/public so it works offline in the
-// Android app and never depends on an external CDN. Art that was never added to
-// the repo maps to the closest local image until the originals are imported.
+// Android app and never depends on an external CDN. manifest.json (written by
+// scripts/materialize_records_assets.py, which the asset-sync workflow runs)
+// lists the files that exist and decode cleanly; anything else maps to the
+// closest local image until its original is imported.
+const RECORDS_ROOT = '/assets/bible-friend/records/';
+const AVAILABLE = new Set(manifest.assets.map(asset => `${RECORDS_ROOT}${asset.file}`));
+
 const LOCAL_ALIASES: Record<string, string> = {
   '/assets/bible-friend/records/hq/02_mascot_wave.png': '/assets/figma/conversation/mascot-wave.png',
   '/assets/bible-friend/records/hq/03_mascot_heart.png': '/assets/bible-friend/records/mascot/praying.png',
@@ -22,10 +28,11 @@ const LOCAL_ALIASES: Record<string, string> = {
 export const RECORD_FALLBACK_ART = '/assets/bible-friend-mascot.svg';
 
 export function recordAssetUrl(path: string) {
+  if (!path.startsWith(RECORDS_ROOT) || AVAILABLE.has(path)) return path;
   return LOCAL_ALIASES[path] ?? path;
 }
 
-/** Background illustrations aren't in the repo yet; screens use the CSS gradient. */
-export function recordBackgroundUrl(_path: string): string | null {
-  return null;
+/** Background illustration if it has been imported; otherwise the CSS gradient. */
+export function recordBackgroundUrl(path: string): string | null {
+  return AVAILABLE.has(path) ? path : null;
 }
