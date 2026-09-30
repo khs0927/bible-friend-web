@@ -231,16 +231,16 @@ function errorCodeFromStatus(status: number, body: string): TTSFailureCode {
 function safeUpstreamMessage(code: TTSFailureCode) {
   switch (code) {
     case "configuration":
-      return "Gemini 음성 연결 설정을 확인하고 있어요.";
+      return "음성 연결 설정을 확인하고 있어요.";
     case "invalid_request":
       return "이 문장은 음성으로 준비하기 어려워요. 조금 짧게 다시 말해 볼까요?";
     case "quota":
     case "rate_limit":
       return "오늘 음성 사용량을 잠시 쉬어 가고 있어요. 글로는 계속 이야기할 수 있어요.";
     case "timeout":
-      return "Gemini 음성을 준비하는 데 시간이 걸리고 있어요. 잠시 후 다시 눌러 주세요.";
+      return "음성을 준비하는 데 시간이 걸리고 있어요. 잠시 후 다시 눌러 주세요.";
     default:
-      return "Gemini 음성을 잠시 준비하지 못했어요. 잠시 후 다시 눌러 주세요.";
+      return "음성을 잠시 준비하지 못했어요. 잠시 후 다시 눌러 주세요.";
   }
 }
 
@@ -479,7 +479,9 @@ function cacheKey(request: TTSRequest, resolved: ResolvedVoice) {
         // emotion/style (automatic reply vs. manual replay), but should not spend
         // another Gemini quota unit for the same Korean answer.
         speed: resolved.speed,
-        model: ENV.geminiTtsModel,
+        geminiModel: ENV.geminiTtsModel,
+        qwenModel: process.env.QWEN3_TTS_MODEL?.trim() || "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+        qwenSpeaker: process.env.QWEN3_TTS_SPEAKER?.trim() || "Sohee",
       }),
     )
     .digest("hex");
