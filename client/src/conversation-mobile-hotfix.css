@@ -16,7 +16,9 @@
 /* Keep the conversation viewport above the composer/nav instead of letting long
  * answers disappear behind the fixed controls. */
 .bf-conversation-main:not(.bf-view-home) {
-  height: 624px !important;
+  /* Header (76px) above, composer + nav (~130px) below: fill what's left so
+   * short phones don't hide the latest answer behind the composer. */
+  height: calc(100dvh - 206px - env(safe-area-inset-bottom, 0px)) !important;
   min-height: 0 !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;

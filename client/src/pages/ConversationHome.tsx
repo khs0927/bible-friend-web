@@ -106,6 +106,21 @@ export default function ConversationHome() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const records = useRecords();
 
+  // Bring the newest message into view: the top of a new answer (so long
+  // answers are read from the start), otherwise the bottom of the thread.
+  useEffect(() => {
+    if (view !== "chat") return;
+    const el = mainRef.current;
+    if (!el) return;
+    const rows = el.querySelectorAll(".bf-chat-bubble-row");
+    const last = rows[rows.length - 1];
+    const answerArrived = !askMutation.isPending && last?.classList.contains("assistant") && rows.length > 1;
+    const top = answerArrived
+      ? el.scrollTop + last.getBoundingClientRect().top - el.getBoundingClientRect().top - 12
+      : el.scrollHeight;
+    el.scrollTo({ top, behavior: "smooth" });
+  }, [messages, askMutation.isPending, view]);
+
   // The voice note is informational; don't let it linger over the chat actions.
   useEffect(() => {
     if (!voiceError) return;
@@ -119,6 +134,7 @@ export default function ConversationHome() {
   const mediaChunksRef = useRef<Blob[]>([]);
   const sendMessageRef = useRef<(content: string) => Promise<void> | void>(() => undefined);
   const audioQueueRef = useRef<AudioPlaybackQueue | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
 
   if (!audioQueueRef.current) {
     audioQueueRef.current = new AudioPlaybackQueue(ttsMutation as TTSMutation, {
@@ -404,7 +420,7 @@ export default function ConversationHome() {
       <div className="bf-conversation-app" data-design-source="figma:Gs1HH9OGCLpndjS6BQQ8rN">
         <Brand onHome={goHome} />
 
-        <main className={`bf-conversation-main bf-view-${view}`}>
+        <main ref={mainRef} className={`bf-conversation-main bf-view-${view}`}>
           {view === "home" && (
             <section className="bf-chat-landing" aria-labelledby="conversation-title">
               <div className="bf-home-hero-copy">

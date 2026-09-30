@@ -131,7 +131,7 @@
   white-space: nowrap;
 }
 .bf-home-hero-copy p {
-  width: 180px;
+  width: 220px;
   margin: 1px 0 0 2px;
   color: #77738d;
   font-family: "Gowun Dodum", sans-serif;
@@ -231,6 +231,13 @@
   line-height: 20px;
   letter-spacing: -0.015em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 375px) {
+  /* Narrow phones: wrap long questions instead of cutting them off. */
+  .bf-quick-question { gap: 10px; height: auto; }
+  .bf-quick-label { font-size: 14px; line-height: 18px; white-space: normal; }
 }
 .bf-quick-chevron {
   width: 21px;
