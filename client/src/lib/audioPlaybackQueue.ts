@@ -1,3 +1,5 @@
+import { apiUrl } from "./apiBase";
+
 export type VoiceRequest = {
   text: string;
   speaker?: "NARRATOR" | "JESUS" | "DAVID" | "PETER" | "MARY" | "CHILD_FRIEND" | "GENERAL_MALE" | "GENERAL_FEMALE";
@@ -365,7 +367,7 @@ export class AudioPlaybackQueue {
       if ("state" in context && context.state === "suspended") return false;
       if (typeof context.createBuffer !== "function" || typeof context.createBufferSource !== "function") return false;
 
-      const response = await window.fetch("/api/voice-tts-stream", {
+      const response = await window.fetch(apiUrl("/api/voice-tts-stream"), {
         method: "POST",
         headers: { "content-type": "application/json", "accept": "text/event-stream" },
         body: JSON.stringify(request),
