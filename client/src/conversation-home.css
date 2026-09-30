@@ -277,3 +277,17 @@
   .bf-listening-stage.is-listening .bf-listening-ring,
   .bf-voice-entry.is-listening { animation: none; }
 }
+
+
+/* Three-tab app shell: conversation / map / records */
+.bf-bottom-nav.bf-global-bottom-nav {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.bf-icon-map {
+  color: #2f8f83;
+  background: #e6f7f3;
+}
+.bf-global-bottom-nav > button:nth-child(2).active .bf-icon-map {
+  color: #fff;
+  background: linear-gradient(145deg, #3a9f91, #71c3b4);
+}
