@@ -1,0 +1,33 @@
+name: Deploy Modal Qwen3 TTS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      QWEN3_TTS_API_TOKEN: ${{ secrets.QWEN3_TTS_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Modal CLI
+        run: pip install --upgrade modal
+      - name: Validate required secrets
+        run: |
+          test -n "$MODAL_TOKEN_ID"
+          test -n "$MODAL_TOKEN_SECRET"
+          test -n "$QWEN3_TTS_API_TOKEN"
+      - name: Create or update Modal runtime secret
+        run: modal secret create bible-friend-tts QWEN3_TTS_API_TOKEN="$QWEN3_TTS_API_TOKEN" --force
+      - name: Deploy Qwen3 TTS
+        run: modal deploy deploy/modal/qwen3_tts.py
+      - name: Show app info
+        run: modal app info bible-friend-qwen3-tts || true
