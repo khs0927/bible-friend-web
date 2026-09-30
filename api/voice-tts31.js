@@ -2,6 +2,12 @@ import { applyCors } from "./_cors.js";
 const PRIMARY_MODEL = "gemini-3.1-flash-tts-preview";
 const FALLBACK_MODEL = "gemini-2.5-flash-preview-tts";
 const GEMINI_HOST = "https://generativelanguage.googleapis.com";
+const OPEN_TTS_GATEWAY_URL = (process.env.OPEN_TTS_GATEWAY_URL || "").trim().replace(/\/$/, "");
+const OPEN_TTS_GATEWAY_TOKEN = (process.env.OPEN_TTS_GATEWAY_TOKEN || "").trim();
+const OPEN_TTS_GATEWAY_TIMEOUT_MS = Math.max(
+  2000,
+  Math.min(Number(process.env.OPEN_TTS_GATEWAY_TIMEOUT_MS || 12000), 30000),
+);
 const MAX_TEXT_CHARS = 900;
 const PRIMARY_TIMEOUT_MS = 9_000;
 const FALLBACK_TIMEOUT_MS = 8_000;
@@ -187,6 +193,71 @@ async function synthesize25({ apiKey, prompt, voice, attempts }) {
   }
 }
 
+
+async function synthesizeOpenGateway({ input, attempts }) {
+  if (!OPEN_TTS_GATEWAY_URL) throw new Error("open_tts_gateway_not_configured");
+
+  const startedAt = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OPEN_TTS_GATEWAY_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${OPEN_TTS_GATEWAY_URL}/api/voice/speech`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "audio/wav, audio/mpeg, audio/ogg, audio/*",
+        ...(OPEN_TTS_GATEWAY_TOKEN
+          ? { authorization: `Bearer ${OPEN_TTS_GATEWAY_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify({
+        text: input.text,
+        speaker: input.speaker === "CHILD_FRIEND" ? "Sohee" : "Sohee",
+        language: "Korean",
+        emotion: input.emotion,
+        style: input.style,
+        context: input.context,
+        speed: input.speed,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) throw new Error(`open_tts_gateway_http_${response.status}`);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length < 44) throw new Error("open_tts_gateway_invalid_audio");
+
+    const model =
+      response.headers.get("x-bible-friend-tts-model") ||
+      response.headers.get("x-bible-friend-tts-provider") ||
+      "qwen3-tts";
+    attempts.push({
+      model,
+      provider: "open-source",
+      ok: true,
+      ms: Date.now() - startedAt,
+      endpoint: response.headers.get("x-bible-friend-tts-endpoint") || undefined,
+      cache: response.headers.get("x-bible-friend-tts-cache") || undefined,
+    });
+    return {
+      bytes,
+      mimeType: response.headers.get("content-type") || "audio/wav",
+      model,
+      provider: "qwen3",
+    };
+  } catch (error) {
+    attempts.push({
+      model: "qwen3-tts",
+      provider: "open-source",
+      ok: false,
+      ms: Date.now() - startedAt,
+      reason: error instanceof Error ? error.message : "unknown",
+    });
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function cacheKey(input) {
   return JSON.stringify([input.text, input.speaker, input.emotion, input.style, input.speed, input.context]);
 }
@@ -214,7 +285,6 @@ function putCached(key, result) {
 
 async function synthesizeUncached(input) {
   const apiKey = process.env.GEMINI_API_KEY || "";
-  if (!apiKey) return { success: false, provider: "gemini", errorCode: "configuration", error: "Gemini 음성 연결 설정이 필요해요.", fallbackSuggested: true, serverResponseAt: Date.now(), attempts: [] };
   if (!input.text) return { success: false, provider: "gemini", errorCode: "invalid_request", error: "읽어 줄 문장이 없어요.", fallbackSuggested: true, serverResponseAt: Date.now(), attempts: [] };
   if (input.text.length > MAX_TEXT_CHARS) return { success: false, provider: "gemini", errorCode: "invalid_request", error: "문장이 너무 길어요. 조금 나누어 말해 주세요.", fallbackSuggested: true, serverResponseAt: Date.now(), attempts: [] };
 
@@ -223,39 +293,72 @@ async function synthesizeUncached(input) {
   const attempts = [];
   const totalStartedAt = Date.now();
 
-  try {
-    const result = await synthesize31({ apiKey, prompt, voice, attempts });
+  if (apiKey) {
+    try {
+      const result = await synthesize31({ apiKey, prompt, voice, attempts });
     const wav = makeWavFromPcm(Buffer.from(result.encoded, "base64"));
     console.info("[VOICE31_DIRECT] success", { model: result.model, voice, totalMs: Date.now() - totalStartedAt, bytes: wav.length, attempts });
-    return {
-      success: true,
-      audioBase64: wav.toString("base64"),
-      mimeType: "audio/wav",
+      return {
+        success: true,
+        audioBase64: wav.toString("base64"),
+        mimeType: "audio/wav",
+        provider: "gemini",
+        model: result.model,
+        voice,
+        latencyMs: Date.now() - totalStartedAt,
+        cached: false,
+        fallback: false,
+        costMode: "gemini-free-tier-compatible",
+        serverResponseAt: Date.now(),
+        attempts,
+      };
+    } catch (error) {
+      const status = Number(error?.status ?? 0);
+      const reason = error instanceof Error ? error.message : String(error);
+      console.warn("[VOICE31_DIRECT] primary failed", { reason, status, attempts });
+    }
+  } else {
+    attempts.push({
+      model: PRIMARY_MODEL,
       provider: "gemini",
-      model: result.model,
-      voice,
-      latencyMs: Date.now() - totalStartedAt,
-      cached: false,
-      fallback: false,
-      costMode: "gemini-free-tier-compatible",
-      serverResponseAt: Date.now(),
-      attempts,
-    };
-  } catch (error) {
-    const status = Number(error?.status ?? 0);
-    const reason = error instanceof Error ? error.message : String(error);
-    console.warn("[VOICE31_DIRECT] primary failed", { reason, status, attempts });
+      ok: false,
+      ms: 0,
+      reason: "gemini_not_configured",
+    });
+  }
 
-    // A 3.1 free-tier 429 must not make the app silent. The 2.5 TTS model has
-    // its own request path, so try it before asking the client to use device
-    // speech. Only one provider is returned to the client, so playback cannot
-    // overlap.
-    if (status === 429 || reason === "gemini31_http_429") {
-      console.info("[VOICE31_DIRECT] primary quota reached; trying Gemini 2.5 fallback");
+  if (OPEN_TTS_GATEWAY_URL) {
+    try {
+      const result = await synthesizeOpenGateway({ input, attempts });
+      console.info("[VOICE31_DIRECT] open-source fallback success", {
+        model: result.model,
+        totalMs: Date.now() - totalStartedAt,
+        bytes: result.bytes.length,
+        attempts,
+      });
+      return {
+        success: true,
+        audioBase64: result.bytes.toString("base64"),
+        mimeType: result.mimeType,
+        provider: result.provider,
+        model: result.model,
+        voice: "Sohee",
+        latencyMs: Date.now() - totalStartedAt,
+        cached: false,
+        fallback: true,
+        costMode: "open-source-free-pool",
+        serverResponseAt: Date.now(),
+        attempts,
+      };
+    } catch (error) {
+      console.warn("[VOICE31_DIRECT] open-source fallback failed", {
+        reason: error instanceof Error ? error.message : String(error),
+        attempts,
+      });
     }
   }
 
-  try {
+  if (apiKey) try {
     const result = await synthesize25({ apiKey, prompt, voice, attempts });
     const wav = makeWavFromPcm(Buffer.from(result.encoded, "base64"));
     console.info("[VOICE31_DIRECT] fallback success", { model: result.model, voice, totalMs: Date.now() - totalStartedAt, bytes: wav.length, attempts });
@@ -274,7 +377,7 @@ async function synthesizeUncached(input) {
       attempts,
     };
   } catch (error) {
-    console.warn("[VOICE31_DIRECT] all Gemini attempts failed", { reason: error instanceof Error ? error.message : String(error), attempts });
+    console.warn("[VOICE31_DIRECT] Gemini 2.5 fallback failed", { reason: error instanceof Error ? error.message : String(error), attempts });
   }
 
   const quotaLimited = attempts.some(attempt =>
@@ -339,8 +442,15 @@ export default async function handler(req, res) {
       configured: Boolean(process.env.GEMINI_API_KEY),
       primaryModel: PRIMARY_MODEL,
       fallbackModel: FALLBACK_MODEL,
+      openSourceGatewayConfigured: Boolean(OPEN_TTS_GATEWAY_URL),
+      providerChain: [
+        PRIMARY_MODEL,
+        ...(OPEN_TTS_GATEWAY_URL ? ["cloudflare-worker/qwen3-tts"] : []),
+        FALLBACK_MODEL,
+        "device-speech",
+      ],
       freeTierCompatible: true,
-      freeTierRequirement: "Keep the Gemini API project on Free Tier with no Cloud Billing account linked.",
+      freeTierRequirement: "Gemini free tier plus optional open-source GPU fallback pool.",
       primaryTimeoutMs: PRIMARY_TIMEOUT_MS,
       fallbackTimeoutMs: FALLBACK_TIMEOUT_MS,
       retry31OnPreview500: true,

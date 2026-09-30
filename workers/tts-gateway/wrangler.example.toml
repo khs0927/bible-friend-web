@@ -1,0 +1,43 @@
+name = "bible-friend-tts-gateway"
+main = "src/index.ts"
+compatibility_date = "2026-09-30"
+workers_dev = true
+
+# Create these namespaces first:
+#   npx wrangler kv namespace create AUDIO_CACHE
+#   npx wrangler kv namespace create CIRCUIT_STATE
+#
+# Then paste the generated IDs below and save this file as wrangler.toml.
+
+[[kv_namespaces]]
+binding = "AUDIO_CACHE"
+id = "REPLACE_AUDIO_CACHE_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "CIRCUIT_STATE"
+id = "REPLACE_CIRCUIT_STATE_NAMESPACE_ID"
+
+[vars]
+CACHE_VERSION = "qwen3-v1"
+CACHE_TTL_SECONDS = "2592000"
+MAX_TEXT_CHARS = "1200"
+MAX_CACHE_BYTES = "8388608"
+DEFAULT_ENDPOINT_TIMEOUT_MS = "25000"
+DEFAULT_CIRCUIT_COOLDOWN_SECONDS = "90"
+
+# Secrets are intentionally not stored in this file.
+# Set them with:
+#   npx wrangler secret put API_TOKEN
+#   npx wrangler secret put GPU_ENDPOINTS_JSON
+#
+# GPU_ENDPOINTS_JSON example:
+# [
+#   {
+#     "name": "modal-qwen3",
+#     "url": "https://YOUR-MODAL-ENDPOINT/tts",
+#     "healthUrl": "https://YOUR-MODAL-ENDPOINT/health",
+#     "token": "OPTIONAL-UPSTREAM-BEARER",
+#     "timeoutMs": 25000,
+#     "cooldownSeconds": 90
+#   }
+# ]
