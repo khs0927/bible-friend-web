@@ -26,6 +26,8 @@ describe("Gemini TTS provider", () => {
     process.env.GEMINI_TTS_DAILY_CHARS = "100";
     process.env.GEMINI_TTS_MAX_CHARS = "900";
     delete process.env.COSYVOICE_API_URL;
+    delete process.env.QWEN3_TTS_API_URL;
+    delete process.env.QWEN3_TTS_API_TOKEN;
   });
 
   afterEach(() => {
