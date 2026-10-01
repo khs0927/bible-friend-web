@@ -1,3 +1,4 @@
+import { applyCors } from "./_cors.js";
 const MODEL = "gemini-3.1-flash-tts-preview";
 const GEMINI_HOST = "https://generativelanguage.googleapis.com";
 const MAX_TEXT_CHARS = 900;
@@ -65,6 +66,7 @@ function isIOSChrome(req) {
 }
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return;
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.setHeader("X-Bible-Friend-TTS-Cost-Mode", "free-tier-compatible");
 

@@ -11,7 +11,12 @@ import BibleMap from "./pages/BibleMap";
 function Router() {
   return (
     <Switch>
+      {/* Bundled apps (Tauri) can open the file itself: /index.html is home too. */}
       <Route path={"/"}>
+        <ConversationHome />
+        <ConversationThemeSwitcher />
+      </Route>
+      <Route path={"/index.html"}>
         <ConversationHome />
         <ConversationThemeSwitcher />
       </Route>

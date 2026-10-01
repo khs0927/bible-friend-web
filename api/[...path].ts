@@ -9,6 +9,7 @@ import { createContext } from "../server/_core/context";
 import { ENV } from "../server/_core/env";
 import { synthesizeSpeech } from "../server/_core/tts";
 import { appRouter } from "../server/routers";
+import { applyCors } from "./_cors.js";
 
 const app = express();
 
@@ -99,6 +100,7 @@ function restoreRewrittenPath(req: Request) {
 }
 
 export default function handler(req: Request, res: Response) {
+  if (applyCors(req, res)) return;
   restoreRewrittenPath(req);
   return app(req, res);
 }

@@ -1,3 +1,4 @@
+import { applyCors } from "./_cors.js";
 const PRIMARY_MODEL = "gemini-3.1-flash-tts-preview";
 const FALLBACK_MODEL = "gemini-2.5-flash-preview-tts";
 const GEMINI_HOST = "https://generativelanguage.googleapis.com";
@@ -437,6 +438,7 @@ function tRpcEnvelope(result) {
 }
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return;
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Bible-Friend-TTS-Primary", PRIMARY_MODEL);
   res.setHeader("X-Bible-Friend-TTS-Cost-Mode", "free-tier-compatible");
