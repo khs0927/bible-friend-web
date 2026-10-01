@@ -4,8 +4,8 @@ const GEMINI_HOST = "https://generativelanguage.googleapis.com";
 const OPEN_TTS_GATEWAY_URL = (process.env.OPEN_TTS_GATEWAY_URL || "").trim().replace(/\/$/, "");
 const OPEN_TTS_GATEWAY_TOKEN = (process.env.OPEN_TTS_GATEWAY_TOKEN || "").trim();
 const OPEN_TTS_GATEWAY_TIMEOUT_MS = Math.max(
-  2000,
-  Math.min(Number(process.env.OPEN_TTS_GATEWAY_TIMEOUT_MS || 12000), 30000),
+  24000,
+  Math.min(Number(process.env.OPEN_TTS_GATEWAY_TIMEOUT_MS || 24000), 30000),
 );
 const MAX_TEXT_CHARS = 900;
 const PRIMARY_TIMEOUT_MS = 9_000;
