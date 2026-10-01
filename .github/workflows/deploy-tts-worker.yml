@@ -20,6 +20,31 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Verify Cloudflare token
+        run: |
+          node --input-type=module - <<'NODE'
+          const token = process.env.CLOUDFLARE_API_TOKEN || "";
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID || "";
+          if (!token || !/^[a-f0-9]{32}$/i.test(account)) {
+            throw new Error("Missing token or invalid Cloudflare account ID");
+          }
+          if (token !== token.trim() || /\s/.test(token) || token.startsWith("Bearer ") || /["']/.test(token)) {
+            throw new Error("CLOUDFLARE_API_TOKEN must contain only the token string, without whitespace, quotes, or Bearer");
+          }
+          const route = token.startsWith("cfat_")
+            ? "/accounts/" + account + "/tokens/verify"
+            : "/user/tokens/verify";
+          const response = await fetch("https://api.cloudflare.com/client/v4" + route, {
+            headers: { authorization: "Bearer " + token },
+            signal: AbortSignal.timeout(20000),
+          });
+          const body = await response.json();
+          const codes = (body.errors || []).map(error => error.code).join(",");
+          if (!response.ok || !body.success || body.result?.status !== "active") {
+            throw new Error("Cloudflare token verification failed: HTTP " + response.status + ", codes=" + codes);
+          }
+          console.log("Cloudflare token is active; KV permissions will be checked by bootstrap.");
+          NODE
       - run: npm install
       - name: Bootstrap KV namespaces and Wrangler config
         run: node scripts/bootstrap.mjs
