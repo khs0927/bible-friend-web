@@ -80,6 +80,48 @@ jobs:
           NODE
       - name: Deploy Worker
         run: npx wrangler deploy --config wrangler.toml --secrets-file .secrets.json
+      - name: Probe gateway speech and KV cache
+        timeout-minutes: 12
+        env:
+          TTS_GATEWAY_URL: https://bible-friend-tts-gateway.hscad-kangyu.workers.dev
+          TTS_GATEWAY_TOKEN: ${{ secrets.TTS_WORKER_API_TOKEN }}
+          QWEN3_TTS_URL: https://khs0927--bible-friend-qwen3-tts-qwen3tts-web.modal.run
+        run: |
+          node --input-type=module - <<'NODE'
+          const base = process.env.TTS_GATEWAY_URL;
+          const health = await fetch(base + "/health");
+          if (!health.ok || !(await health.json()).ok) throw new Error("Gateway health failed");
+          const denied = await fetch(base + "/api/voice/speech", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:"인증 검사"})});
+          if (denied.status !== 401) throw new Error("Unauthenticated speech must be rejected");
+          const warm = await fetch(process.env.QWEN3_TTS_URL + "/health", {signal:AbortSignal.timeout(600000)});
+          if (!warm.ok) throw new Error("Modal warmup failed");
+          const payload = {text:"안녕하세요. 성경 친구입니다.",language:"Korean",speaker:"Sohee"};
+          let first;
+          for (let attempt = 0; attempt < 12; attempt++) {
+            const response = await fetch(base + "/api/voice/speech", {
+              method:"POST",headers:{"content-type":"application/json",authorization:"Bearer " + process.env.TTS_GATEWAY_TOKEN},
+              body:JSON.stringify(payload),signal:AbortSignal.timeout(70000)
+            });
+            const audio = new Uint8Array(await response.arrayBuffer());
+            if (!response.ok || audio.length < 44) throw new Error("Gateway speech failed: HTTP " + response.status);
+            if (String.fromCharCode(...audio.slice(0,4)) !== "RIFF") throw new Error("Invalid WAV");
+            first ??= audio;
+            console.log("Gateway speech:",audio.length,"bytes, cache=" + response.headers.get("x-bible-friend-tts-cache"));
+            if (response.headers.get("x-bible-friend-tts-cache") === "HIT") {
+              if (Buffer.compare(Buffer.from(first),Buffer.from(audio))) throw new Error("Cached audio differs");
+              console.log("Gateway authentication, Korean speech, and KV cache probe passed.");
+              break;
+            }
+            if (attempt === 11) throw new Error("KV cache did not become available");
+            await new Promise(resolve => setTimeout(resolve,5000));
+          }
+          NODE
+      - name: Prewarm common Korean speech
+        timeout-minutes: 8
+        env:
+          TTS_GATEWAY_URL: https://bible-friend-tts-gateway.hscad-kangyu.workers.dev
+          TTS_GATEWAY_TOKEN: ${{ secrets.TTS_WORKER_API_TOKEN }}
+        run: node scripts/prewarm.mjs
       - name: Remove temporary secrets file
         if: always()
         run: rm -f .secrets.json wrangler.toml
