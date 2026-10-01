@@ -296,7 +296,7 @@ export class AudioPlaybackQueue {
       const allowBrowserFallback = this.options.allowBrowserFallback === true;
       const configuredFallbackMs = this.options.fastFallbackMs;
       const fastFallbackMs = typeof configuredFallbackMs === "number" && typeof document !== "undefined"
-        ? Math.max(configuredFallbackMs, 7_000)
+        ? Math.max(configuredFallbackMs, 900)
         : configuredFallbackMs;
       const race = allowBrowserFallback && typeof fastFallbackMs === "number"
         ? await Promise.race([
@@ -308,7 +308,14 @@ export class AudioPlaybackQueue {
       if ("__fastFallback" in race) {
         void serverPromise.catch(() => undefined);
         if (run === this.generation) {
-          const browserPlayed = await this.playBrowserAudio(next, next.speed ?? 0.94, "browser", run);
+          const browserPlayed = await this.playBrowserAudio(
+            next,
+            next.speed ?? 0.94,
+            "browser",
+            run,
+            undefined,
+            !isIOSLikeBrowser(),
+          );
           if (!browserPlayed) {
             const recoveryMs = this.options.lateServerRecoveryMs ?? 8_000;
             const lateResponse = await Promise.race([
