@@ -140,13 +140,16 @@ export default function ConversationHome() {
         setIsSpeaking(false);
         setVoiceError(
           info.code === "rate_limit" || info.code === "quota"
-            ? "Google 음성이 잠시 제한되어 기기 음성으로 들려드릴게요."
-            : "Google 음성을 재생하지 못해 기기 음성으로 다시 시도할게요.",
+            ? "서버 음성이 잠시 제한되어 기기 음성으로 들려드릴게요."
+            : "음성 재생을 시작하지 못해 기기 음성으로 다시 시도할게요.",
         );
       },
-      // Keep exactly one audible lane. Gemini is always tried first; browser
-      // speech is used only after server TTS/playback fails, never in a race.
+      // Keep exactly one audible lane. Qwen/server TTS is preferred, but if a
+      // cold start takes too long let the device voice speak instead of leaving
+      // the child in silence while the server continues warming its cache.
       allowBrowserFallback: true,
+      fastFallbackMs: 7_000,
+      lateServerRecoveryMs: 10_000,
       allowStreaming: false,
     });
   }
