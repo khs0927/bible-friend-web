@@ -1,4 +1,4 @@
-import { AudioPlaybackQueue, type TTSMutation, type VoiceRequest } from "@/lib/audioPlaybackQueue";
+import { AudioPlaybackQueue, splitSentences, type TTSMutation, type VoiceRequest } from "@/lib/audioPlaybackQueue";
 import { blobToDataUrl, pickRecordingMimeType } from "@/lib/voiceCapture";
 import { transcribeAndSend } from "@/lib/voiceConversationFlow";
 import { trpc } from "@/lib/trpc";
@@ -171,7 +171,14 @@ export default function ConversationHome() {
     audioQueueRef.current?.cancel({ preserveMediaPrime: true });
     setIsSpeaking(false);
     audioQueueRef.current?.prime();
-    audioQueueRef.current?.enqueue({ ...request, text });
+
+    // Long Korean answers can take long enough on a T4 to hit the gateway
+    // timeout. Queue sentence-sized clips so the first audible phrase arrives
+    // quickly and the remaining sentences continue in order.
+    const chunks = splitSentences(text);
+    for (const chunk of chunks.length ? chunks : [text]) {
+      audioQueueRef.current?.enqueue({ ...request, text: chunk });
+    }
   };
 
   const sendMessage = async (rawQuestion: string) => {
