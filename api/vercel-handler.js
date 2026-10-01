@@ -22,7 +22,7 @@ function parseLegacyTtsBody(body) {
     const parsed = JSON.parse(body);
     const format = parsed.response_format;
     const audioRequested = Array.isArray(format) ? format.some((item) => item?.type === "audio") : format?.type === "audio";
-    return audioRequested ? parsed : null;
+    return audioRequested && typeof parsed.input === "string" ? parsed : null;
   } catch {
     return null;
   }
@@ -235,7 +235,7 @@ var userGrowthEvents = mysqlTable("user_growth_events", {
 });
 
 // server/_core/env.ts
-var BIBLE_FRIEND_GEMINI_TTS_MODEL = "gemini-3.1-flash-tts-preview";
+var BIBLE_FRIEND_GEMINI_TTS_MODEL = "gemini-3.8-flash-tts";
 var GEMINI_TTS_REQUEST_TIMEOUT_MS = 8e3;
 function boundedVoiceTimeout(value) {
   const configured = Number(value ?? GEMINI_TTS_REQUEST_TIMEOUT_MS);
@@ -252,11 +252,9 @@ var ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-  // Gemini 3.1 is the current preferred expressive TTS model and supports
-  // low-latency streaming. The direct fallback gets enough time to complete on
-  // browsers where streaming audio is unavailable; the client still starts its
-  // browser fallback race earlier if Gemini is unusually slow.
-  geminiTtsModel: BIBLE_FRIEND_GEMINI_TTS_MODEL,
+  // Gemini 3.8 Flash TTS is the current flagship expressive TTS model.
+  // It uses structured speech_metadata and returns WAV audio on unary requests.
+  geminiTtsModel: process.env.GEMINI_TTS_MODEL?.trim() || BIBLE_FRIEND_GEMINI_TTS_MODEL,
   geminiTtsTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_TIMEOUT_MS),
   geminiTtsHardTimeoutMs: boundedVoiceTimeout(process.env.GEMINI_TTS_HARD_TIMEOUT_MS)
 };
@@ -892,6 +890,46 @@ async function synthesizeWithCosyVoice(req) {
   return response.data;
 }
 
+// server/_core/qwen3tts.ts
+function timeoutMs() {
+  const configured = Number(process.env.QWEN3_TTS_TIMEOUT_MS ?? 2e4);
+  return Number.isFinite(configured) && configured > 0 ? Math.min(configured, 6e4) : 2e4;
+}
+async function synthesizeWithQwen3TTS(req) {
+  const baseUrl = process.env.QWEN3_TTS_API_URL?.trim();
+  if (!baseUrl) {
+    throw new Error("QWEN3_TTS_API_URL is not configured");
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs());
+  try {
+    const token = process.env.QWEN3_TTS_API_TOKEN?.trim();
+    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/tts`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "audio/wav",
+        ...token ? { authorization: `Bearer ${token}` } : {}
+      },
+      body: JSON.stringify({
+        text: req.text,
+        language: req.language ?? "Korean",
+        speaker: req.speaker ?? process.env.QWEN3_TTS_SPEAKER ?? "Sohee",
+        instruct: req.instruct ?? ""
+      }),
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`Qwen3-TTS returned HTTP ${response.status}`);
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length < 44) throw new Error("Qwen3-TTS returned empty audio");
+    return bytes;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // server/_core/tts.ts
 var VOICE_PROFILES = {
   NARRATOR: {
@@ -977,6 +1015,18 @@ ${request.text.trim()}`
   ].filter(Boolean).join("\n");
   return { ...profile, speaker, speed, prompt };
 }
+function resolveSpeechStyle(request, resolved) {
+  const pace = resolved.speed <= 0.92 ? "slightly slow and calm" : resolved.speed >= 1.08 ? "slightly brisk and lively" : "natural conversational pace";
+  return [
+    resolved.instruction,
+    "Speak natural Korean for a child aged 6 to 12. Keep pronunciation clear and emotionally believable.",
+    "Avoid exaggerated baby talk or theatrical overacting.",
+    pace,
+    request.emotion?.trim() ? `Emotion: ${request.emotion.trim()}.` : "Emotion: warm, friendly, and reassuring.",
+    request.style?.trim() || "Use short natural breaths and gently emphasize the important words.",
+    request.context?.trim() ? `Scene context: ${request.context.trim()}.` : ""
+  ].filter(Boolean).join(" ");
+}
 function makeWavFromPcm(pcm, sampleRate = 24e3, channels = 1, bitsPerSample = 16) {
   if (pcm.subarray(0, 4).toString("ascii") === "RIFF") return pcm;
   const blockAlign = channels * (bitsPerSample / 8);
@@ -1010,16 +1060,16 @@ function errorCodeFromStatus(status, body) {
 function safeUpstreamMessage(code) {
   switch (code) {
     case "configuration":
-      return "Gemini \uC74C\uC131 \uC5F0\uACB0 \uC124\uC815\uC744 \uD655\uC778\uD558\uACE0 \uC788\uC5B4\uC694.";
+      return "\uC74C\uC131 \uC5F0\uACB0 \uC124\uC815\uC744 \uD655\uC778\uD558\uACE0 \uC788\uC5B4\uC694.";
     case "invalid_request":
       return "\uC774 \uBB38\uC7A5\uC740 \uC74C\uC131\uC73C\uB85C \uC900\uBE44\uD558\uAE30 \uC5B4\uB824\uC6CC\uC694. \uC870\uAE08 \uC9E7\uAC8C \uB2E4\uC2DC \uB9D0\uD574 \uBCFC\uAE4C\uC694?";
     case "quota":
     case "rate_limit":
       return "\uC624\uB298 \uC74C\uC131 \uC0AC\uC6A9\uB7C9\uC744 \uC7A0\uC2DC \uC26C\uC5B4 \uAC00\uACE0 \uC788\uC5B4\uC694. \uAE00\uB85C\uB294 \uACC4\uC18D \uC774\uC57C\uAE30\uD560 \uC218 \uC788\uC5B4\uC694.";
     case "timeout":
-      return "Gemini \uC74C\uC131\uC744 \uC900\uBE44\uD558\uB294 \uB370 \uC2DC\uAC04\uC774 \uAC78\uB9AC\uACE0 \uC788\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uB20C\uB7EC \uC8FC\uC138\uC694.";
+      return "\uC74C\uC131\uC744 \uC900\uBE44\uD558\uB294 \uB370 \uC2DC\uAC04\uC774 \uAC78\uB9AC\uACE0 \uC788\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uB20C\uB7EC \uC8FC\uC138\uC694.";
     default:
-      return "Gemini \uC74C\uC131\uC744 \uC7A0\uC2DC \uC900\uBE44\uD558\uC9C0 \uBABB\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uB20C\uB7EC \uC8FC\uC138\uC694.";
+      return "\uC74C\uC131\uC744 \uC7A0\uC2DC \uC900\uBE44\uD558\uC9C0 \uBABB\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uB20C\uB7EC \uC8FC\uC138\uC694.";
   }
 }
 var GeminiTTSProvider = class {
@@ -1049,14 +1099,39 @@ var GeminiTTSProvider = class {
           "content-type": "application/json",
           "x-goog-api-key": this.apiKey
         },
-        body: JSON.stringify({
-          model: this.model,
-          input: resolved.prompt,
-          response_format: { type: "audio" },
-          generation_config: {
-            speech_config: [{ voice: resolved.voice }]
+        body: JSON.stringify(
+          this.model.startsWith("gemini-3.8-") ? {
+            model: this.model,
+            input: [
+              {
+                type: "user_input",
+                content: [
+                  {
+                    type: "text",
+                    text: request.text.trim(),
+                    annotations: [
+                      {
+                        type: "speech_metadata",
+                        style: resolveSpeechStyle(request, resolved)
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            response_format: { type: "audio" },
+            generation_config: {
+              speech_config: [{ voice: resolved.voice }]
+            }
+          } : {
+            model: this.model,
+            input: resolved.prompt,
+            response_format: { type: "audio" },
+            generation_config: {
+              speech_config: [{ voice: resolved.voice }]
+            }
           }
-        }),
+        ),
         signal: controller.signal
       });
       const bodyText = await response.text();
@@ -1092,6 +1167,47 @@ var GeminiTTSProvider = class {
       throw new TTSProviderError("upstream", this.name, "Gemini TTS request failed", true);
     } finally {
       clearTimeout(timeout);
+    }
+  }
+};
+var Qwen3TTSProvider = class {
+  name = "qwen3";
+  isAvailable() {
+    return Boolean(process.env.QWEN3_TTS_API_URL?.trim());
+  }
+  async synthesize(request, resolved) {
+    if (!this.isAvailable()) {
+      throw new TTSProviderError("configuration", this.name, "QWEN3_TTS_API_URL is not configured");
+    }
+    const startedAt = Date.now();
+    const instruction = request.instructText?.trim() || [
+      resolved.instruction,
+      "6~12\uC138 \uC5B4\uB9B0\uC774\uAC00 \uD3B8\uC548\uD558\uAC8C \uB4E4\uC744 \uC218 \uC788\uB294 \uC790\uC5F0\uC2A4\uB7EC\uC6B4 \uD55C\uAD6D\uC5B4\uB85C \uB9D0\uD574.",
+      request.emotion?.trim() ? `\uAC10\uC815: ${request.emotion.trim()}` : "\uAC10\uC815: \uB530\uB73B\uD558\uACE0 \uC790\uC5F0\uC2A4\uB7EC\uC6B4 \uACA9\uB824",
+      request.style?.trim() || "\uBB38\uC7A5 \uC0AC\uC774\uC5D0 \uC9E7\uC740 \uD638\uD761\uC744 \uB450\uACE0 \uC911\uC694\uD55C \uBD80\uBD84\uC740 \uC0B4\uC9DD \uAC15\uC870\uD574.",
+      request.context?.trim() ? `\uC7A5\uBA74 \uB9E5\uB77D: ${request.context.trim()}` : ""
+    ].filter(Boolean).join("\n");
+    try {
+      const audio = await synthesizeWithQwen3TTS({
+        text: request.text,
+        language: "Korean",
+        speaker: process.env.QWEN3_TTS_SPEAKER?.trim() || "Sohee",
+        instruct: instruction
+      });
+      return {
+        audio,
+        mimeType: "audio/wav",
+        provider: this.name,
+        model: process.env.QWEN3_TTS_MODEL?.trim() || "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+        voice: process.env.QWEN3_TTS_SPEAKER?.trim() || "Sohee",
+        latencyMs: Date.now() - startedAt,
+        cached: false
+      };
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new TTSProviderError("timeout", this.name, "Qwen3-TTS request timed out", true);
+      }
+      throw new TTSProviderError("upstream", this.name, "Qwen3-TTS request failed", true);
     }
   }
 };
@@ -1163,7 +1279,9 @@ function cacheKey(request, resolved) {
       // emotion/style (automatic reply vs. manual replay), but should not spend
       // another Gemini quota unit for the same Korean answer.
       speed: resolved.speed,
-      model: ENV.geminiTtsModel
+      geminiModel: ENV.geminiTtsModel,
+      qwenModel: process.env.QWEN3_TTS_MODEL?.trim() || "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+      qwenSpeaker: process.env.QWEN3_TTS_SPEAKER?.trim() || "Sohee"
     })
   ).digest("hex");
 }
@@ -1183,21 +1301,24 @@ function setCached(key, result) {
   }
   audioCache.set(key, { result: { ...result, cached: false }, expiresAt: Date.now() + CACHE_TTL_MS });
 }
-function enforceRequest(request, countAgainstGeminiQuota) {
+function validateRequest(request) {
   const text2 = request.text.trim();
   const config = limits();
   if (!text2) throw new TTSProviderError("invalid_request", "gemini", "Text is required");
   if (text2.length > config.maxChars) {
     throw new TTSProviderError("invalid_request", "gemini", `Text exceeds ${config.maxChars} characters`);
   }
-  if (!countAgainstGeminiQuota) return;
+}
+function getGeminiQuotaFailure(request) {
   const usage = getUsage();
+  const config = limits();
   if (usage.requests >= config.requests) {
-    throw new TTSProviderError("quota", "gemini", "Daily TTS request quota reached");
+    return new TTSProviderError("quota", "gemini", "Daily TTS request quota reached");
   }
-  if (usage.characters + text2.length > config.characters) {
-    throw new TTSProviderError("quota", "gemini", "Daily TTS character quota reached");
+  if (usage.characters + request.text.trim().length > config.characters) {
+    return new TTSProviderError("quota", "gemini", "Daily TTS character quota reached");
   }
+  return void 0;
 }
 function consumeUsage(text2) {
   const usage = getUsage();
@@ -1237,7 +1358,7 @@ async function synthesizeSpeechInternal(request) {
   }
   const geminiProvider = new GeminiTTSProvider();
   try {
-    enforceRequest(normalized, geminiProvider.isAvailable());
+    validateRequest(normalized);
   } catch (error) {
     const failure = error instanceof TTSProviderError ? error : new TTSProviderError("invalid_request", "gemini", "Invalid TTS request");
     return {
@@ -1250,14 +1371,22 @@ async function synthesizeSpeechInternal(request) {
       serverResponseAt: Date.now()
     };
   }
-  const providers = [geminiProvider, new CosyVoiceProvider()];
+  const ttsMode = process.env.BIBLE_FRIEND_TTS_MODE?.trim() || "gemini_only";
+  const providers = ttsMode === "fallback_chain" ? [geminiProvider, new Qwen3TTSProvider(), new CosyVoiceProvider()] : [geminiProvider];
   let lastFailure;
-  if (Date.now() < geminiRateLimitUntil) {
+  let skipGemini = Date.now() < geminiRateLimitUntil;
+  if (skipGemini) {
     lastFailure = new TTSProviderError("rate_limit", "gemini", "Gemini TTS rate limit cooldown is active", true);
+  } else if (geminiProvider.isAvailable()) {
+    const quotaFailure = getGeminiQuotaFailure(normalized);
+    if (quotaFailure) {
+      lastFailure = quotaFailure;
+      skipGemini = true;
+    }
   }
   for (const provider of providers) {
     if (!provider.isAvailable()) continue;
-    if (provider.name === "gemini" && Date.now() < geminiRateLimitUntil) continue;
+    if (provider.name === "gemini" && skipGemini) continue;
     try {
       const result = await provider.synthesize(normalized, resolved);
       if (result.provider === "gemini") consumeUsage(normalized.text);
@@ -2728,11 +2857,15 @@ app.get("/api/voice-health", (_req, res) => {
   res.status(200).json({
     ok: true,
     geminiConfigured: Boolean(ENV.geminiApiKey),
+    qwen3Configured: Boolean(process.env.QWEN3_TTS_API_URL),
+    cosyVoiceConfigured: Boolean(process.env.COSYVOICE_API_URL),
+    ttsMode: process.env.BIBLE_FRIEND_TTS_MODE?.trim() || "gemini_only",
+    providerChain: (process.env.BIBLE_FRIEND_TTS_MODE?.trim() || "gemini_only") === "fallback_chain" ? ["gemini", "qwen3", "cosyvoice"] : ["gemini"],
     model: ENV.geminiTtsModel,
     timeoutMs: ENV.geminiTtsTimeoutMs,
     hardTimeoutMs: ENV.geminiTtsHardTimeoutMs,
     serverAudioPreferred: true,
-    browserFallbackAvailable: true
+    browserFallbackAvailable: false
   });
 });
 app.get("/api/voice-probe", async (_req, res) => {
