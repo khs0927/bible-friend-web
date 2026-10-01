@@ -2,6 +2,11 @@ name: Deploy Modal Qwen3 TTS
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "deploy/modal/**"
+      - ".github/workflows/deploy-modal-qwen3.yml"
 
 permissions:
   contents: read
