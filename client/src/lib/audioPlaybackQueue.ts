@@ -121,6 +121,7 @@ export class AudioPlaybackQueue {
   private generation = 0;
   private mediaPrimed = false;
   private mediaPrimePending = false;
+  private mediaUnlockLoopActive = false;
   private streamAbortController?: AbortController;
   private streamSources = new Set<AudioBufferSourceNode>();
 
@@ -162,7 +163,11 @@ export class AudioPlaybackQueue {
       const audio = this.currentAudio ?? new Audio();
       this.currentAudio = audio;
       audio.preload = "auto";
-      audio.volume = 1;
+      // Keep the same media element actively playing silent audio while the
+      // assistant response is generated. iOS can revoke async playback when a
+      // primed element is paused/reset before the real audio arrives.
+      audio.loop = true;
+      audio.volume = 0;
       audio.setAttribute?.("playsinline", "");
       try {
         (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
@@ -175,19 +180,16 @@ export class AudioPlaybackQueue {
       void Promise.resolve(playPromise).then(() => {
         this.mediaPrimed = true;
         this.mediaPrimePending = false;
-        try {
-          audio.pause();
-          audio.currentTime = 0;
-        } catch {
-          // The tiny silent clip may already have ended.
-        }
+        this.mediaUnlockLoopActive = true;
       }).catch(() => {
         this.mediaPrimePending = false;
         this.mediaPrimed = false;
+        this.mediaUnlockLoopActive = false;
       });
     } catch {
       this.mediaPrimePending = false;
       this.mediaPrimed = false;
+      this.mediaUnlockLoopActive = false;
     }
   }
 
@@ -221,11 +223,19 @@ export class AudioPlaybackQueue {
       try { source.stop(); } catch { /* already ended */ }
     }
     this.streamSources.clear();
-    try {
-      this.currentAudio?.pause();
-      if (this.currentAudio) this.currentAudio.currentTime = 0;
-    } catch {
-      // Media element may not have loaded enough metadata to seek.
+    const keepIOSUnlockLoop =
+      preserveMediaPrime &&
+      isIOSLikeBrowser() &&
+      this.mediaUnlockLoopActive &&
+      Boolean(this.currentAudio);
+    if (!keepIOSUnlockLoop) {
+      try {
+        this.currentAudio?.pause();
+        if (this.currentAudio) this.currentAudio.currentTime = 0;
+      } catch {
+        // Media element may not have loaded enough metadata to seek.
+      }
+      this.mediaUnlockLoopActive = false;
     }
     try {
       this.currentSource?.stop();
@@ -237,6 +247,11 @@ export class AudioPlaybackQueue {
     if (!preserveMediaPrime) {
       this.mediaPrimed = false;
       this.mediaPrimePending = false;
+      this.mediaUnlockLoopActive = false;
+      if (this.currentAudio) {
+        this.currentAudio.loop = false;
+        this.currentAudio.volume = 1;
+      }
     }
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     this.playing = false;
@@ -549,9 +564,15 @@ export class AudioPlaybackQueue {
     }
     let completed = false;
     try {
-      audio.pause();
+      const wasUnlockLoop = this.mediaUnlockLoopActive;
+      this.mediaUnlockLoopActive = false;
+      if (!wasUnlockLoop) audio.pause();
+      audio.loop = false;
+      audio.volume = 1;
       audio.src = url;
-      audio.load?.();
+      // Do not call load() here. On iOS, load() can reset the user-gesture
+      // activation that was established on the same element while waiting for
+      // the async TTS response.
       await audio.play();
       if (run === this.generation) {
         this.options.onPlaybackStarted?.({ request, provider, startedAt: Date.now(), serverResponseAt });
