@@ -31,3 +31,33 @@ jobs:
         run: modal deploy deploy/modal/qwen3_tts.py
       - name: Show app info
         run: modal app info bible-friend-qwen3-tts || true
+      - name: Probe Korean speech
+        timeout-minutes: 12
+        env:
+          TTS_BASE_URL: https://khs0927--bible-friend-qwen3-tts-qwen3tts-web.modal.run
+        run: |
+          python - <<'PY'
+          import io, json, os, urllib.request, wave
+          base = os.environ["TTS_BASE_URL"]
+          with urllib.request.urlopen(base + "/health", timeout=600) as response:
+              health = json.load(response)
+          assert health.get("ok"), health
+          request = urllib.request.Request(
+              base + "/tts",
+              data=json.dumps({"text": "안녕하세요. 성경 친구입니다.", "language": "Korean", "speaker": "Sohee"}).encode(),
+              headers={"Content-Type": "application/json", "Authorization": "Bearer " + os.environ["QWEN3_TTS_API_TOKEN"]},
+          )
+          with urllib.request.urlopen(request, timeout=120) as response:
+              audio = response.read()
+          with wave.open(io.BytesIO(audio)) as wav:
+              seconds = wav.getnframes() / wav.getframerate()
+              assert seconds > 0 and wav.getnchannels() > 0
+              print("Korean speech probe passed:", len(audio), "bytes,", round(seconds, 2), "seconds")
+          with open("qwen3-probe.wav", "wb") as output:
+              output.write(audio)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qwen3-speech-probe
+          path: qwen3-probe.wav
+          retention-days: 3
