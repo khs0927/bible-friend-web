@@ -52,13 +52,27 @@ jobs:
         env:
           API_TOKEN: ${{ secrets.TTS_WORKER_API_TOKEN }}
           GPU_ENDPOINTS_JSON: ${{ secrets.GPU_ENDPOINTS_JSON }}
+          QWEN3_TTS_API_TOKEN: ${{ secrets.QWEN3_TTS_API_TOKEN }}
+          QWEN3_TTS_URL: https://khs0927--bible-friend-qwen3-tts-qwen3tts-web.modal.run/tts
         run: |
           node - <<'NODE'
           const fs = require("fs");
+          if (!process.env.GPU_ENDPOINTS_JSON && process.env.QWEN3_TTS_API_TOKEN) {
+            process.env.GPU_ENDPOINTS_JSON = JSON.stringify([{
+              name: "modal-qwen3",
+              url: process.env.QWEN3_TTS_URL,
+              healthUrl: process.env.QWEN3_TTS_URL.replace(/\/tts$/, "/health"),
+              token: process.env.QWEN3_TTS_API_TOKEN,
+              timeoutMs: 55000,
+              enabled: true,
+            }]);
+          }
           const required = ["API_TOKEN", "GPU_ENDPOINTS_JSON"];
           for (const key of required) {
             if (!process.env[key]) throw new Error(`Missing required GitHub secret: ${key}`);
           }
+          const endpoints = JSON.parse(process.env.GPU_ENDPOINTS_JSON);
+          if (!Array.isArray(endpoints) || endpoints.length === 0) throw new Error("At least one GPU endpoint is required");
           fs.writeFileSync(".secrets.json", JSON.stringify({
             API_TOKEN: process.env.API_TOKEN,
             GPU_ENDPOINTS_JSON: process.env.GPU_ENDPOINTS_JSON,
