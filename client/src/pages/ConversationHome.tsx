@@ -26,6 +26,14 @@ type ChatMessage = {
 
 type ConversationView = "home" | "chat" | "voice" | "answer" | "history";
 
+function isIOSPlaybackDevice() {
+  if (typeof navigator === "undefined") return false;
+  const userAgent = navigator.userAgent ?? "";
+  const platform = navigator.platform ?? "";
+  const touchPoints = navigator.maxTouchPoints ?? 0;
+  return /iPad|iPhone|iPod/i.test(userAgent) || (platform === "MacIntel" && touchPoints > 1);
+}
+
 type IconTileProps = {
   tone: "heart" | "pray" | "question" | "candle" | "chat" | "story" | "record";
   size?: "sm" | "md" | "lg";
@@ -172,12 +180,17 @@ export default function ConversationHome() {
     setIsSpeaking(false);
     audioQueueRef.current?.prime();
 
-    // Long Korean answers can take long enough on a T4 to hit the gateway
-    // timeout. Queue sentence-sized clips so the first audible phrase arrives
-    // quickly and the remaining sentences continue in order.
-    const chunks = splitSentences(text);
-    for (const chunk of chunks.length ? chunks : [text]) {
-      audioQueueRef.current?.enqueue({ ...request, text: chunk });
+    // iOS is most reliable when the user-unlocked media element receives one
+    // complete clip. Replacing its src repeatedly after async TTS requests can
+    // make later sentences silent even though the server generated them.
+    // Other browsers keep the lower-latency sentence queue.
+    if (isIOSPlaybackDevice()) {
+      audioQueueRef.current?.enqueue({ ...request, text });
+    } else {
+      const chunks = splitSentences(text);
+      for (const chunk of chunks.length ? chunks : [text]) {
+        audioQueueRef.current?.enqueue({ ...request, text: chunk });
+      }
     }
   };
 
