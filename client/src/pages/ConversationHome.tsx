@@ -156,7 +156,7 @@ export default function ConversationHome() {
       // cold start takes too long let the device voice speak instead of leaving
       // the child in silence while the server continues warming its cache.
       allowBrowserFallback: true,
-      fastFallbackMs: 7_000,
+      fastFallbackMs: 1_000,
       lateServerRecoveryMs: 10_000,
       allowStreaming: false,
     });
