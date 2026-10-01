@@ -12,7 +12,7 @@ image = (
         "nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04",
         add_python="3.12",
     )
-    .apt_install("git", "libsndfile1")
+    .apt_install("git", "libsndfile1", "sox", "build-essential")
     .uv_pip_install(
         "fastapi>=0.115,<1",
         "soundfile>=0.13,<1",
@@ -44,7 +44,7 @@ class Qwen3TTS:
         self.model = Qwen3TTSModel.from_pretrained(
             MODEL_ID,
             device_map="cuda:0",
-            dtype=torch.bfloat16,
+            dtype=torch.float16,
         )
 
     @modal.asgi_app()
