@@ -257,6 +257,27 @@ async function synthesizeOpenGateway({ input, attempts }) {
   }
 }
 
+async function probeOpenGateway(input) {
+  const attempts = [];
+  try {
+    const result = await synthesizeOpenGateway({ input, attempts });
+    return {
+      success: true,
+      provider: result.provider,
+      model: result.model,
+      voice: "Sohee",
+      audioBase64: result.bytes.toString("base64"),
+      latencyMs: attempts.at(-1)?.ms,
+      cached: attempts.at(-1)?.cache === "HIT",
+      fallback: true,
+      costMode: "open-source-free-pool",
+      attempts,
+    };
+  } catch {
+    return { success: false, errorCode: "open_source_probe_failed", attempts };
+  }
+}
+
 function cacheKey(input) {
   return JSON.stringify([input.text, input.speaker, input.emotion, input.style, input.speed, input.context]);
 }
@@ -422,14 +443,17 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     if (String(req.query?.probe ?? "") === "1") {
-      const result = await synthesize({
+      const probeInput = {
         text: "안녕! 나는 성경 친구야. 오늘도 함께 말씀을 알아보자.",
         speaker: "CHILD_FRIEND",
         emotion: "밝고 친근한 목소리",
         style: "또렷하고 따뜻하게",
         speed: 1,
         context: "성경 친구 앱 음성 진단",
-      });
+      };
+      const result = String(req.query?.provider ?? "") === "qwen3"
+        ? await probeOpenGateway(probeInput)
+        : await synthesize(probeInput);
       const safe = result.success
         ? { success: true, provider: result.provider, model: result.model, voice: result.voice, latencyMs: result.latencyMs, cached: result.cached, fallback: result.fallback, costMode: result.costMode, audioBytesApprox: Math.floor((result.audioBase64.length * 3) / 4), attempts: result.attempts }
         : { success: false, errorCode: result.errorCode, error: result.error, costMode: result.costMode, attempts: result.attempts };
