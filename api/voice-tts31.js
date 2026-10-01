@@ -141,7 +141,7 @@ async function synthesize31Once({ apiKey, prompt, voice }) {
   return { encoded, model: PRIMARY_MODEL, latencyMs: elapsedMs };
 }
 
-async function synthesize31({ apiKey, prompt, voice, attempts }) {
+async function synthesize31({ apiKey, prompt, voice, attempts, retryPreview = true }) {
   for (let retry = 0; retry < 2; retry += 1) {
     const startedAt = Date.now();
     try {
@@ -152,7 +152,7 @@ async function synthesize31({ apiKey, prompt, voice, attempts }) {
       const reason = error instanceof Error ? error.message : "unknown";
       attempts.push({ model: PRIMARY_MODEL, ok: false, ms: Date.now() - startedAt, retry, reason });
       const status = Number(error?.status ?? 0);
-      const retryablePreviewGlitch = retry === 0 && (status === 500 || reason === "gemini31_no_audio" || reason === "gemini31_bad_json");
+      const retryablePreviewGlitch = retryPreview && retry === 0 && (status === 500 || reason === "gemini31_no_audio" || reason === "gemini31_bad_json");
       if (!retryablePreviewGlitch) throw error;
       await new Promise(resolve => setTimeout(resolve, 120));
     }
@@ -269,7 +269,7 @@ async function probeOpenGateway(input) {
       audioBase64: result.bytes.toString("base64"),
       latencyMs: attempts.at(-1)?.ms,
       cached: attempts.at(-1)?.cache === "HIT",
-      fallback: true,
+      fallback: false,
       costMode: "open-source-free-pool",
       attempts,
     };
@@ -313,9 +313,40 @@ async function synthesizeUncached(input) {
   const attempts = [];
   const totalStartedAt = Date.now();
 
+  if (OPEN_TTS_GATEWAY_URL) {
+    try {
+      const result = await synthesizeOpenGateway({ input, attempts });
+      console.info("[VOICE31_DIRECT] Qwen primary success", {
+        model: result.model,
+        totalMs: Date.now() - totalStartedAt,
+        bytes: result.bytes.length,
+        attempts,
+      });
+      return {
+        success: true,
+        audioBase64: result.bytes.toString("base64"),
+        mimeType: result.mimeType,
+        provider: result.provider,
+        model: result.model,
+        voice: "Sohee",
+        latencyMs: Date.now() - totalStartedAt,
+        cached: attempts.at(-1)?.cache === "HIT",
+        fallback: false,
+        costMode: "open-source-free-pool",
+        serverResponseAt: Date.now(),
+        attempts,
+      };
+    } catch (error) {
+      console.warn("[VOICE31_DIRECT] Qwen primary failed", {
+        reason: error instanceof Error ? error.message : String(error),
+        attempts,
+      });
+    }
+  }
+
   if (apiKey) {
     try {
-      const result = await synthesize31({ apiKey, prompt, voice, attempts });
+      const result = await synthesize31({ apiKey, prompt, voice, attempts, retryPreview: false });
     const wav = makeWavFromPcm(Buffer.from(result.encoded, "base64"));
     console.info("[VOICE31_DIRECT] success", { model: result.model, voice, totalMs: Date.now() - totalStartedAt, bytes: wav.length, attempts });
       return {
@@ -327,7 +358,7 @@ async function synthesizeUncached(input) {
         voice,
         latencyMs: Date.now() - totalStartedAt,
         cached: false,
-        fallback: false,
+        fallback: true,
         costMode: "gemini-free-tier-compatible",
         serverResponseAt: Date.now(),
         attempts,
@@ -345,37 +376,6 @@ async function synthesizeUncached(input) {
       ms: 0,
       reason: "gemini_not_configured",
     });
-  }
-
-  if (OPEN_TTS_GATEWAY_URL) {
-    try {
-      const result = await synthesizeOpenGateway({ input, attempts });
-      console.info("[VOICE31_DIRECT] open-source fallback success", {
-        model: result.model,
-        totalMs: Date.now() - totalStartedAt,
-        bytes: result.bytes.length,
-        attempts,
-      });
-      return {
-        success: true,
-        audioBase64: result.bytes.toString("base64"),
-        mimeType: result.mimeType,
-        provider: result.provider,
-        model: result.model,
-        voice: "Sohee",
-        latencyMs: Date.now() - totalStartedAt,
-        cached: false,
-        fallback: true,
-        costMode: "open-source-free-pool",
-        serverResponseAt: Date.now(),
-        attempts,
-      };
-    } catch (error) {
-      console.warn("[VOICE31_DIRECT] open-source fallback failed", {
-        reason: error instanceof Error ? error.message : String(error),
-        attempts,
-      });
-    }
   }
 
   if (apiKey) try {
@@ -438,7 +438,7 @@ function tRpcEnvelope(result) {
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Bible-Friend-TTS-Primary", PRIMARY_MODEL);
+  res.setHeader("X-Bible-Friend-TTS-Primary", "qwen3-tts");
   res.setHeader("X-Bible-Friend-TTS-Cost-Mode", "free-tier-compatible");
 
   if (req.method === "GET") {
@@ -457,25 +457,26 @@ export default async function handler(req, res) {
       const safe = result.success
         ? { success: true, provider: result.provider, model: result.model, voice: result.voice, latencyMs: result.latencyMs, cached: result.cached, fallback: result.fallback, costMode: result.costMode, audioBytesApprox: Math.floor((result.audioBase64.length * 3) / 4), attempts: result.attempts }
         : { success: false, errorCode: result.errorCode, error: result.error, costMode: result.costMode, attempts: result.attempts };
-      return res.status(200).json({ ok: result.success, primaryModel: PRIMARY_MODEL, fallbackModel: FALLBACK_MODEL, freeTierCompatible: true, configured: Boolean(process.env.GEMINI_API_KEY), result: safe });
+      return res.status(200).json({ ok: result.success, primaryModel: "qwen3-tts", fallbackModel: PRIMARY_MODEL, freeTierCompatible: true, configured: Boolean(OPEN_TTS_GATEWAY_URL || process.env.GEMINI_API_KEY), result: safe });
     }
     return res.status(200).json({
       ok: true,
-      configured: Boolean(process.env.GEMINI_API_KEY),
-      primaryModel: PRIMARY_MODEL,
-      fallbackModel: FALLBACK_MODEL,
+      configured: Boolean(OPEN_TTS_GATEWAY_URL || process.env.GEMINI_API_KEY),
+      primaryModel: "qwen3-tts",
+      fallbackModel: PRIMARY_MODEL,
       openSourceGatewayConfigured: Boolean(OPEN_TTS_GATEWAY_URL),
       providerChain: [
-        PRIMARY_MODEL,
         ...(OPEN_TTS_GATEWAY_URL ? ["cloudflare-worker/qwen3-tts"] : []),
+        PRIMARY_MODEL,
         FALLBACK_MODEL,
         "device-speech",
       ],
       freeTierCompatible: true,
-      freeTierRequirement: "Gemini free tier plus optional open-source GPU fallback pool.",
-      primaryTimeoutMs: PRIMARY_TIMEOUT_MS,
+      freeTierRequirement: "Qwen3 primary with Gemini fallback; provider usage limits apply.",
+      primaryTimeoutMs: OPEN_TTS_GATEWAY_TIMEOUT_MS,
+      gemini31TimeoutMs: PRIMARY_TIMEOUT_MS,
       fallbackTimeoutMs: FALLBACK_TIMEOUT_MS,
-      retry31OnPreview500: true,
+      retry31OnPreview500: false,
       duplicateRequestCacheTtlMs: CACHE_TTL_MS,
     });
   }
