@@ -1,5 +1,7 @@
 import io
+import math
 import os
+import re
 
 import modal
 
@@ -73,17 +75,68 @@ class Qwen3TTS:
         def health():
             return {"ok": True, "model": MODEL_ID, "gpu": "T4"}
 
+        def split_for_batch(text: str) -> list[str]:
+            text = text.strip()
+            if len(text) <= 180:
+                return [text]
+
+            sentences = [
+                part.strip()
+                for part in re.split(r"(?<=[.!?。！？])\\s+|\\n+", text)
+                if part.strip()
+            ]
+            if not sentences:
+                sentences = [text]
+
+            target = max(120, min(260, math.ceil(len(text) / 4)))
+            chunks: list[str] = []
+            current = ""
+            for sentence in sentences:
+                candidate = f"{current} {sentence}".strip() if current else sentence
+                if current and len(candidate) > target:
+                    chunks.append(current)
+                    current = sentence
+                else:
+                    current = candidate
+            if current:
+                chunks.append(current)
+
+            while len(chunks) > 4:
+                chunks[-2] = f"{chunks[-2]} {chunks[-1]}".strip()
+                chunks.pop()
+            return chunks
+
         @api.post("/tts")
         def tts(request: TTSRequest, authorization: str | None = Header(default=None)):
             authorize(authorization)
-            wavs, sample_rate = service.model.generate_custom_voice(
-                text=request.text.strip(),
-                language=request.language,
-                speaker=request.speaker,
-                instruct=request.instruct or None,
-            )
+            import numpy as np
+
+            chunks = split_for_batch(request.text)
+            if len(chunks) == 1:
+                wavs, sample_rate = service.model.generate_custom_voice(
+                    text=chunks[0],
+                    language=request.language,
+                    speaker=request.speaker,
+                    instruct=request.instruct or None,
+                )
+                audio = wavs[0]
+            else:
+                wavs, sample_rate = service.model.generate_custom_voice(
+                    text=chunks,
+                    language=[request.language] * len(chunks),
+                    speaker=[request.speaker] * len(chunks),
+                    instruct=[request.instruct or ""] * len(chunks),
+                )
+                pause = np.zeros(max(1, int(sample_rate * 0.055)), dtype=wavs[0].dtype)
+                pieces = []
+                for index, wav in enumerate(wavs):
+                    if index:
+                        pieces.append(pause)
+                    pieces.append(wav)
+                audio = np.concatenate(pieces)
+
             output = io.BytesIO()
-            sf.write(output, wavs[0], sample_rate, format="WAV")
+            sf.write(output, audio, sample_rate, format="WAV")
             return Response(
                 content=output.getvalue(),
                 media_type="audio/wav",
@@ -91,6 +144,7 @@ class Qwen3TTS:
                     "Cache-Control": "no-store",
                     "X-Bible-Friend-TTS-Provider": "qwen3",
                     "X-Bible-Friend-TTS-Model": MODEL_ID,
+                    "X-Bible-Friend-TTS-Batch-Chunks": str(len(chunks)),
                 },
             )
 
