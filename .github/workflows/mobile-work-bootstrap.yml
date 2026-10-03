@@ -54,7 +54,6 @@ jobs:
           config=json.load(open('wrangler.jsonc'));config['vars']['PUBLIC_URL']=origin;config['vars']['REVIEWED_SHA']='be90100d5ebcdaa4750e1b2fcc4f32ebfa49e141'
           config['d1_databases']=[{'binding':'DB','database_name':'mobile-work-gateway','database_id':d1['uuid'],'migrations_dir':'migrations'}]
           config['kv_namespaces']=[{'binding':'OAUTH_KV','id':kv['id']}]
-          config['limits']={'cpu_ms':10}
           json.dump(config,open('wrangler.deploy.json','w'),indent=2)
           public={'public_url':origin,'reviewed_sha':config['vars']['REVIEWED_SHA'],'d1_id':d1['uuid'],'oauth_kv_id':kv['id'],'mcp_auth_configured':False}
           json.dump(public,open('deployment-evidence.json','w'),indent=2)
