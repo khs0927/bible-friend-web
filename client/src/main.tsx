@@ -8,6 +8,7 @@ import App from "./App";
 import "./analytics";
 import GlobalBottomNav from "./components/GlobalBottomNav";
 import RecordsExperience from "./records/RecordsExperience";
+import RecordsViewportGuard from "./records/RecordsViewportGuard";
 import { startLogin } from "./const";
 import "./index.css";
 import "./bible-friend-polish.css";
@@ -83,6 +84,7 @@ createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <RecordsExperience />
+      <RecordsViewportGuard />
       <GlobalBottomNav />
       <App />
     </QueryClientProvider>
