@@ -72,6 +72,9 @@ jobs:
               try:
                   with urllib.request.urlopen(origin+'/health',timeout=20) as r: health=json.load(r);status=r.status
                   break
+              except urllib.error.HTTPError as e:
+                  print('Public health HTTP',e.code,'content-type',e.headers.get('Content-Type'),'body',e.read(2000).decode(errors='replace'))
+                  raise
               except Exception:
                   if attempt==2:raise
                   time.sleep(2)
@@ -84,6 +87,7 @@ jobs:
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:f.write('### Live fail-closed deployment\n\x60\x60\x60json\n'+json.dumps(evidence,indent=2)+'\n\x60\x60\x60\n')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: mobile-work-deployment-evidence
           path: mobile-work-gateway/gateway/deployment-evidence.json
