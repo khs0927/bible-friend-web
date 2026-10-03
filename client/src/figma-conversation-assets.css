@@ -13,9 +13,10 @@
 
 .bf-conversation-app {
   position: relative;
-  width: min(100%, 430px);
-  min-height: 844px;
-  height: 844px;
+  width: 100%;
+  max-width: 430px;
+  min-height: min(844px, 100dvh);
+  height: min(844px, 100dvh);
   margin: 0 auto;
   overflow: hidden;
   isolation: isolate;
@@ -108,7 +109,8 @@
 /* Home */
 .bf-chat-landing {
   position: relative;
-  width: 430px;
+  width: 100%;
+  max-width: 430px;
   min-height: 768px;
   padding: 0;
 }
@@ -196,14 +198,17 @@
   position: absolute;
   z-index: 5;
   left: 30px;
+  right: 30px;
   top: 298px;
-  width: 370px;
+  width: auto;
+  max-width: 370px;
   display: grid;
   gap: 8px;
   margin: 0;
 }
 .bf-quick-question {
-  width: 370px;
+  width: 100%;
+  max-width: 370px;
   height: 54px;
   min-height: 54px;
   display: grid;
@@ -244,7 +249,7 @@
 .bf-chat-bubble-row { gap: 7px; }
 .bf-chat-avatar { flex: 0 0 42px; width: 42px; height: 42px; margin-top: 2px; }
 .bf-chat-bubble {
-  max-width: 302px;
+  max-width: min(302px, calc(100vw - 120px));
   padding: 14px 18px;
   border-radius: 24px;
   color: #17134b;
@@ -258,7 +263,7 @@
   white-space: pre-wrap;
 }
 .bf-chat-bubble-row.user .bf-chat-bubble {
-  max-width: 258px;
+  max-width: min(258px, calc(100vw - 120px));
   background: #efe2ff;
 }
 .bf-chat-thinking {
@@ -266,7 +271,8 @@
   font-size: 13px;
 }
 .bf-verse-card {
-  width: 300px;
+  width: auto;
+  max-width: 300px;
   margin: 12px 0 10px 64px;
   padding: 15px 18px 17px;
   border-radius: 24px;
@@ -351,10 +357,12 @@
   position: absolute;
   z-index: 90;
   left: 22px;
+  right: 22px;
   top: 706px;
   bottom: auto;
   translate: none;
-  width: 386px;
+  width: auto;
+  max-width: 386px;
   height: 48px;
   padding: 6px 6px 6px 18px;
   border: 1px solid rgba(255, 230, 214, 0.75);
@@ -391,10 +399,12 @@
   position: absolute;
   z-index: 95;
   left: 18px;
+  right: 18px;
   top: 762px;
   bottom: auto;
   translate: none;
-  width: 394px;
+  width: auto;
+  max-width: 394px;
   min-height: 68px;
   height: 68px;
   padding: 5px 8px 3px;
@@ -429,8 +439,18 @@
 
 @media (max-width: 430px) {
   .bf-conversation-app {
-    width: 100vw;
+    width: 100%;
+    max-width: 100vw;
     border-radius: 0;
+  }
+  .bf-chat-landing,
+  .bf-quick-question-list,
+  .bf-quick-question {
+    max-width: 100%;
+  }
+  .bf-conversation-main {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 }
 
