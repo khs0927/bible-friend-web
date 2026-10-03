@@ -1,0 +1,56 @@
+name: Configure Mobile Work Gateway Authentication
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mobile-work-cloudflare-bootstrap
+  cancel-in-progress: false
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: mobile-work-production
+    defaults:
+      run:
+        working-directory: mobile-work-gateway/gateway
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: khs0927/jev-browser-control-plane
+          ref: be90100d5ebcdaa4750e1b2fcc4f32ebfa49e141
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Generate fixed provisioned configuration
+        env:
+          D1_ID: f2addd52-6ebd-4d13-a6bc-ce4e9fc01a47
+          KV_ID: 876ab2d9d2a440ecb8757a332a084643
+          PUBLIC_URL: https://mobile-work-gateway.hscad-kangyu.workers.dev
+          REVIEWED_SHA: be90100d5ebcdaa4750e1b2fcc4f32ebfa49e141
+        run: node ../scripts/deploy-config.mjs
+      - name: Install owner-only runtime credentials without logging values
+        env:
+          MWG_GITHUB_TOKEN: ${{ secrets.MWG_GITHUB_TOKEN }}
+          MWG_GITHUB_CLIENT_ID: ${{ secrets.MWG_GITHUB_CLIENT_ID }}
+          MWG_GITHUB_CLIENT_SECRET: ${{ secrets.MWG_GITHUB_CLIENT_SECRET }}
+        run: |
+          python - <<'PY'
+          import os,json
+          names={'GITHUB_TOKEN':'MWG_GITHUB_TOKEN','GITHUB_CLIENT_ID':'MWG_GITHUB_CLIENT_ID','GITHUB_CLIENT_SECRET':'MWG_GITHUB_CLIENT_SECRET'}
+          missing=[v for v in names.values() if not os.environ.get(v)]
+          if missing:raise SystemExit('Missing configured Secrets: '+', '.join(missing))
+          os.umask(0o077)
+          json.dump({k:os.environ[v] for k,v in names.items()},open('/tmp/mobile-work-secrets.json','w'))
+          PY
+          npx wrangler secret bulk /tmp/mobile-work-secrets.json --config wrangler.deploy.json
+          rm -f /tmp/mobile-work-secrets.json
+      - run: npx wrangler deploy --config wrangler.deploy.json
+      - name: Record authentication deployment gate
+        run: |
+          echo 'Runtime authentication configuration deployed. OAuth login, MCP tools and mobile E2E still require live verification.' >> "$GITHUB_STEP_SUMMARY"

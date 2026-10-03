@@ -1,0 +1,37 @@
+name: Mobile Work Cloudflare Readiness
+on:
+  push:
+    branches: [ops/mobile-work-readiness]
+    paths: [.github/workflows/mobile-work-cloudflare-check.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Verify existing deployment credentials without disclosing them
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request,urllib.error
+          token=os.environ.get('CF_TOKEN',''); account=os.environ.get('CF_ACCOUNT','')
+          if not token or not account: raise SystemExit('Cloudflare deployment Secrets are missing')
+          checks={}
+          for key,path in [('token','/user/tokens/verify'),('subdomain',f'/accounts/{account}/workers/subdomain'),('d1',f'/accounts/{account}/d1/database'),('kv',f'/accounts/{account}/storage/kv/namespaces')]:
+              req=urllib.request.Request('https://api.cloudflare.com/client/v4'+path,headers={'Authorization':'Bearer '+token})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r: payload=json.load(r); code=r.status
+              except urllib.error.HTTPError as e: code=e.code; payload=json.load(e)
+              checks[key]={'http_status':code,'success':payload.get('success',False),'error_codes':[x.get('code') for x in payload.get('errors',[])]}
+              if key=='subdomain' and checks[key]['success']: checks[key]['subdomain']=payload.get('result',{}).get('subdomain')
+              if key=='token' and checks[key]['success']: checks[key]['status']=payload.get('result',{}).get('status')
+              if key in ('d1','kv') and checks[key]['success']:
+                  checks[key]['mobile_work_resources']=[{'id':x.get('uuid',x.get('id')),'name':x.get('name',x.get('title'))} for x in payload.get('result',[]) if x.get('name',x.get('title')) in ('mobile-work-gateway','mobile-work-oauth')]
+          print(json.dumps(checks,indent=2))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:f.write('### Cloudflare readiness\n\x60\x60\x60json\n'+json.dumps(checks,indent=2)+'\n\x60\x60\x60\n')
+          if not checks['token']['success']: raise SystemExit('Existing token verification failed')
+          PY
